@@ -16,10 +16,12 @@ import { PricingPage } from '@/pages/public/PricingPage';
 import { AboutPage } from '@/pages/public/AboutPage';
 import { ContactPage } from '@/pages/public/ContactPage';
 import { DemoSandboxPage } from '@/pages/public/DemoSandboxPage';
+import { ProductDetailPage } from '@/pages/public/ProductDetailPage';
 import { OrdersFeaturePage } from '@/pages/public/features/OrdersFeaturePage';
 import { InventoryFeaturePage } from '@/pages/public/features/InventoryFeaturePage';
 import { FulfillmentFeaturePage } from '@/pages/public/features/FulfillmentFeaturePage';
 import { FinanceFeaturePage } from '@/pages/public/features/FinanceFeaturePage';
+import { DemoControlPanel } from '@/components/mock/DemoControlPanel';
 
 // Auth & Onboarding Pages
 import { LoginPage } from '@/pages/auth/LoginPage';
@@ -220,6 +222,7 @@ function AppRouter() {
   if (path === '/about') return <AboutPage onNavigate={navigate} />;
   if (path === '/contact') return <ContactPage onNavigate={navigate} />;
   if (path === '/demo') return <DemoSandboxPage onNavigate={navigate} />;
+  if (path === '/products' || path === '/product-detail') return <ProductDetailPage onNavigate={navigate} />;
   if (path === '/features/orders') return <OrdersFeaturePage onNavigate={navigate} />;
   if (path === '/features/inventory') return <InventoryFeaturePage onNavigate={navigate} />;
   if (path === '/features/fulfillment') return <FulfillmentFeaturePage onNavigate={navigate} />;
@@ -284,6 +287,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <AppRouter />
+        <DemoControlPanel />
       </ToastProvider>
     </AuthProvider>
   );

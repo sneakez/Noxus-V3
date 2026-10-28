@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Plus, Menu, ChevronDown, Building2, Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/providers/AuthProvider';
+import type { TenantRole } from '@/types';
 
 interface TopbarProps {
   title: string;
@@ -24,7 +25,7 @@ export function Topbar({
   primaryActionLabel = 'Them moi',
   onMobileMenu,
 }: TopbarProps) {
-  const { activeTenant, memberships, switchTenant } = useAuth();
+  const { activeTenant, memberships, switchTenant, activeRole, switchRole } = useAuth();
   const [showSwitcher, setShowSwitcher] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +58,22 @@ export function Topbar({
           <p className="text-xs lg:text-sm text-ink-400 mt-0.5 truncate hidden sm:block">{subtitle}</p>
         </div>
 
-        {/* Tenant switcher */}
+        {/* Quick Role Switcher (Prototype RBAC) */}
+        <div className="relative shrink-0 hidden sm:block">
+          <select
+            value={activeRole || 'owner'}
+            onChange={(e) => switchRole(e.target.value as TenantRole)}
+            className="text-xs font-bold py-2 px-3 rounded-xl border border-ink-200 bg-white/80 text-ink-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm"
+            title="Chuyển vai trò Demo (Prototype RBAC)"
+          >
+            <option value="owner">👑 Owner (Chủ)</option>
+            <option value="admin">⚡ Admin</option>
+            <option value="manager">📊 Manager (OMS)</option>
+            <option value="warehouse">📦 Thủ Kho</option>
+            <option value="finance">💰 Kế Toán</option>
+            <option value="viewer">👁️ Chỉ Xem</option>
+          </select>
+        </div>
         {memberships.length > 0 && (
           <div className="relative shrink-0" ref={switcherRef}>
             <button

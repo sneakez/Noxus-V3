@@ -88,9 +88,14 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
           <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
             Chi Phí Đầu Tư Linh Hoạt Theo Quy Mô Của Bạn
           </h1>
-          <p className="text-base text-gray-300 max-w-2xl mx-auto mb-8">
-            Dùng thử miễn phí 14 ngày không cần thẻ tín dụng. Nâng cấp hoặc chuyển đổi gói bất kỳ lúc nào.
+          <p className="text-base text-gray-300 max-w-2xl mx-auto mb-6">
+            Khung chi phí tham khảo phân cấp theo quy mô đơn hàng và số lượng kho bãi.
           </p>
+
+          {/* Prototype Illustrative Banner */}
+          <div className="max-w-2xl mx-auto mb-8 p-3 rounded-2xl bg-[#123A52]/80 border border-[#1E647F] text-xs text-wood-aqua">
+            ℹ️ <strong>Bản Minh Họa Prototype:</strong> Chưa áp dụng giao dịch thanh toán thật. Bạn có thể bấm chọn bất kỳ gói nào để trải nghiệm đầy đủ quy trình trong Bản Demo Sandbox.
+          </div>
 
           {/* Billing Switcher */}
           <div className="inline-flex items-center gap-3 p-1.5 rounded-xl bg-[#05121E] border border-[#1E647F]/50">

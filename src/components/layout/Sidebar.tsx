@@ -147,21 +147,35 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Quan tri vien',
-  manager: 'Quan ly',
-  warehouse: 'Nhan vien kho',
+const ROLE_LABELS: Record<TenantRole, string> = {
+  owner: '👑 Chủ Doanh Nghiệp',
+  admin: '⚡ Admin Quản Trị',
+  manager: '📊 Trưởng Phòng OMS',
+  warehouse: '📦 Nhân Viên Kho',
+  finance: '💰 Kế Toán Sổ Kép',
+  viewer: '👁️ Người Xem (Chỉ Đọc)',
 };
 
 export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose }: SidebarProps) {
   const { profile, signOut } = useAuth();
   
   const { tenantRole } = useRole();
-  const activeRole: TenantRole = tenantRole ?? 'warehouse';
+  const activeRole: TenantRole = tenantRole ?? 'owner';
   const filteredGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.roles || item.roles.includes(activeRole as UserRole)),
+      items: group.items.filter((item) => {
+        if (!item.roles) return true;
+        if (activeRole === 'owner' || activeRole === 'admin') return true;
+        if (activeRole === 'viewer') return true;
+        if (activeRole === 'finance') {
+          return ['dashboard', 'orders', 'ledger', 'feeReconciliation', 'marginControl', 'revenueReport', 'salesVelocity', 'flowGuide'].includes(item.id);
+        }
+        if (activeRole === 'warehouse') {
+          return ['dashboard', 'orders', 'inventory', 'fulfillment', 'warehouses', 'transfers', 'batches', 'stockLedger', 'returns', 'flowGuide'].includes(item.id);
+        }
+        return item.roles.includes(activeRole as UserRole);
+      }),
     }))
     .filter((group) => group.items.length > 0);
 

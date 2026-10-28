@@ -2,6 +2,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { isMockMode } from '@/lib/config';
+import { mockStore } from '@/mock/store';
 import type { Profile, UserRole, Tenant, TenantMembership, TenantRole } from '@/types';
 
 interface AuthContextValue {
@@ -18,6 +20,7 @@ interface AuthContextValue {
   resetPasswordForEmail: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   switchTenant: (tenantId: string) => void;
+  switchRole: (role: TenantRole) => void;
   createTenantOnboarding: (name: string, slug?: string) => Promise<{ tenant: Tenant | null; error: string | null }>;
   reloadUser: () => Promise<void>;
 }
@@ -31,9 +34,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [memberships, setMemberships] = useState<TenantMembership[]>([]);
   const [activeTenant, setActiveTenant] = useState<Tenant | null>(null);
+  const [activeRole, setActiveRole] = useState<TenantRole | null>('owner');
   const [loading, setLoading] = useState(true);
 
+  // Sync mock store state when in mock mode
+  const syncFromMockStore = useCallback(() => {
+    if (!isMockMode()) return;
+    const snap = mockStore.getSnapshot();
+    const currTenant = mockStore.getActiveTenant();
+    const currRole = mockStore.getActiveRole();
+
+    setActiveTenant(currTenant);
+    setActiveRole(currRole);
+    setMemberships(snap.memberships);
+
+    const activeProfile = snap.profiles.find(p => p.email.includes(currRole)) || snap.profiles[0];
+    setProfile(activeProfile || null);
+
+    setSession({
+      user: {
+        id: activeProfile?.id || 'usr_owner_01',
+        email: activeProfile?.email || 'owner@nexusoms.io',
+        app_metadata: {},
+        user_metadata: { full_name: activeProfile?.full_name },
+        aud: 'authenticated',
+        created_at: new Date().toISOString()
+      },
+      access_token: 'mock-token',
+      expires_at: 9999999999,
+      token_type: 'bearer',
+      refresh_token: 'mock-refresh'
+    } as unknown as Session);
+
+    setLoading(false);
+  }, []);
+
   const loadProfile = useCallback(async (userId: string) => {
+    if (isMockMode()) {
+      syncFromMockStore();
+      return;
+    }
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -44,9 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setProfile(data as Profile);
     }
-  }, []);
+  }, [syncFromMockStore]);
 
   const loadMemberships = useCallback(async (userId: string) => {
+    if (isMockMode()) {
+      syncFromMockStore();
+      return;
+    }
     const { data, error } = await supabase
       .from('tenant_memberships')
       .select('*, tenant:tenants(*)')
@@ -63,7 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const mships = data as unknown as TenantMembership[];
     setMemberships(mships);
 
-    // Restore active tenant from localStorage or default to first
     const savedTenantId = localStorage.getItem(ACTIVE_TENANT_KEY);
     const saved = savedTenantId
       ? mships.find((m) => m.tenant_id === savedTenantId)
@@ -73,9 +116,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (target?.tenant_id) {
       localStorage.setItem(ACTIVE_TENANT_KEY, target.tenant_id);
     }
-  }, []);
+  }, [syncFromMockStore]);
 
   const reloadUser = useCallback(async () => {
+    if (isMockMode()) {
+      syncFromMockStore();
+      return;
+    }
     const { data } = await supabase.auth.getSession();
     setSession(data.session);
     if (data.session) {
@@ -84,9 +131,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadMemberships(data.session.user.id),
       ]);
     }
-  }, [loadProfile, loadMemberships]);
+  }, [loadProfile, loadMemberships, syncFromMockStore]);
 
   useEffect(() => {
+    if (isMockMode()) {
+      syncFromMockStore();
+      const unsub = mockStore.subscribe((event) => {
+        if (event?.topic === 'ROLE_SWITCHED' || event?.topic === 'DATABASE_RESET') {
+          syncFromMockStore();
+        }
+      });
+      return unsub;
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (data.session) {
@@ -123,29 +180,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => { sub.subscription.unsubscribe(); };
-  }, [loadProfile, loadMemberships]);
+  }, [loadProfile, loadMemberships, syncFromMockStore]);
 
   async function signIn(email: string, password: string) {
+    if (isMockMode()) {
+      // Determine role from demo email or default to owner
+      let targetRole: TenantRole = 'owner';
+      if (email.includes('admin')) targetRole = 'admin';
+      else if (email.includes('manager')) targetRole = 'manager';
+      else if (email.includes('kho') || email.includes('warehouse')) targetRole = 'warehouse';
+      else if (email.includes('ketoan') || email.includes('finance')) targetRole = 'finance';
+      else if (email.includes('viewer')) targetRole = 'viewer';
+
+      mockStore.setActiveRole(targetRole);
+      syncFromMockStore();
+      return { error: null };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     return { error: null };
   }
 
   async function signUp(email: string, password: string, fullName: string) {
+    if (isMockMode()) {
+      mockStore.setActiveRole('owner');
+      syncFromMockStore();
+      return { 
+        error: null, 
+        user: { id: `usr_${Date.now()}`, email } as unknown as User 
+      };
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
+      options: { data: { full_name: fullName } },
     });
     if (error) return { error: error.message, user: null };
     return { error: null, user: data.user };
   }
 
   async function resetPasswordForEmail(email: string) {
+    if (isMockMode()) {
+      return { error: null };
+    }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
@@ -154,45 +232,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function updatePassword(newPassword: string) {
+    if (isMockMode()) {
+      return { error: null };
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) return { error: error.message };
     return { error: null };
   }
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    setProfile(null);
-    setMemberships([]);
-    setActiveTenant(null);
-    setSession(null);
-    localStorage.removeItem(ACTIVE_TENANT_KEY);
+  function switchTenant(tenantId: string) {
+    if (isMockMode()) {
+      mockStore.setActiveTenant(tenantId);
+      syncFromMockStore();
+      return;
+    }
+    const target = memberships.find((m) => m.tenant_id === tenantId);
+    if (!target) return;
+    setActiveTenant(target.tenant ?? null);
+    localStorage.setItem(ACTIVE_TENANT_KEY, tenantId);
   }
 
-  function switchTenant(tenantId: string) {
-    const m = memberships.find((m) => m.tenant_id === tenantId);
-    if (m?.tenant) {
-      setActiveTenant(m.tenant);
-      localStorage.setItem(ACTIVE_TENANT_KEY, tenantId);
+  function switchRole(role: TenantRole) {
+    if (isMockMode()) {
+      mockStore.setActiveRole(role);
+      syncFromMockStore();
     }
   }
 
+  async function signOut() {
+    if (isMockMode()) {
+      setSession(null);
+      setProfile(null);
+      setActiveTenant(null);
+      return;
+    }
+    await supabase.auth.signOut();
+  }
+
   async function createTenantOnboarding(name: string, slug?: string) {
-    if (!session?.user) return { tenant: null, error: 'Chua dang nhap' };
-    const generatedSlug = (slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')).slice(0, 32);
+    if (isMockMode()) {
+      const newTenant: Tenant = {
+        id: `tenant_${Date.now()}`,
+        name,
+        slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      mockStore.setActiveTenant(newTenant.id);
+      syncFromMockStore();
+      return { tenant: newTenant, error: null };
+    }
 
     try {
+      if (!session) return { tenant: null, error: 'Chua dang nhap' };
+
+      const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
-        .insert({
-          name,
-          slug: generatedSlug,
-        })
+        .insert({ name, slug: finalSlug })
         .select()
         .single();
 
-      if (tenantError || !tenantData) {
-        return { tenant: null, error: tenantError?.message ?? 'Khong the tao to chuc' };
-      }
+      if (tenantError) return { tenant: null, error: tenantError.message };
 
       const { error: membershipError } = await supabase
         .from('tenant_memberships')
@@ -203,9 +305,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           status: 'active',
         });
 
-      if (membershipError) {
-        return { tenant: null, error: membershipError.message };
-      }
+      if (membershipError) return { tenant: null, error: membershipError.message };
 
       await loadMemberships(session.user.id);
       setActiveTenant(tenantData as Tenant);
@@ -215,8 +315,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { tenant: null, error: (err as Error).message || 'Loi tao to chuc' };
     }
   }
-
-  const activeRole = memberships.find((m) => m.tenant_id === activeTenant?.id)?.role ?? null;
 
   return (
     <AuthContext.Provider
@@ -234,6 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetPasswordForEmail,
         updatePassword,
         switchTenant,
+        switchRole,
         createTenantOnboarding,
         reloadUser,
       }}
@@ -255,6 +354,8 @@ export function useRole(): {
   isAdmin: boolean;
   isManager: boolean;
   isWarehouse: boolean;
+  isFinance: boolean;
+  isViewer: boolean;
   canDelete: boolean;
   canManageFinance: boolean;
   canManageSettings: boolean;
@@ -266,14 +367,19 @@ export function useRole(): {
   const isAdmin = tenantRole === 'owner' || tenantRole === 'admin';
   const isManager = tenantRole === 'manager' || isAdmin;
   const isWarehouse = tenantRole === 'warehouse';
+  const isFinance = tenantRole === 'finance' || isAdmin;
+  const isViewer = tenantRole === 'viewer';
+
   return {
     role,
     tenantRole,
     isAdmin,
     isManager,
     isWarehouse,
+    isFinance,
+    isViewer,
     canDelete: tenantRole === 'owner',
-    canManageFinance: isManager,
+    canManageFinance: isFinance || isManager,
     canManageSettings: isAdmin,
     canManageUsers: isAdmin,
   };
