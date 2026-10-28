@@ -141,8 +141,52 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             </button>
           </form>
 
+          {/* Quick 1-Click Demo Accounts */}
+          <div className="mt-5 pt-4 border-t border-gray-800">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">
+              Bấm nhanh để điền tài khoản mẫu:
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@nexusoms.vn');
+                  setPassword('Admin@123');
+                }}
+                className="p-2 rounded-lg bg-[#081B2C] hover:bg-[#123A52] text-metal-mist border border-[#1E647F]/40 hover:text-white transition-colors text-center"
+              >
+                <div className="font-bold text-wood-aqua">👑 Admin</div>
+                <div className="text-[10px] text-gray-500 truncate">admin@...</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('manager@nexusoms.vn');
+                  setPassword('Manager@123');
+                }}
+                className="p-2 rounded-lg bg-[#081B2C] hover:bg-[#123A52] text-metal-mist border border-[#1E647F]/40 hover:text-white transition-colors text-center"
+              >
+                <div className="font-bold text-cyan-400">📊 Manager</div>
+                <div className="text-[10px] text-gray-500 truncate">manager@...</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('warehouse@nexusoms.vn');
+                  setPassword('Warehouse@123');
+                }}
+                className="p-2 rounded-lg bg-[#081B2C] hover:bg-[#123A52] text-metal-mist border border-[#1E647F]/40 hover:text-white transition-colors text-center"
+              >
+                <div className="font-bold text-amber-400">📦 Kho</div>
+                <div className="text-[10px] text-gray-500 truncate">warehouse@...</div>
+              </button>
+            </div>
+          </div>
+
           {/* Register Prompt */}
-          <div className="mt-6 pt-5 border-t border-gray-800 text-center">
+          <div className="mt-4 pt-3 border-t border-gray-800 text-center">
             <p className="text-xs text-gray-400">
               Chưa có tài khoản doanh nghiệp?{' '}
               <button
