@@ -3,12 +3,34 @@ import { supabase } from '@/lib/supabase';
 import { emitPrimaryAction } from '@/lib/events';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
-import { LoginPage } from '@/pages/auth/LoginPage';
+import { useRouter } from '@/lib/router';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { Sidebar, type PageId } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 
+// Public Marketing & Presentation Pages
+import { LandingPage } from '@/pages/public/LandingPage';
+import { SolutionsPage } from '@/pages/public/SolutionsPage';
+import { PricingPage } from '@/pages/public/PricingPage';
+import { AboutPage } from '@/pages/public/AboutPage';
+import { ContactPage } from '@/pages/public/ContactPage';
+import { DemoSandboxPage } from '@/pages/public/DemoSandboxPage';
+import { OrdersFeaturePage } from '@/pages/public/features/OrdersFeaturePage';
+import { InventoryFeaturePage } from '@/pages/public/features/InventoryFeaturePage';
+import { FulfillmentFeaturePage } from '@/pages/public/features/FulfillmentFeaturePage';
+import { FinanceFeaturePage } from '@/pages/public/features/FinanceFeaturePage';
+
+// Auth & Onboarding Pages
+import { LoginPage } from '@/pages/auth/LoginPage';
+import { RegisterPage } from '@/pages/auth/RegisterPage';
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
+import { VerifyEmailPage } from '@/pages/auth/VerifyEmailPage';
+import { AcceptInvitePage } from '@/pages/auth/AcceptInvitePage';
+import { OnboardingWizard } from '@/pages/onboarding/OnboardingWizard';
+
+// Lazy Authenticated App Pages
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const CustomersPage = lazy(() => import('@/pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
@@ -47,49 +69,50 @@ interface PageMeta {
 }
 
 const PAGE_META: Record<PageId, PageMeta> = {
-  dashboard: { title: 'Dashboard', subtitle: 'Tong quan hoat dong & phan tich', searchPlaceholder: 'Tim kiem...', primaryLabel: '' },
-  orders: { title: 'Don hang', subtitle: 'Trung tam don hang da kenh — giao hang da kho', searchPlaceholder: 'Tim theo ma don hoac khach hang...', primaryLabel: 'Tao don' },
-  customers: { title: 'Khach hang', subtitle: 'CRM thong nhat voi diem thuong & RFM', searchPlaceholder: 'Tim theo ten, email, hoac cong ty...', primaryLabel: 'Them khach hang' },
-  complaints: { title: 'Khieu nai & AI', subtitle: 'Phan tich khieu nai an toan PII voi AI sentiment', searchPlaceholder: 'Tim khieu nai...', primaryLabel: 'Tao khieu nai' },
-  returns: { title: 'Doi tra / RMA', subtitle: 'Quan ly doi tra va hoan tien', searchPlaceholder: 'Tim theo ma RMA hoac don hang...', primaryLabel: 'Tao yeu cau' },
-  products: { title: 'San pham & BOM', subtitle: 'Danh muc voi combo/bundle & da kho', searchPlaceholder: 'Tim theo ten, SKU, hoac danh muc...', primaryLabel: 'Them san pham' },
-  inventory: { title: 'Ton kho 5 trang thai', subtitle: 'Physical, Reserved, Available, Unavailable, Incoming', searchPlaceholder: 'Tim theo san pham hoac SKU...', primaryLabel: '' },
-  warehouses: { title: 'Kho & Bin', subtitle: 'Quan ly da kho voi vi tri bin', searchPlaceholder: 'Tim kho...', primaryLabel: 'Them kho' },
-  transfers: { title: 'Chuyen kho', subtitle: 'Chuyen kho lien chi nhanh theo doi trang thai', searchPlaceholder: 'Tim phieu chuyen...', primaryLabel: 'Tao phieu' },
-  batches: { title: 'Lo & Serial', subtitle: 'Theo doi lo FEFO & Serial/IMEI', searchPlaceholder: 'Tim theo ma lo hoac serial...', primaryLabel: '' },
-  stockLedger: { title: 'So giao dich ton', subtitle: 'Lich su giao dich ton kho bat bien', searchPlaceholder: 'Tim giao dich...', primaryLabel: '' },
-  purchaseOrders: { title: 'Don mua hang', subtitle: 'Quan ly PO voi dat truoc & hang sap ve', searchPlaceholder: 'Tim theo ma PO hoac nha cung cap...', primaryLabel: 'Tao PO' },
-  channelMapping: { title: 'Anh xa SKU kenh', subtitle: 'Anh xa SKU noi bo sang SKU kenh TMĐT', searchPlaceholder: 'Tim anh xa...', primaryLabel: 'Them anh xa' },
-  channelConnections: { title: 'Ket noi kenh', subtitle: 'Quan ly ket noi shop Shopee, TikTok, Lazada', searchPlaceholder: 'Tim ket noi...', primaryLabel: 'Them ket noi' },
-  syncMonitor: { title: 'Giam sat dong bo', subtitle: 'Trang thai day ton kho & log retry', searchPlaceholder: 'Tim log...', primaryLabel: '' },
-  fulfillment: { title: 'Wave Picking & SLA', subtitle: 'Wave picking, SLA countdown, scan-to-pack', searchPlaceholder: 'Tim wave...', primaryLabel: 'Tao wave' },
-  ledger: { title: 'So kep', subtitle: 'Bút toan kep voi Debit == Credit', searchPlaceholder: 'Tim but toan...', primaryLabel: 'Tao but toan' },
-  feeReconciliation: { title: 'Doi soát phi', subtitle: 'Phan tich phi chi tiet & phat hien chenh lech', searchPlaceholder: 'Tim theo ma don...', primaryLabel: '' },
-  marginControl: { title: 'Marg Circuit Breaker', subtitle: 'Tu dong ngat khi phat hien margin am', searchPlaceholder: 'Tim kiem...', primaryLabel: '' },
-  salesVelocity: { title: 'Van toc ban', subtitle: 'Bao cao doanh thu, loi nhuan, van toc ban', searchPlaceholder: 'Tim kiem...', primaryLabel: '' },
-  revenueReport: { title: 'Bao cao doanh thu', subtitle: 'Phan tich doanh thu theo ngay, thang, nam', searchPlaceholder: 'Tim kiem...', primaryLabel: '' },
-  auditTrail: { title: 'Nhat ky Audit', subtitle: 'Nhat ky SHA-256 chong xoa', searchPlaceholder: 'Tim nhat ky...', primaryLabel: '' },
-  automationRules: { title: 'Luat tu dong', subtitle: 'Tu dong hoa don hang IF-THEN', searchPlaceholder: 'Tim luat...', primaryLabel: 'Tao luat' },
-  webhooks: { title: 'Outbound Webhooks', subtitle: 'Sự kiện HMAC gui he thong ben ngoai', searchPlaceholder: 'Tim webhook...', primaryLabel: 'Them webhook' },
-  simulator: { title: 'Chaos Simulator', subtitle: 'Flash sale, duplicate webhook, margin attack', searchPlaceholder: 'Tim kiem...', primaryLabel: '' },
-  bufferRules: { title: 'Ton kho an toan', subtitle: 'Cau hinh safety stock & reorder point', searchPlaceholder: 'Tim quy tac...', primaryLabel: 'Them quy tac' },
-  routingRules: { title: 'Dinh tuyen kho', subtitle: 'Cau hinh dinh tuyen kho tu dong & tach/gop don', searchPlaceholder: 'Tim quy tac...', primaryLabel: 'Them quy tac' },
-  settings: { title: 'Cai dat & Phan quyen', subtitle: 'Quan ly nguoi dung & vai tro RBAC', searchPlaceholder: 'Tim nguoi dung...', primaryLabel: '' },
-  flowGuide: { title: 'Luong hoat dong', subtitle: 'Huong dan luong end-to-end & phan quyen', searchPlaceholder: 'Tim kiem...', primaryLabel: '' },
+  dashboard: { title: 'Dashboard', subtitle: 'Tổng quan hoạt động & phân tích số liệu', searchPlaceholder: 'Tìm kiếm nhanh...', primaryLabel: '' },
+  orders: { title: 'Đơn hàng', subtitle: 'Trung tâm đơn hàng đa kênh — xử lý đa kho', searchPlaceholder: 'Tìm theo mã đơn hoặc khách hàng...', primaryLabel: 'Tạo đơn' },
+  customers: { title: 'Khách hàng', subtitle: 'CRM thống nhất với điểm thưởng & RFM', searchPlaceholder: 'Tìm theo tên, email, hoặc công ty...', primaryLabel: 'Thêm khách hàng' },
+  complaints: { title: 'Khiếu nại & AI', subtitle: 'Phân tích khiếu nại an toàn PII với AI sentiment', searchPlaceholder: 'Tìm khiếu nại...', primaryLabel: 'Tạo khiếu nại' },
+  returns: { title: 'Đổi trả / RMA', subtitle: 'Quản lý đổi trả và hoàn tiền', searchPlaceholder: 'Tìm theo mã RMA hoặc đơn hàng...', primaryLabel: 'Tạo yêu cầu' },
+  products: { title: 'Sản phẩm & BOM', subtitle: 'Danh mục với combo/bundle & đa kho', searchPlaceholder: 'Tìm theo tên, SKU, hoặc danh mục...', primaryLabel: 'Thêm sản phẩm' },
+  inventory: { title: 'Tồn kho 5 trạng thái', subtitle: 'Physical, Reserved, Available, Unavailable, Incoming', searchPlaceholder: 'Tìm theo sản phẩm hoặc SKU...', primaryLabel: '' },
+  warehouses: { title: 'Kho & Bin', subtitle: 'Quản lý đa kho với vị trí bin chi tiết', searchPlaceholder: 'Tìm kho...', primaryLabel: 'Thêm kho' },
+  transfers: { title: 'Chuyển kho', subtitle: 'Chuyển kho liên chi nhánh theo dõi trạng thái', searchPlaceholder: 'Tìm phiếu chuyển...', primaryLabel: 'Tạo phiếu' },
+  batches: { title: 'Lô & Serial', subtitle: 'Theo dõi lô FEFO & Serial/IMEI', searchPlaceholder: 'Tìm theo mã lô hoặc serial...', primaryLabel: '' },
+  stockLedger: { title: 'Sổ giao dịch tồn', subtitle: 'Lịch sử giao dịch tồn kho bất biến (Append-only)', searchPlaceholder: 'Tìm giao dịch...', primaryLabel: '' },
+  purchaseOrders: { title: 'Đơn mua hàng', subtitle: 'Quản lý PO với đặt trước & hàng sắp về', searchPlaceholder: 'Tìm theo mã PO hoặc nhà cung cấp...', primaryLabel: 'Tạo PO' },
+  channelMapping: { title: 'Ánh xạ SKU kênh', subtitle: 'Ánh xạ SKU nội bộ sang SKU kênh TMĐT', searchPlaceholder: 'Tìm ánh xạ...', primaryLabel: 'Thêm ánh xạ' },
+  channelConnections: { title: 'Kết nối kênh', subtitle: 'Quản lý kết nối shop Shopee, TikTok, Lazada', searchPlaceholder: 'Tìm kết nối...', primaryLabel: 'Thêm kết nối' },
+  syncMonitor: { title: 'Giám sát đồng bộ', subtitle: 'Trạng thái đẩy tồn kho & log retry', searchPlaceholder: 'Tìm log...', primaryLabel: '' },
+  fulfillment: { title: 'Wave Picking & SLA', subtitle: 'Wave picking, SLA countdown, scan-to-pack', searchPlaceholder: 'Tìm wave...', primaryLabel: 'Tạo wave' },
+  ledger: { title: 'Sổ kép', subtitle: 'Bút toán kép với Debit == Credit', searchPlaceholder: 'Tìm bút toán...', primaryLabel: 'Tạo bút toán' },
+  feeReconciliation: { title: 'Đối soát phí', subtitle: 'Phân tích phí chi tiết & phát hiện chênh lệch', searchPlaceholder: 'Tìm theo mã đơn...', primaryLabel: '' },
+  marginControl: { title: 'Margin Circuit Breaker', subtitle: 'Tự động ngắt khi phát hiện margin âm', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  salesVelocity: { title: 'Vận tốc bán', subtitle: 'Báo cáo doanh thu, lợi nhuận, vận tốc bán', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  revenueReport: { title: 'Báo cáo doanh thu', subtitle: 'Phân tích doanh thu theo ngày, tháng, năm', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  auditTrail: { title: 'Nhật ký Audit', subtitle: 'Nhật ký SHA-256 chống xóa', searchPlaceholder: 'Tìm nhật ký...', primaryLabel: '' },
+  automationRules: { title: 'Luật tự động', subtitle: 'Tự động hóa đơn hàng IF-THEN', searchPlaceholder: 'Tìm luật...', primaryLabel: 'Tạo luật' },
+  webhooks: { title: 'Outbound Webhooks', subtitle: 'Sự kiện HMAC gửi hệ thống bên ngoài', searchPlaceholder: 'Tìm webhook...', primaryLabel: 'Thêm webhook' },
+  simulator: { title: 'Chaos Simulator', subtitle: 'Flash sale, duplicate webhook, margin attack', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  bufferRules: { title: 'Tồn kho an toàn', subtitle: 'Cấu hình safety stock & reorder point', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: 'Thêm quy tắc' },
+  routingRules: { title: 'Định tuyến kho', subtitle: 'Cấu hình định tuyến kho tự động & tách/gộp đơn', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: 'Thêm quy tắc' },
+  settings: { title: 'Cài đặt & Phân quyền', subtitle: 'Quản lý người dùng & vai trò RBAC', searchPlaceholder: 'Tìm người dùng...', primaryLabel: '' },
+  flowGuide: { title: 'Luồng hoạt động', subtitle: 'Hướng dẫn luồng end-to-end & phân quyền', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
 };
 
-function AppInner() {
-  const { session, loading: authLoading, activeTenant } = useAuth();
+function AuthenticatedWorkspace() {
+  const { session, activeTenant } = useAuth();
   const [page, setPage] = useState<PageId>('dashboard');
   const [search, setSearch] = useState('');
   const [sidebarStats, setSidebarStats] = useState({ pendingOrders: 0, lowStock: 0 });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   async function refreshStats() {
+    if (!activeTenant) return;
     try {
       const [ordersRes, productsRes] = await Promise.all([
-        supabase.from('orders').select('status').in('status', ['pending', 'processing']),
-        supabase.from('products').select('stock, reorder_level, safety_stock'),
+        supabase.from('orders').select('status').eq('tenant_id', activeTenant.id).in('status', ['pending', 'processing']),
+        supabase.from('products').select('stock, reorder_level, safety_stock').eq('tenant_id', activeTenant.id),
       ]);
       if (ordersRes.error || productsRes.error) return;
       setSidebarStats({
@@ -97,16 +120,17 @@ function AppInner() {
         lowStock: productsRes.data?.filter((p) => p.stock <= (p.reorder_level ?? 10)).length ?? 0,
       });
     } catch {
-      // Silent fail — sidebar stats are non-critical
+      // Silent fail
     }
   }
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !activeTenant) return;
     refreshStats();
     const interval = setInterval(refreshStats, 30000);
     return () => clearInterval(interval);
-  }, [session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, activeTenant]);
 
   function navigate(p: PageId) {
     setPage(p);
@@ -114,11 +138,7 @@ function AppInner() {
     setMobileSidebarOpen(false);
   }
 
-  if (authLoading) return <FullPageSpinner label="Dang tai..." />;
-
-  if (!session) return <LoginPage />;
-
-  const meta = PAGE_META[page];
+  const meta = PAGE_META[page] || PAGE_META.dashboard;
   const showPrimary = page !== 'dashboard' && page !== 'inventory' && page !== 'batches' &&
     page !== 'stockLedger' && page !== 'feeReconciliation' && page !== 'marginControl' &&
     page !== 'auditTrail' && page !== 'simulator' && page !== 'syncMonitor' &&
@@ -127,7 +147,13 @@ function AppInner() {
 
   return (
     <div className="flex min-h-screen bg-ink-50">
-      <Sidebar current={page} onNavigate={navigate} stats={sidebarStats} mobileOpen={mobileSidebarOpen} onMobileClose={() => setMobileSidebarOpen(false)} />
+      <Sidebar 
+        current={page} 
+        onNavigate={navigate} 
+        stats={sidebarStats} 
+        mobileOpen={mobileSidebarOpen} 
+        onMobileClose={() => setMobileSidebarOpen(false)} 
+      />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar
           title={meta.title}
@@ -141,37 +167,37 @@ function AppInner() {
         />
         <main key={activeTenant?.id ?? 'default'} className="flex-1">
           <ErrorBoundary>
-          <Suspense fallback={<FullPageSpinner label="Dang tai trang..." />}>
-          {page === 'dashboard' && <DashboardPage onNavigate={(p) => navigate(p)} />}
-          {page === 'orders' && <OrdersPage search={search} />}
-          {page === 'customers' && <CustomersPage search={search} />}
-          {page === 'complaints' && <ComplaintsPage search={search} />}
-          {page === 'returns' && <ReturnsPage search={search} />}
-          {page === 'products' && <ProductsPage search={search} />}
-          {page === 'inventory' && <InventoryPage search={search} />}
-          {page === 'warehouses' && <WarehousesPage search={search} />}
-          {page === 'transfers' && <TransfersPage search={search} />}
-          {page === 'batches' && <BatchesPage search={search} />}
-          {page === 'stockLedger' && <StockLedgerPage search={search} />}
-          {page === 'purchaseOrders' && <PurchaseOrdersPage search={search} />}
-          {page === 'channelMapping' && <ChannelMappingPage search={search} />}
-          {page === 'channelConnections' && <ChannelConnectionsPage search={search} />}
-          {page === 'syncMonitor' && <SyncMonitorPage search={search} />}
-          {page === 'fulfillment' && <FulfillmentPage search={search} />}
-          {page === 'ledger' && <LedgerPage search={search} />}
-          {page === 'feeReconciliation' && <FeeReconciliationPage search={search} />}
-          {page === 'marginControl' && <MarginControlPage />}
-          {page === 'salesVelocity' && <SalesVelocityPage />}
-          {page === 'revenueReport' && <RevenueReportPage />}
-          {page === 'auditTrail' && <AuditTrailPage search={search} />}
-          {page === 'automationRules' && <AutomationRulesPage search={search} />}
-          {page === 'webhooks' && <WebhooksPage search={search} />}
-          {page === 'simulator' && <SimulatorPage />}
-          {page === 'bufferRules' && <BufferRulesPage search={search} />}
-          {page === 'routingRules' && <RoutingRulesPage search={search} />}
-          {page === 'settings' && <SettingsPage search={search} />}
-          {page === 'flowGuide' && <FlowGuidePage />}
-          </Suspense>
+            <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu trang..." />}>
+              {page === 'dashboard' && <DashboardPage onNavigate={(p) => navigate(p)} />}
+              {page === 'orders' && <OrdersPage search={search} />}
+              {page === 'customers' && <CustomersPage search={search} />}
+              {page === 'complaints' && <ComplaintsPage search={search} />}
+              {page === 'returns' && <ReturnsPage search={search} />}
+              {page === 'products' && <ProductsPage search={search} />}
+              {page === 'inventory' && <InventoryPage search={search} />}
+              {page === 'warehouses' && <WarehousesPage search={search} />}
+              {page === 'transfers' && <TransfersPage search={search} />}
+              {page === 'batches' && <BatchesPage search={search} />}
+              {page === 'stockLedger' && <StockLedgerPage search={search} />}
+              {page === 'purchaseOrders' && <PurchaseOrdersPage search={search} />}
+              {page === 'channelMapping' && <ChannelMappingPage search={search} />}
+              {page === 'channelConnections' && <ChannelConnectionsPage search={search} />}
+              {page === 'syncMonitor' && <SyncMonitorPage search={search} />}
+              {page === 'fulfillment' && <FulfillmentPage search={search} />}
+              {page === 'ledger' && <LedgerPage search={search} />}
+              {page === 'feeReconciliation' && <FeeReconciliationPage search={search} />}
+              {page === 'marginControl' && <MarginControlPage />}
+              {page === 'salesVelocity' && <SalesVelocityPage />}
+              {page === 'revenueReport' && <RevenueReportPage />}
+              {page === 'auditTrail' && <AuditTrailPage search={search} />}
+              {page === 'automationRules' && <AutomationRulesPage search={search} />}
+              {page === 'webhooks' && <WebhooksPage search={search} />}
+              {page === 'simulator' && <SimulatorPage />}
+              {page === 'bufferRules' && <BufferRulesPage search={search} />}
+              {page === 'routingRules' && <RoutingRulesPage search={search} />}
+              {page === 'settings' && <SettingsPage search={search} />}
+              {page === 'flowGuide' && <FlowGuidePage />}
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>
@@ -179,11 +205,85 @@ function AppInner() {
   );
 }
 
+function AppRouter() {
+  const { path, navigate } = useRouter();
+  const { session, loading: authLoading, activeTenant, memberships } = useAuth();
+
+  if (authLoading) {
+    return <FullPageSpinner label="Đang khởi tạo hệ thống..." />;
+  }
+
+  // 1. PUBLIC MARKETING & SITEMAP ROUTES
+  if (path === '/') return <LandingPage onNavigate={navigate} />;
+  if (path === '/solutions') return <SolutionsPage onNavigate={navigate} />;
+  if (path === '/pricing') return <PricingPage onNavigate={navigate} />;
+  if (path === '/about') return <AboutPage onNavigate={navigate} />;
+  if (path === '/contact') return <ContactPage onNavigate={navigate} />;
+  if (path === '/demo') return <DemoSandboxPage onNavigate={navigate} />;
+  if (path === '/features/orders') return <OrdersFeaturePage onNavigate={navigate} />;
+  if (path === '/features/inventory') return <InventoryFeaturePage onNavigate={navigate} />;
+  if (path === '/features/fulfillment') return <FulfillmentFeaturePage onNavigate={navigate} />;
+  if (path === '/features/finance') return <FinanceFeaturePage onNavigate={navigate} />;
+
+  // 2. AUTHENTICATION & ONBOARDING LIFECYCLE
+  if (path === '/login') {
+    if (session) {
+      navigate('/app', true);
+      return null;
+    }
+    return <LoginPage onNavigate={navigate} />;
+  }
+
+  if (path === '/register') {
+    if (session) {
+      navigate('/onboarding', true);
+      return null;
+    }
+    return <RegisterPage onNavigate={navigate} />;
+  }
+
+  if (path === '/forgot-password') return <ForgotPasswordPage onNavigate={navigate} />;
+  if (path === '/reset-password') return <ResetPasswordPage onNavigate={navigate} />;
+  if (path === '/verify-email') return <VerifyEmailPage onNavigate={navigate} />;
+  if (path === '/accept-invite') return <AcceptInvitePage onNavigate={navigate} />;
+
+  if (path === '/onboarding') {
+    return (
+      <OnboardingWizard
+        onComplete={() => navigate('/app', true)}
+        onNavigate={navigate}
+      />
+    );
+  }
+
+  // 3. AUTHENTICATED OMS APPLICATION (/app or fallback)
+  if (path.startsWith('/app')) {
+    if (!session) {
+      return <LoginPage onNavigate={navigate} />;
+    }
+
+    // If user has zero memberships, direct them to Onboarding Wizard
+    if (memberships.length === 0 && !activeTenant) {
+      return (
+        <OnboardingWizard
+          onComplete={() => navigate('/app', true)}
+          onNavigate={navigate}
+        />
+      );
+    }
+
+    return <AuthenticatedWorkspace />;
+  }
+
+  // Default Fallback
+  return <LandingPage onNavigate={navigate} />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <AppInner />
+        <AppRouter />
       </ToastProvider>
     </AuthProvider>
   );

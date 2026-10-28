@@ -3,29 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --color-ink-50: #f6f7f9;
-  --color-ink-100: #eceef2;
-  --color-ink-200: #d4d9e2;
-  --color-ink-300: #aab3c4;
-  --color-ink-400: #78849c;
-  --color-ink-500: #566178;
-  --color-ink-600: #3e4859;
-  --color-ink-700: #2c3442;
-  --color-ink-800: #1c222d;
-  --color-ink-900: #11161e;
-  --color-ink-950: #0a0d12;
+  /* Kim tương sinh — Sắc thái trung tính thanh nhã & chính xác */
+  --color-ink-50: #F4F8FA;
+  --color-ink-100: #EBF1F5;
+  --color-ink-200: #D9E3E8;
+  --color-ink-300: #B0C2CC;
+  --color-ink-400: #7E95A3;
+  --color-ink-500: #566E7D;
+  --color-ink-600: #3D525F;
+  --color-ink-700: #283944;
+  --color-ink-800: #18252E;
+  --color-ink-900: #101B22;
+  --color-ink-950: #08131A;
 
-  --brand-50: #eef5ff;
-  --brand-100: #d9e7ff;
-  --brand-200: #bcd5ff;
-  --brand-300: #8ebaff;
-  --brand-400: #5993ff;
-  --brand-500: #3b76f6;
-  --brand-600: #2459e6;
-  --brand-700: #1d47c4;
-  --brand-800: #1d3d9e;
-  --brand-900: #1e387d;
-  --brand-950: #162351;
+  /* Tuyền Trung Thủy — Sóng nguồn đại dương & chuyển động uyển chuyển */
+  --water-deep: #081B2C;
+  --water-midnight: #123A52;
+  --water-teal: #1E647F;
+  --water-cerulean: #2D82B7;
+  --water-foam: #EBF3F8;
+
+  /* Mộc sinh sôi — Tăng trưởng doanh thu & thịnh vượng */
+  --wood-aqua: #27B4A0;
+  --wood-emerald: #10B981;
+
+  /* Brand Scale mapped to Tuyền Trung Thủy */
+  --brand-50: #F0F6FA;
+  --brand-100: #E1EDF4;
+  --brand-200: #C3DCE9;
+  --brand-300: #94C0D7;
+  --brand-400: #5C9EC1;
+  --brand-500: #2D82B7;
+  --brand-600: #1E647F;
+  --brand-700: #123A52;
+  --brand-800: #0C2739;
+  --brand-900: #081B2C;
+  --brand-950: #05121E;
 }
 
 @layer base {
@@ -48,11 +61,12 @@
 
   ::selection {
     background-color: var(--brand-200);
+    color: var(--brand-950);
   }
 
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
@@ -71,12 +85,19 @@
     @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium text-sm
            px-4 py-2.5 transition-all duration-200 disabled:opacity-50
            disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2
-           active:scale-[0.97];
+           active:scale-[0.98];
   }
   .btn-primary {
-    @apply btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]
-           focus:ring-[var(--brand-400)] shadow-sm
-           hover:shadow-md;
+    @apply btn bg-[#1E647F] text-white hover:bg-[#123A52]
+           focus:ring-[#5C9EC1] shadow-sm hover:shadow-md;
+  }
+  .btn-aqua {
+    @apply btn bg-[#27B4A0] text-white hover:bg-[#1f9383]
+           focus:ring-[#27B4A0] shadow-sm hover:shadow-md;
+  }
+  .btn-dark {
+    @apply btn bg-[#081B2C] text-white hover:bg-[#123A52]
+           focus:ring-[#1E647F] shadow-sm hover:shadow-md;
   }
   .btn-secondary {
     @apply btn bg-white border border-ink-200 text-ink-700 hover:bg-ink-50
@@ -93,8 +114,8 @@
   .input {
     @apply w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm
            text-ink-800 placeholder:text-ink-400
-           focus:outline-none focus:ring-2 focus:ring-[var(--brand-400)]
-           focus:border-[var(--brand-400)] transition-all duration-200;
+           focus:outline-none focus:ring-2 focus:ring-[#1E647F]
+           focus:border-[#1E647F] transition-all duration-200;
   }
   .label {
     @apply block text-sm font-medium text-ink-700 mb-1.5;
@@ -113,20 +134,28 @@
   }
 
   .glass {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
+  .glass-dark {
+    background: rgba(8, 27, 44, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .gradient-water {
+    background: linear-gradient(135deg, #081B2C 0%, #123A52 50%, #1E647F 100%);
+  }
   .gradient-brand {
-    background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+    background: linear-gradient(135deg, #1E647F 0%, #123A52 100%);
   }
   .gradient-brand-soft {
-    background: linear-gradient(
-      135deg,
-      var(--brand-50),
-      var(--brand-100)
-    );
+    background: linear-gradient(135deg, #F0F6FA 0%, #E1EDF4 100%);
+  }
+  .gradient-growth {
+    background: linear-gradient(135deg, #1E647F 0%, #27B4A0 100%);
   }
 
   .shimmer {

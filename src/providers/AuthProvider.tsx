@@ -1,19 +1,25 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { Profile, UserRole, Tenant, TenantMembership, TenantRole } from '@/types';
 
 interface AuthContextValue {
   session: Session | null;
+  user: User | null;
   profile: Profile | null;
   loading: boolean;
   memberships: TenantMembership[];
   activeTenant: Tenant | null;
   activeRole: TenantRole | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null; user: User | null }>;
   signOut: () => Promise<void>;
+  resetPasswordForEmail: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   switchTenant: (tenantId: string) => void;
+  createTenantOnboarding: (name: string, slug?: string) => Promise<{ tenant: Tenant | null; error: string | null }>;
+  reloadUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -38,7 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setProfile(data as Profile);
     }
-    setLoading(false);
   }, []);
 
   const loadMemberships = useCallback(async (userId: string) => {
@@ -70,6 +75,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const reloadUser = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    setSession(data.session);
+    if (data.session) {
+      await Promise.all([
+        loadProfile(data.session.user.id),
+        loadMemberships(data.session.user.id),
+      ]);
+    }
+  }, [loadProfile, loadMemberships]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -77,7 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         Promise.all([
           loadProfile(data.session.user.id),
           loadMemberships(data.session.user.id),
-        ]);
+        ]).finally(() => {
+          setLoading(false);
+        });
       } else {
         setLoading(false);
       }
@@ -93,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             loadProfile(sess.user.id),
             loadMemberships(sess.user.id),
           ]);
+          setLoading(false);
         })();
       } else {
         setProfile(null);
@@ -108,6 +127,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return { error: null };
+  }
+
+  async function signUp(email: string, password: string, fullName: string) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+    if (error) return { error: error.message, user: null };
+    return { error: null, user: data.user };
+  }
+
+  async function resetPasswordForEmail(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  }
+
+  async function updatePassword(newPassword: string) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) return { error: error.message };
     return { error: null };
   }
@@ -129,20 +176,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function createTenantOnboarding(name: string, slug?: string) {
+    if (!session?.user) return { tenant: null, error: 'Chua dang nhap' };
+    const generatedSlug = (slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')).slice(0, 32);
+
+    try {
+      const { data: tenantData, error: tenantError } = await supabase
+        .from('tenants')
+        .insert({
+          name,
+          slug: generatedSlug,
+        })
+        .select()
+        .single();
+
+      if (tenantError || !tenantData) {
+        return { tenant: null, error: tenantError?.message ?? 'Khong the tao to chuc' };
+      }
+
+      const { error: membershipError } = await supabase
+        .from('tenant_memberships')
+        .insert({
+          tenant_id: tenantData.id,
+          user_id: session.user.id,
+          role: 'owner',
+          status: 'active',
+        });
+
+      if (membershipError) {
+        return { tenant: null, error: membershipError.message };
+      }
+
+      await loadMemberships(session.user.id);
+      setActiveTenant(tenantData as Tenant);
+      localStorage.setItem(ACTIVE_TENANT_KEY, tenantData.id);
+      return { tenant: tenantData as Tenant, error: null };
+    } catch (err: unknown) {
+      return { tenant: null, error: (err as Error).message || 'Loi tao to chuc' };
+    }
+  }
+
   const activeRole = memberships.find((m) => m.tenant_id === activeTenant?.id)?.role ?? null;
 
   return (
     <AuthContext.Provider
       value={{
         session,
+        user: session?.user ?? null,
         profile,
         loading,
         memberships,
         activeTenant,
         activeRole,
         signIn,
+        signUp,
         signOut,
+        resetPasswordForEmail,
+        updatePassword,
         switchTenant,
+        createTenantOnboarding,
+        reloadUser,
       }}
     >
       {children}

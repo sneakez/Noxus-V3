@@ -4,6 +4,37 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Tuyền Trung Thủy / Kim tương sinh / Mộc phát triển
+        water: {
+          deep: '#081B2C',      // Biển sâu nguồn cội (Deep Ocean)
+          midnight: '#123A52',  // Đêm thẳm tĩnh lặng (Midnight Blue)
+          teal: '#1E647F',      // Nước nguồn chuyển động (Ocean Teal)
+          cerulean: '#2D82B7',  // Sóng biển động lực (Cerulean Blue)
+          foam: '#EBF3F8',      // Bọt nước trong trẻo (Water Foam)
+          50: '#F0F6FA',
+          100: '#E1EDF4',
+          200: '#C3DCE9',
+          300: '#94C0D7',
+          400: '#5C9EC1',
+          500: '#2D82B7',
+          600: '#1E647F',
+          700: '#174E64',
+          800: '#123A52',
+          900: '#0C2739',
+          950: '#081B2C',
+        },
+        metal: {
+          mist: '#D9E3E8',      // Sương bạc ánh kim (Silver Mist)
+          pearl: '#F4F8FA',     // Trắng ngọc trai thanh khiết (Pearl White)
+          platinum: '#E2E8F0',  // Bạch kim sáng
+          slate: '#64748B',     // Đá kim loại
+          steel: '#334155',     // Thép tôi luyện
+        },
+        wood: {
+          aqua: '#27B4A0',      // Ngọc bích thủy mộc sinh sôi (Jade Aqua)
+          emerald: '#10B981',   // Tăng trưởng doanh thu (Growth Emerald)
+          leaf: '#059669',      // Tán lá vững bền
+        },
         ink: {
           50: 'var(--color-ink-50)',
           100: 'var(--color-ink-100)',
