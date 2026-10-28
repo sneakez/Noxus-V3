@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Trash2,
   Waves,
-  Truck,
   Warehouse as WarehouseIcon,
   Tag,
 } from 'lucide-react';
@@ -107,33 +106,49 @@ export function OrderDetailDrawer({
       updates.delivered_at = null;
     }
 
-    const { error } = await supabase
-      .from('orders')
-      .update(updates)
-      .eq('id', order.id);
+    if (newStatus === 'cancelled') {
+      const { error: cancelErr } = await supabase.rpc('cancel_order_atomic', {
+        p_order_id: order.id,
+        p_tenant_id: activeTenant!.id,
+        p_reason: 'Thay doi trang thai don hang boi user',
+      });
+      if (cancelErr) {
+        if (cancelErr.code === '42883') {
+          if (oldStatus !== 'cancelled' && oldStatus !== 'refunded') {
+            for (const item of items) {
+              await supabase.rpc('restore_stock', {
+                p_product_id: item.product_id,
+                p_qty: item.quantity,
+                p_tenant_id: activeTenant!.id,
+              });
+            }
+          }
+          await supabase.from('orders').update(updates).eq('id', order.id);
+        } else {
+          toast('Huy don that bai: ' + cancelErr.message, 'error');
+          setUpdating(false);
+          return;
+        }
+      }
+    } else {
+      const { error } = await supabase
+        .from('orders')
+        .update(updates)
+        .eq('id', order.id);
 
-    if (error) {
-      toast('Cap nhat trang thai that bai: ' + error.message, 'error');
-      setUpdating(false);
-      return;
+      if (error) {
+        toast('Cap nhat trang thai that bai: ' + error.message, 'error');
+        setUpdating(false);
+        return;
+      }
     }
 
     await supabase.from('order_status_log').insert({
+      tenant_id: activeTenant!.id,
       order_id: order.id,
       from_status: oldStatus,
       to_status: newStatus,
     });
-
-    // If cancelling, restore stock
-    if (newStatus === 'cancelled' || newStatus === 'refunded') {
-      for (const item of items) {
-        await supabase.rpc('restore_stock', {
-          p_product_id: item.product_id,
-          p_qty: item.quantity,
-          p_tenant_id: activeTenant!.id,
-        });
-      }
-    }
 
     toast(`Trang thai don hang da cap nhat: ${ORDER_STATUS_LABELS[newStatus]}`, 'success');
     setUpdating(false);
@@ -159,18 +174,30 @@ export function OrderDetailDrawer({
 
   async function handleDelete() {
     if (!order) return;
-    // Restore stock before deleting
-    for (const item of items) {
-      await supabase.rpc('restore_stock', {
-        p_product_id: item.product_id,
-        p_qty: item.quantity,
-        p_tenant_id: activeTenant!.id,
-      });
-    }
-    const { error } = await supabase.from('orders').delete().eq('id', order.id);
-    if (error) {
-      toast('Xoa don hang that bai', 'error');
-      return;
+    const { error: delErr } = await supabase.rpc('delete_order_atomic', {
+      p_order_id: order.id,
+      p_tenant_id: activeTenant!.id,
+    });
+    if (delErr) {
+      if (delErr.code === '42883') {
+        if (order.status !== 'cancelled' && order.status !== 'refunded') {
+          for (const item of items) {
+            await supabase.rpc('restore_stock', {
+              p_product_id: item.product_id,
+              p_qty: item.quantity,
+              p_tenant_id: activeTenant!.id,
+            });
+          }
+        }
+        const { error } = await supabase.from('orders').delete().eq('id', order.id);
+        if (error) {
+          toast('Xoa don hang that bai', 'error');
+          return;
+        }
+      } else {
+        toast('Xoa don hang that bai: ' + delErr.message, 'error');
+        return;
+      }
     }
     toast('Da xoa don hang', 'success');
     onDeleted();

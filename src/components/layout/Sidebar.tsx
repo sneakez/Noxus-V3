@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth, useRole } from '@/providers/AuthProvider';
-import type { UserRole } from '@/types';
+import type { UserRole, TenantRole } from '@/types';
 
 export type PageId =
   | 'dashboard'
@@ -155,13 +155,13 @@ const ROLE_LABELS: Record<UserRole, string> = {
 
 export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose }: SidebarProps) {
   const { profile, signOut } = useAuth();
-  const { role } = useRole();
-
-  const userRole = profile?.role ?? 'warehouse';
+  
+  const { tenantRole } = useRole();
+  const activeRole: TenantRole = tenantRole ?? 'warehouse';
   const filteredGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.roles || item.roles.includes(userRole)),
+      items: group.items.filter((item) => !item.roles || item.roles.includes(activeRole as UserRole)),
     }))
     .filter((group) => group.items.length > 0);
 
@@ -267,7 +267,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
             <p className="text-sm font-medium text-white truncate">{profile?.full_name ?? 'User'}</p>
             <p className="text-[11px] text-ink-400 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {ROLE_LABELS[userRole]}
+              {ROLE_LABELS[activeRole as keyof typeof ROLE_LABELS] ?? activeRole}
             </p>
           </div>
           <button

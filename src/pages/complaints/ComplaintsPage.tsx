@@ -5,7 +5,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { formatDate, formatDateTime, maskPII, COMPLAINT_STATUS_LABELS, COMPLAINT_STATUS_COLORS } from '@/lib/utils';
+import { formatDateTime, maskPII, COMPLAINT_STATUS_LABELS, COMPLAINT_STATUS_COLORS } from '@/lib/utils';
 import type { CustomerComplaint, Order, Customer } from '@/types';
 
 interface ComplaintsPageProps {

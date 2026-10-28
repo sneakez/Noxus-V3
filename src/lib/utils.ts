@@ -300,7 +300,8 @@ export const APPROVAL_STATUS_COLORS: Record<ApprovalStatus, string> = {
   rejected: 'bg-rose-100 text-rose-800 border-rose-200',
 };
 
-export function maskPII(text: string): string {
+export function maskPII(text?: string | null): string {
+  if (!text) return '';
   return text
     .replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE]')
     .replace(/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g, '[EMAIL]')

@@ -87,7 +87,10 @@ function RbacTab({ search }: { search: string }) {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = profiles.filter((p) =>
     !search || p.email.toLowerCase().includes(search.toLowerCase()) ||

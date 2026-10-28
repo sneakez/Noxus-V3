@@ -1,6 +1,6 @@
 type Listener = () => void;
 
-let listeners: Record<string, Listener[]> = {};
+const listeners: Record<string, Listener[]> = {};
 
 export function emitPrimaryAction(page: string) {
   (listeners[page] ?? []).forEach((fn) => fn());

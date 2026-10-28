@@ -3,7 +3,7 @@ import { Atom, Zap, Bug, ShieldOff, TrendingDown, Copy, AlertTriangle, CheckCirc
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/components/ui/Toast';
-import { formatDateTime, truncateHash } from '@/lib/utils';
+import { truncateHash } from '@/lib/utils';
 
 type SimScenario = 'flash_sale' | 'duplicate_webhook' | 'margin_attack' | 'tamper_db' | 'concurrent_inventory';
 

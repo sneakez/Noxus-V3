@@ -100,7 +100,7 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (page: 'orders') =>
           totalCustomers: Number(m.total_customers ?? 0),
           totalProducts: Number(m.total_products ?? 0),
           lowStockCount: Number(m.low_stock_count ?? 0),
-          statusCounts: (m.status_counts as Record<string, number>) ?? {},
+          statusCounts: (m.status_counts as unknown as Record<string, number>) ?? {},
         });
 
         setDailyData((dailyRes.data as DailyRevenue[]) ?? []);

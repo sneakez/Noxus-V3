@@ -53,15 +53,17 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
       supabase
         .from('customers')
         .select('*')
+        .eq('tenant_id', activeTenant!.id)
         .eq('status', 'active')
         .order('name'),
-      supabase.from('products').select('*').eq('status', 'active').order('name'),
+      supabase.from('products').select('*').eq('tenant_id', activeTenant!.id).eq('status', 'active').order('name'),
     ]).then(([cRes, pRes]) => {
       setCustomers(cRes.data ?? []);
       setProducts(pRes.data ?? []);
       setLoading(false);
     });
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, activeTenant?.id]);
 
   function resetForm() {
     setCustomerId('');
@@ -154,66 +156,101 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
 
     setSaving(true);
 
+    if (!activeTenant?.id) {
+      toast('Vui long chon workspace', 'error');
+      setSaving(false);
+      return;
+    }
+
     const { data: orderNumberData } = await supabase.rpc('next_order_number');
     const orderNumber = orderNumberData ?? `ORD-${Date.now()}`;
+    const idempotencyKey = `idemp_${activeTenant.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        order_number: orderNumber,
-        customer_id: customerId,
-        status,
-        subtotal,
-        tax,
-        shipping,
-        discount,
-        total,
-        payment_status: paymentStatus,
-        payment_method: paymentMethod,
-        shipping_address: shippingAddress || null,
-        notes: notes || null,
-      })
-      .select()
-      .single();
+    const payloadItems = items.map((i) => ({
+      product_id: i.product_id,
+      product_name: i.product_name,
+      product_sku: i.product_sku,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+      line_total: i.line_total,
+    }));
 
-    if (orderError || !order) {
-      toast('Tao don hang that bai: ' + (orderError?.message ?? 'Loi khong xac dinh'), 'error');
-      setSaving(false);
-      return;
-    }
-
-    const { error: itemsError } = await supabase.from('order_items').insert(
-      items.map((i) => ({
-        order_id: order.id,
-        product_id: i.product_id,
-        product_name: i.product_name,
-        product_sku: i.product_sku,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-        line_total: i.line_total,
-      }))
-    );
-
-    if (itemsError) {
-      toast('Don hang da tao nhung them san pham that bai: ' + itemsError.message, 'error');
-      setSaving(false);
-      return;
-    }
-
-    // Log status
-    await supabase.from('order_status_log').insert({
-      order_id: order.id,
-      from_status: null,
-      to_status: status,
+    const { error: atomicError } = await supabase.rpc('place_order_atomic', {
+      p_tenant_id: activeTenant.id,
+      p_customer_id: customerId,
+      p_order_number: orderNumber,
+      p_items: payloadItems,
+      p_subtotal: subtotal,
+      p_tax: tax,
+      p_shipping: shipping,
+      p_discount: discount,
+      p_total: total,
+      p_payment_status: paymentStatus,
+      p_payment_method: paymentMethod,
+      p_shipping_address: shippingAddress || null,
+      p_notes: notes || null,
+      p_idempotency_key: idempotencyKey,
     });
 
-    // Decrement stock for each item
-    for (const item of items) {
-      await supabase.rpc('decrement_stock', {
-        p_product_id: item.product_id,
-        p_qty: item.quantity,
-        p_tenant_id: activeTenant!.id,
-      });
+    if (atomicError) {
+      if (atomicError.code === '42883') {
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            tenant_id: activeTenant.id,
+            order_number: orderNumber,
+            customer_id: customerId,
+            status,
+            subtotal,
+            tax,
+            shipping,
+            discount,
+            total,
+            payment_status: paymentStatus,
+            payment_method: paymentMethod,
+            shipping_address: shippingAddress || null,
+            notes: notes || null,
+          })
+          .select()
+          .single();
+
+        if (orderError || !order) {
+          toast('Tao don hang that bai: ' + (orderError?.message ?? 'Loi khong xac dinh'), 'error');
+          setSaving(false);
+          return;
+        }
+
+        const { error: itemsError } = await supabase.from('order_items').insert(
+          items.map((i) => ({
+            tenant_id: activeTenant.id,
+            order_id: order.id,
+            product_id: i.product_id,
+            product_name: i.product_name,
+            product_sku: i.product_sku,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+            line_total: i.line_total,
+          }))
+        );
+
+        if (itemsError) {
+          toast('Don hang da tao nhung them san pham that bai: ' + itemsError.message, 'error');
+          setSaving(false);
+          return;
+        }
+
+        for (const item of items) {
+          await supabase.rpc('decrement_stock', {
+            p_product_id: item.product_id,
+            p_qty: item.quantity,
+            p_tenant_id: activeTenant.id,
+          });
+        }
+      } else {
+        toast('Tao don that bai: ' + atomicError.message, 'error');
+        setSaving(false);
+        return;
+      }
     }
 
     toast(`Don hang ${orderNumber} da tao thanh cong`, 'success');

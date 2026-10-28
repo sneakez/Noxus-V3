@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Gauge, TrendingUp, TrendingDown, Package } from 'lucide-react';
+import { Gauge, TrendingUp, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Spinner } from '@/components/ui/Spinner';
 import { Card } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import type { Order, Product } from '@/types';
 
 export function SalesVelocityPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<7 | 30 | 90>(7);
 

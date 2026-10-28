@@ -5,9 +5,7 @@ import {
   ChevronDown,
   ChevronRight,
   Trash2,
-  Package,
   Calendar,
-  Truck,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/cn';
@@ -38,8 +36,7 @@ interface POWithItems extends PurchaseOrder {
 const STATUS_OPTIONS: POStatus[] = ['draft', 'ordered', 'partial', 'received', 'cancelled'];
 
 export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
-  const toast = useToast();
-  const [orders, setOrders] = useState<POWithItems[]>([]);
+    const [orders, setOrders] = useState<POWithItems[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

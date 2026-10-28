@@ -4,8 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import type { OrderFeeBreakdown, Order } from '@/types';
+import { formatCurrency } from '@/lib/utils';
+import type { OrderFeeBreakdown } from '@/types';
 
 interface FeeReconciliationPageProps {
   search: string;

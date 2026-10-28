@@ -153,7 +153,7 @@ export function LedgerPage({ search }: LedgerPageProps) {
   function NewEntryModal({ open, onClose, accounts, onSaved }: {
     open: boolean; onClose: () => void; accounts: LedgerAccount[]; onSaved: () => void;
   }) {
-    const [source, setSource] = useState('manual');
+    const [source] = useState('manual');
     const [description, setDescription] = useState('');
     const [reference, setReference] = useState('');
     const [debitAccount, setDebitAccount] = useState('');

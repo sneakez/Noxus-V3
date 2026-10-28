@@ -42,7 +42,10 @@ export function ChannelConnectionsPage({ search }: ChannelConnectionsPageProps) 
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = connections.filter((c) =>
     !search || c.shop_name.toLowerCase().includes(search.toLowerCase()) ||

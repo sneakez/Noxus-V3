@@ -35,7 +35,6 @@ interface TransferWithItems extends StockTransfer {
   to_warehouse?: Warehouse;
 }
 
-const FLOW: TransferStatus[] = ['requested', 'in_transit', 'received'];
 const NEXT_STATUS: Partial<Record<TransferStatus, TransferStatus>> = {
   requested: 'in_transit',
   in_transit: 'received',

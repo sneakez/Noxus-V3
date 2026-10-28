@@ -14,6 +14,7 @@ import { cn } from '@/lib/cn';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card } from '@/components/ui/card';
+import { useAuth } from '@/providers/AuthProvider';
 import type { InventoryItem, Warehouse } from '@/types';
 
 interface InventoryPageProps {
@@ -26,6 +27,7 @@ interface InventoryRow extends InventoryItem {
 }
 
 export function InventoryPage({ search }: InventoryPageProps) {
+  const { activeTenant } = useAuth();
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,8 +43,9 @@ export function InventoryPage({ search }: InventoryPageProps) {
         supabase
           .from('inventory_items')
           .select('*, warehouses(*), products(id, name, sku, safety_stock)')
+          .eq('tenant_id', activeTenant?.id)
           .order('updated_at', { ascending: false }),
-        supabase.from('warehouses').select('*').order('priority'),
+        supabase.from('warehouses').select('*').eq('tenant_id', activeTenant?.id).order('priority'),
       ]);
       if (invErr) throw invErr;
       if (whErr) throw whErr;
@@ -59,7 +62,8 @@ export function InventoryPage({ search }: InventoryPageProps) {
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTenant?.id]);
 
   const filtered = useMemo(() => {
     return items.filter((item) => {

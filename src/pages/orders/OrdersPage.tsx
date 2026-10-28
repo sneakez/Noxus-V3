@@ -14,6 +14,7 @@ import { FullPageSpinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/lib/cn';
 import { exportOrdersToExcel, exportOrdersToPDF } from '@/lib/export';
 import { OrderFormModal } from './OrderFormModal';
@@ -36,6 +37,7 @@ const STATUS_FILTERS: (OrderStatus | 'all')[] = [
 
 export function OrdersPage({ search }: OrdersPageProps) {
   const toast = useToast();
+  const { activeTenant } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
@@ -48,6 +50,7 @@ export function OrdersPage({ search }: OrdersPageProps) {
     const { data, error } = await supabase
       .from('orders')
       .select('*, customer:customers(*)')
+      .eq('tenant_id', activeTenant?.id)
       .order('placed_at', { ascending: false });
     if (error) {
       toast('Loi tai danh sach don hang: ' + error.message, 'error');
@@ -59,6 +62,7 @@ export function OrdersPage({ search }: OrdersPageProps) {
   useEffect(() => {
     loadOrders();
     return onPrimaryAction('orders', () => setShowForm(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => {

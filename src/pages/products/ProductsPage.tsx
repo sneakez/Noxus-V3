@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { exportProductsToExcel, exportProductsToPDF } from '@/lib/export';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/providers/AuthProvider';
 import { Spinner } from '@/components/ui/Spinner';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/cn';
@@ -36,6 +37,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['active', 'discontinued', 'out_of_stock
 
 export function ProductsPage({ search }: ProductsPageProps) {
   const toast = useToast();
+  const { activeTenant } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -60,7 +62,7 @@ export function ProductsPage({ search }: ProductsPageProps) {
       setEditing(null);
       setShowForm(true);
     });
-  }, []);
+      }, [activeTenant?.id]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -387,6 +389,7 @@ function ProductFormModal({
   onSaved,
 }: ProductFormModalProps) {
   const toast = useToast();
+  const { activeTenant } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<ProductInput>({
     sku: '',
@@ -460,7 +463,8 @@ function ProductFormModal({
     }
     setSaving(true);
 
-    const payload: ProductInput = {
+    const payload: ProductInput & { tenant_id?: string } = {
+      tenant_id: activeTenant?.id,
       ...form,
       sku: form.sku.trim().toUpperCase(),
       name: form.name.trim(),

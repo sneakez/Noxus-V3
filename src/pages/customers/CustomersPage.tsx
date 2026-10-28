@@ -24,6 +24,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Drawer } from '@/components/ui/Drawer';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/providers/AuthProvider';
 import { Spinner } from '@/components/ui/Spinner';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/cn';
@@ -37,6 +38,7 @@ const STATUS_OPTIONS: CustomerStatus[] = ['active', 'inactive', 'lead'];
 
 export function CustomersPage({ search }: CustomersPageProps) {
   const toast = useToast();
+  const { activeTenant } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -51,6 +53,7 @@ export function CustomersPage({ search }: CustomersPageProps) {
     const { data } = await supabase
       .from('customers')
       .select('*')
+      .eq('tenant_id', activeTenant?.id)
       .order('created_at', { ascending: false });
     setCustomers(data ?? []);
     setLoading(false);
@@ -62,7 +65,8 @@ export function CustomersPage({ search }: CustomersPageProps) {
       setEditing(null);
       setShowForm(true);
     });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTenant?.id]);
 
   const filtered = useMemo(() => {
     if (!search) return customers;
@@ -375,6 +379,7 @@ function CustomerFormModal({
   onSaved,
 }: CustomerFormModalProps) {
   const toast = useToast();
+  const { activeTenant } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<CustomerInput>({
     name: '',
@@ -438,7 +443,8 @@ function CustomerFormModal({
       return;
     }
     setSaving(true);
-    const payload: CustomerInput = {
+    const payload: CustomerInput & { tenant_id?: string } = {
+      tenant_id: activeTenant?.id,
       ...form,
       email: form.email?.trim() || null,
       phone: form.phone?.trim() || null,

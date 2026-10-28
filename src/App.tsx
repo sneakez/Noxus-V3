@@ -79,7 +79,7 @@ const PAGE_META: Record<PageId, PageMeta> = {
 };
 
 function AppInner() {
-  const { session, loading: authLoading } = useAuth();
+  const { session, loading: authLoading, activeTenant } = useAuth();
   const [page, setPage] = useState<PageId>('dashboard');
   const [search, setSearch] = useState('');
   const [sidebarStats, setSidebarStats] = useState({ pendingOrders: 0, lowStock: 0 });
@@ -139,7 +139,7 @@ function AppInner() {
           primaryActionLabel={meta.primaryLabel}
           onMobileMenu={() => setMobileSidebarOpen(true)}
         />
-        <main className="flex-1">
+        <main key={activeTenant?.id ?? 'default'} className="flex-1">
           <ErrorBoundary>
           <Suspense fallback={<FullPageSpinner label="Dang tai trang..." />}>
           {page === 'dashboard' && <DashboardPage onNavigate={(p) => navigate(p)} />}

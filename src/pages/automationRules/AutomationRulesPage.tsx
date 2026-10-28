@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Zap, Plus, Trash2, Power, ArrowRight, Sparkles, AlertTriangle } from 'lucide-react';
+import { Zap, Plus, Trash2, Power, ArrowRight, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -19,20 +19,7 @@ type ConditionField = 'order_total' | 'order_item_count' | 'payment_method' | 'c
 type ConditionOperator = 'gte' | 'lte' | 'eq' | 'neq';
 type ActionType = 'add_free_gift' | 'set_status' | 'assign_warehouse' | 'add_note' | 'notify_admin' | 'auto_approve';
 
-interface ConditionOption {
-  field: ConditionField;
-  fieldLabel: string;
-  operator: ConditionOperator;
-  operatorLabel: string;
-  value: string;
-}
 
-interface ActionOption {
-  type: ActionType;
-  label: string;
-  value: string;
-  valueLabel: string;
-}
 
 const CONDITION_FIELDS: { value: ConditionField; label: string; inputType: 'number' | 'text' | 'select'; options?: { value: string; label: string }[] }[] = [
   { value: 'order_total', label: 'Tong tien don hang', inputType: 'number' },
@@ -260,8 +247,7 @@ function NewRuleModal({ open, onClose, onSaved }: { open: boolean; onClose: () =
 
   const fieldDef = CONDITION_FIELDS.find((f) => f.value === condField)!;
   const actionDef = ACTION_TYPES.find((a) => a.value === actionType)!;
-  const availableOps = OPERATORS.filter((o) => fieldDef.inputType === 'select' ? o.supportsText : !o.supportsText || o.supportsText);
-
+  
   async function handleSave() {
     if (!name.trim()) { toast('Vui long nhap ten luat', 'error'); return; }
     if (!condValue.trim() && fieldDef.inputType !== 'select') { toast('Vui long nhap gia tri dieu kien', 'error'); return; }
