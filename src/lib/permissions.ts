@@ -36,8 +36,8 @@ const ROLE_PERMISSIONS: Record<TenantRole, readonly Permission[]> = {
     'finance:view', 'finance:manage', 'audit:view', 'simulator:access',
   ],
   warehouse: [
-    'orders:view', 'orders:create', 'orders:cancel',
-    'inventory:view', 'inventory:mutate', 'products:manage', 'warehouses:manage',
+    'orders:view',
+    'inventory:view', 'inventory:mutate', 'warehouses:manage',
   ],
   finance: [
     'orders:view', 'finance:view', 'finance:manage', 'audit:view',

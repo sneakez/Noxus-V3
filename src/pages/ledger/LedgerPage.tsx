@@ -5,6 +5,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/providers/AuthProvider';
 import { formatCurrency, formatDateTime, ACCOUNT_TYPE_LABELS, ACCOUNT_TYPE_COLORS } from '@/lib/utils';
 import type { JournalEntry, LedgerAccount, JournalLine } from '@/types';
 
@@ -151,8 +152,10 @@ export function LedgerPage({ search }: LedgerPageProps) {
   );
 
   function NewEntryModal({ open, onClose, accounts, onSaved }: {
+
     open: boolean; onClose: () => void; accounts: LedgerAccount[]; onSaved: () => void;
   }) {
+    const { activeTenant } = useAuth();
     const [source] = useState('manual');
     const [description, setDescription] = useState('');
     const [reference, setReference] = useState('');
@@ -162,23 +165,36 @@ export function LedgerPage({ search }: LedgerPageProps) {
     const [saving, setSaving] = useState(false);
 
     async function handleSave() {
-      if (!debitAccount || !creditAccount || amount <= 0) { toast('Fill all fields', 'error'); return; }
+      if (!activeTenant?.id) { toast('Vui long chon workspace', 'error'); return; }
+      if (!debitAccount || !creditAccount || amount <= 0) { toast('Dien day du cac truong va so tien phai lon hon 0', 'error'); return; }
       setSaving(true);
       const { data: jeNum } = await supabase.rpc('next_journal_entry_number');
-      const { data: je, error: jeErr } = await supabase.from('journal_entries').insert({
-        entry_number: jeNum ?? `JE-${Date.now()}`,
-        event_source: source,
-        description: description || null,
-        reference_id: reference || null,
-      }).select().single();
-      if (jeErr || !je) { toast('Failed: ' + (jeErr?.message ?? ''), 'error'); setSaving(false); return; }
-      const { error: lErr } = await supabase.from('journal_lines').insert([
-        { journal_entry_id: je.id, account_id: debitAccount, debit_amount: amount, credit_amount: 0 },
-        { journal_entry_id: je.id, account_id: creditAccount, debit_amount: 0, credit_amount: amount },
-      ]);
+      const entryNumber = jeNum ?? `JE-${Date.now()}`;
+
+      const { error: jeErr } = await supabase.rpc('post_journal_entry_atomic', {
+        p_tenant_id: activeTenant.id,
+        p_entry_number: entryNumber,
+        p_event_source: source,
+        p_description: description || null,
+        p_reference_id: reference || null,
+        p_lines: [
+          { account_id: debitAccount, debit_amount: amount, credit_amount: 0 },
+          { account_id: creditAccount, debit_amount: 0, credit_amount: amount },
+        ],
+      });
+
+      if (jeErr) {
+        if (jeErr.code === '42883') {
+          toast('Loi he thong: RPC post_journal_entry_atomic chua duoc cau hinh tren database. Thao tac ghi bi chan de chong lech so.', 'error');
+        } else {
+          toast('Tao but toan that bai: ' + jeErr.message, 'error');
+        }
+        setSaving(false);
+        return;
+      }
+
       setSaving(false);
-      if (lErr) { toast('Lines failed: ' + lErr.message, 'error'); return; }
-      toast('Journal entry created', 'success');
+      toast('Da tao but toan can doi thanh cong', 'success');
       onSaved();
     }
 

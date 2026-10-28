@@ -114,21 +114,12 @@ export function OrderDetailDrawer({
       });
       if (cancelErr) {
         if (cancelErr.code === '42883') {
-          if (oldStatus !== 'cancelled' && oldStatus !== 'refunded') {
-            for (const item of items) {
-              await supabase.rpc('restore_stock', {
-                p_product_id: item.product_id,
-                p_qty: item.quantity,
-                p_tenant_id: activeTenant!.id,
-              });
-            }
-          }
-          await supabase.from('orders').update(updates).eq('id', order.id);
+          toast('Loi he thong: RPC cancel_order_atomic chua duoc cau hinh tren database. Thao tac bi chan de tranh sai lech ton kho.', 'error');
         } else {
           toast('Huy don that bai: ' + cancelErr.message, 'error');
-          setUpdating(false);
-          return;
         }
+        setUpdating(false);
+        return;
       }
     } else {
       const { error } = await supabase
@@ -180,24 +171,11 @@ export function OrderDetailDrawer({
     });
     if (delErr) {
       if (delErr.code === '42883') {
-        if (order.status !== 'cancelled' && order.status !== 'refunded') {
-          for (const item of items) {
-            await supabase.rpc('restore_stock', {
-              p_product_id: item.product_id,
-              p_qty: item.quantity,
-              p_tenant_id: activeTenant!.id,
-            });
-          }
-        }
-        const { error } = await supabase.from('orders').delete().eq('id', order.id);
-        if (error) {
-          toast('Xoa don hang that bai', 'error');
-          return;
-        }
+        toast('Loi he thong: RPC delete_order_atomic chua duoc cau hinh tren database. Thao tac bi chan de bao ve du lieu.', 'error');
       } else {
         toast('Xoa don hang that bai: ' + delErr.message, 'error');
-        return;
       }
+      return;
     }
     toast('Da xoa don hang', 'success');
     onDeleted();

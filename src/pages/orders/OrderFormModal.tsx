@@ -194,63 +194,12 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
 
     if (atomicError) {
       if (atomicError.code === '42883') {
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            tenant_id: activeTenant.id,
-            order_number: orderNumber,
-            customer_id: customerId,
-            status,
-            subtotal,
-            tax,
-            shipping,
-            discount,
-            total,
-            payment_status: paymentStatus,
-            payment_method: paymentMethod,
-            shipping_address: shippingAddress || null,
-            notes: notes || null,
-          })
-          .select()
-          .single();
-
-        if (orderError || !order) {
-          toast('Tao don hang that bai: ' + (orderError?.message ?? 'Loi khong xac dinh'), 'error');
-          setSaving(false);
-          return;
-        }
-
-        const { error: itemsError } = await supabase.from('order_items').insert(
-          items.map((i) => ({
-            tenant_id: activeTenant.id,
-            order_id: order.id,
-            product_id: i.product_id,
-            product_name: i.product_name,
-            product_sku: i.product_sku,
-            quantity: i.quantity,
-            unit_price: i.unit_price,
-            line_total: i.line_total,
-          }))
-        );
-
-        if (itemsError) {
-          toast('Don hang da tao nhung them san pham that bai: ' + itemsError.message, 'error');
-          setSaving(false);
-          return;
-        }
-
-        for (const item of items) {
-          await supabase.rpc('decrement_stock', {
-            p_product_id: item.product_id,
-            p_qty: item.quantity,
-            p_tenant_id: activeTenant.id,
-          });
-        }
+        toast('Loi he thong: RPC place_order_atomic chua duoc cau hinh tren database. Thao tac ghi bi chan de bao ve an toan ton kho.', 'error');
       } else {
         toast('Tao don that bai: ' + atomicError.message, 'error');
-        setSaving(false);
-        return;
       }
+      setSaving(false);
+      return;
     }
 
     toast(`Don hang ${orderNumber} da tao thanh cong`, 'success');
