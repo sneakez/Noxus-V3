@@ -9,7 +9,7 @@ import {
   Truck, 
   Calculator, 
   Sparkles, 
-  ArrowRight
+  LogIn
 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -30,20 +30,20 @@ export function PublicHeader({ currentPath, onNavigate }: PublicHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#081B2C]/90 backdrop-blur-md border-b border-[#1E647F]/30 text-white">
+    <header className="sticky top-0 z-50 w-full bg-[#081B2C]/95 backdrop-blur-md border-b border-[#1E647F]/40 text-white">
       {/* Top micro announcement bar */}
-      <div className="bg-gradient-to-r from-[#081B2C] via-[#123A52] to-[#1E647F] text-xs py-1.5 px-4 text-center text-metal-mist flex items-center justify-center gap-2 border-b border-water-teal/20">
+      <div className="bg-gradient-to-r from-[#081B2C] via-[#123A52] to-[#1E647F] text-xs py-1.5 px-4 text-center text-metal-mist flex flex-wrap items-center justify-center gap-2 border-b border-water-teal/20">
         <span className="inline-flex items-center gap-1 font-semibold text-wood-aqua">
           <Sparkles size={13} />
           NexusOMS V5
         </span>
         <span className="hidden sm:inline">|</span>
-        <span className="text-gray-300">Động cơ xử lý đơn hàng đa kênh & Quản trị kho phân tán chuẩn ACID PostgreSQL</span>
+        <span className="text-gray-300">Động cơ xử lý đơn hàng đa kênh & Quản trị kho chuẩn ACID PostgreSQL</span>
         <button 
-          onClick={() => handleNav('/demo')} 
-          className="ml-2 underline text-wood-aqua hover:text-emerald-400 font-medium inline-flex items-center gap-0.5"
+          onClick={() => handleNav('/login')} 
+          className="ml-2 font-bold text-white bg-wood-aqua/20 hover:bg-wood-aqua/30 px-2 py-0.5 rounded border border-wood-aqua/40 inline-flex items-center gap-1"
         >
-          Khám phá Bản Demo <ArrowRight size={11} />
+          <LogIn size={11} /> Đăng nhập hệ thống
         </button>
       </div>
 
@@ -70,7 +70,7 @@ export function PublicHeader({ currentPath, onNavigate }: PublicHeaderProps) {
         </div>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-gray-300">
+        <nav className="hidden xl:flex items-center gap-6 text-sm font-medium text-gray-300">
           <button 
             onClick={() => handleNav('/')} 
             className={`hover:text-white transition-colors ${currentPath === '/' ? 'text-wood-aqua font-semibold' : ''}`}
@@ -85,7 +85,7 @@ export function PublicHeader({ currentPath, onNavigate }: PublicHeaderProps) {
               onMouseEnter={() => setFeaturesDropdownOpen(true)}
               className="flex items-center gap-1 hover:text-white transition-colors py-2"
             >
-              <span>Tính năng cốt lõi</span>
+              <span>Tính năng</span>
               <ChevronDown size={14} className={`transition-transform duration-200 ${featuresDropdownOpen ? 'rotate-180 text-wood-aqua' : ''}`} />
             </button>
 
@@ -153,7 +153,7 @@ export function PublicHeader({ currentPath, onNavigate }: PublicHeaderProps) {
             onClick={() => handleNav('/solutions')} 
             className={`hover:text-white transition-colors ${currentPath === '/solutions' ? 'text-wood-aqua font-semibold' : ''}`}
           >
-            Giải pháp ngành
+            Giải pháp
           </button>
 
           <button 
@@ -178,62 +178,50 @@ export function PublicHeader({ currentPath, onNavigate }: PublicHeaderProps) {
           </button>
         </nav>
 
-        {/* Right CTA Actions */}
-        <div className="hidden lg:flex items-center gap-3">
+        {/* ALWAYS-VISIBLE ACTIONS (Visible on ALL Screen Sizes) */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => handleNav('/demo')}
-            className="px-3.5 py-2 rounded-lg text-xs font-semibold text-metal-mist border border-[#1E647F] hover:bg-[#123A52] hover:text-white transition-all flex items-center gap-1.5"
+            className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-wood-aqua border border-[#1E647F] hover:bg-[#123A52] hover:text-white transition-all flex items-center gap-1"
           >
-            <Sparkles size={14} className="text-wood-aqua" />
-            Dùng thử Demo
+            <Sparkles size={13} />
+            <span>Demo</span>
           </button>
 
           {session ? (
             <button
               onClick={() => handleNav('/app')}
-              className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#1E647F] to-[#27B4A0] hover:from-[#174E64] hover:to-[#10B981] shadow-lg shadow-[#1E647F]/40 transition-all flex items-center gap-1.5"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#1E647F] to-[#27B4A0] hover:from-[#174E64] hover:to-[#10B981] shadow-lg shadow-[#1E647F]/40 transition-all flex items-center gap-1.5"
             >
-              <span>Vào Hệ Thống OMS</span>
-              <ArrowRight size={14} />
+              <LogIn size={14} />
+              <span>Vào Bàn Làm Việc</span>
             </button>
           ) : (
-            <>
-              <button
-                onClick={() => handleNav('/login')}
-                className="px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-200 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                Đăng nhập
-              </button>
-              <button
-                onClick={() => handleNav('/register')}
-                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#1E647F] to-[#27B4A0] hover:from-[#174E64] hover:to-[#10B981] shadow-md shadow-[#27B4A0]/20 transition-all"
-              >
-                Bắt đầu Miễn phí
-              </button>
-            </>
+            <button
+              onClick={() => handleNav('/login')}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#1E647F] to-[#2D82B7] hover:from-[#174E64] hover:to-[#1E647F] border border-[#2D82B7]/60 shadow-md shadow-[#1E647F]/30 transition-all flex items-center gap-1.5"
+            >
+              <LogIn size={14} className="text-wood-aqua" />
+              <span>Đăng nhập</span>
+            </button>
           )}
-        </div>
 
-        {/* Mobile Hamburger Button */}
-        <div className="lg:hidden flex items-center gap-2">
-          <button
-            onClick={() => handleNav('/demo')}
-            className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-wood-aqua border border-[#1E647F]"
-          >
-            Demo
-          </button>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10"
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          {/* Mobile Menu Toggle Button */}
+          <div className="xl:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#0C2739] border-b border-[#1E647F]/40 px-4 pt-3 pb-6 space-y-3 animate-fade-in">
+        <div className="xl:hidden bg-[#0C2739] border-b border-[#1E647F]/40 px-4 pt-3 pb-6 space-y-3 animate-fade-in">
           <div className="grid grid-cols-2 gap-2 pb-3 border-b border-gray-800">
             <button
               onClick={() => handleNav('/')}
@@ -290,29 +278,19 @@ export function PublicHeader({ currentPath, onNavigate }: PublicHeaderProps) {
           </div>
 
           <div className="pt-3 border-t border-gray-800 space-y-2">
-            {session ? (
-              <button
-                onClick={() => handleNav('/app')}
-                className="w-full py-2.5 rounded-lg text-center font-bold text-sm bg-gradient-to-r from-[#1E647F] to-[#27B4A0] text-white"
-              >
-                Vào Bàn Làm Việc OMS
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleNav('/login')}
-                  className="w-full py-2 rounded-lg text-center font-semibold text-sm border border-[#1E647F] text-white"
-                >
-                  Đăng nhập
-                </button>
-                <button
-                  onClick={() => handleNav('/register')}
-                  className="w-full py-2 rounded-lg text-center font-bold text-sm bg-[#27B4A0] text-white"
-                >
-                  Đăng ký dùng thử
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => handleNav('/login')}
+              className="w-full py-2.5 rounded-lg text-center font-bold text-sm bg-gradient-to-r from-[#1E647F] to-[#27B4A0] text-white flex items-center justify-center gap-2"
+            >
+              <LogIn size={16} />
+              <span>Đăng nhập vào Hệ thống OMS</span>
+            </button>
+            <button
+              onClick={() => handleNav('/register')}
+              className="w-full py-2 rounded-lg text-center font-semibold text-xs border border-gray-700 text-gray-300 hover:text-white"
+            >
+              Đăng ký tài khoản doanh nghiệp mới
+            </button>
           </div>
         </div>
       )}

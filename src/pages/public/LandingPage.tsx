@@ -14,7 +14,8 @@ import {
   Clock,
   Play,
   RotateCcw,
-  Sliders
+  Sliders,
+  LogIn
 } from 'lucide-react';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
@@ -147,22 +148,30 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               và kiểm soát toàn bộ dòng tiền với hạch toán kế toán sổ kép trong một nền tảng duy nhất.
             </p>
 
-            {/* Dual CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-14">
               <button
-                onClick={() => onNavigate('/register')}
+                onClick={() => onNavigate('/login')}
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#1E647F] to-[#27B4A0] hover:from-[#174E64] hover:to-[#10B981] shadow-xl shadow-[#27B4A0]/25 transition-all flex items-center justify-center gap-2 group"
               >
-                <span>Bắt Đầu Miễn Phí (14 Ngày)</span>
-                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <LogIn size={16} />
+                <span>Đăng Nhập Vào Bàn Làm Việc (/app)</span>
+                <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
                 onClick={() => onNavigate('/demo')}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-semibold text-sm text-metal-mist bg-[#123A52]/80 hover:bg-[#123A52] border border-[#1E647F]/60 hover:text-white transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-semibold text-sm text-metal-mist bg-[#123A52]/80 hover:bg-[#123A52] border border-[#1E647F]/60 hover:text-white transition-all flex items-center justify-center gap-2"
               >
                 <Play size={15} className="text-wood-aqua fill-wood-aqua" />
-                <span>Trải Nghiệm Bản Demo Trực Tiếp</span>
+                <span>Dùng Thử Demo (Sandbox)</span>
+              </button>
+
+              <button
+                onClick={() => onNavigate('/register')}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-semibold text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>Đăng Ký Doanh Nghiệp Mới</span>
               </button>
             </div>
 
