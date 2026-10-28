@@ -104,7 +104,16 @@ const PAGE_META: Record<PageId, PageMeta> = {
 
 function AuthenticatedWorkspace() {
   const { session, activeTenant } = useAuth();
-  const [page, setPage] = useState<PageId>('dashboard');
+  const [page, setPage] = useState<PageId>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('page') as PageId;
+      if (q && PAGE_META[q]) return q;
+      const hash = window.location.hash.replace('#', '') as PageId;
+      if (hash && PAGE_META[hash]) return hash;
+    }
+    return 'dashboard';
+  });
   const [search, setSearch] = useState('');
   const [sidebarStats, setSidebarStats] = useState({ pendingOrders: 0, lowStock: 0 });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -138,6 +147,9 @@ function AuthenticatedWorkspace() {
     setPage(p);
     setSearch('');
     setMobileSidebarOpen(false);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', `/app?page=${p}`);
+    }
   }
 
   const meta = PAGE_META[page] || PAGE_META.dashboard;
