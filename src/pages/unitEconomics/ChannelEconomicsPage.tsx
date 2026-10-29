@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layers, TrendingUp, DollarSign, Percent, AlertCircle, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { analyticsService } from '@/analytics/analyticsService';
 import { AnalyticsCard } from '@/components/charts/AnalyticsCard';
 import { KPICard } from '@/components/charts/KPICard';
 import { GroupedBarChart } from '@/components/charts/GroupedBarChart';
+import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBanner';
 import { cn } from '@/lib/cn';
 
 export function ChannelEconomicsPage() {
+  const [chartView, setChartView] = useState<'revenue_cm3' | 'margin_percent' | 'cost_per_order'>('revenue_cm3');
   const channels = analyticsService.getChannelEconomics();
 
   const totalNet = channels.reduce((sum, c) => sum + c.netRevenue, 0);
@@ -23,12 +25,51 @@ export function ChannelEconomicsPage() {
   const totalCm3 = channels.reduce((sum, c) => sum + c.cm3, 0);
   const blendedTakeRate = totalNet > 0 ? (totalMktFees / totalNet) * 100 : 0;
 
-  const chartData = channels.map(c => ({
-    name: c.channelName,
-    netRevenue: c.netRevenue,
-    cm2: c.cm2,
-    cm3: c.cm3
-  }));
+  const chartData = channels.map(c => {
+    if (chartView === 'margin_percent') {
+      return {
+        name: c.channelName,
+        'Biên CM1 (%)': c.cm1Margin,
+        'Biên CM2 (%)': c.cm2Margin,
+        'Biên CM3 (%)': c.cm3Margin
+      };
+    }
+    if (chartView === 'cost_per_order') {
+      const perOrderFees = c.orderCount > 0 ? Math.round(c.marketplaceFees / c.orderCount) : 0;
+      const perOrderOps = c.orderCount > 0 ? Math.round((c.fulfillmentCosts + c.shippingSubsidies + c.returnCosts) / c.orderCount) : 0;
+      const perOrderAds = c.orderCount > 0 ? Math.round(c.marketingSpend / c.orderCount) : 0;
+      return {
+        name: c.channelName,
+        'Phí Sàn / Đơn (₫)': perOrderFees,
+        'Vận Hành & Hoàn / Đơn (₫)': perOrderOps,
+        'Ads / Đơn (₫)': perOrderAds
+      };
+    }
+    return {
+      name: c.channelName,
+      'Doanh thu thuần (₫)': c.netRevenue,
+      'Lợi nhuận CM2 (₫)': c.cm2,
+      'Lợi nhuận CM3 sau Ads (₫)': c.cm3
+    };
+  });
+
+  const chartSeries = chartView === 'margin_percent'
+    ? [
+        { key: 'Biên CM1 (%)', label: 'Biên CM1 (%)', color: '#6366F1' },
+        { key: 'Biên CM2 (%)', label: 'Biên CM2 (%)', color: '#0284C7' },
+        { key: 'Biên CM3 (%)', label: 'Biên CM3 (%)', color: '#10B981' }
+      ]
+    : chartView === 'cost_per_order'
+    ? [
+        { key: 'Phí Sàn / Đơn (₫)', label: 'Phí Sàn / Đơn (₫)', color: '#F59E0B' },
+        { key: 'Vận Hành & Hoàn / Đơn (₫)', label: 'Vận Hành & Hoàn / Đơn (₫)', color: '#EC4899' },
+        { key: 'Ads / Đơn (₫)', label: 'Ads / Đơn (₫)', color: '#8B5CF6' }
+      ]
+    : [
+        { key: 'Doanh thu thuần (₫)', label: 'Doanh thu thuần (₫)', color: '#27B4A0' },
+        { key: 'Lợi nhuận CM2 (₫)', label: 'Lợi nhuận CM2 (₫)', color: '#0284C7' },
+        { key: 'Lợi nhuận CM3 sau Ads (₫)', label: 'Lợi nhuận CM3 sau Ads (₫)', color: '#10B981' }
+      ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-fade-in-up">
@@ -48,6 +89,13 @@ export function ChannelEconomicsPage() {
           </p>
         </div>
       </div>
+
+      {/* Snapshot Metadata Banner */}
+      <SnapshotMetadataBanner
+        currentModule="Channel Economics"
+        orderCount={channels.reduce((sum, c) => sum + c.orderCount, 0)}
+        dateFilter="30 Ngày Qua (Toàn Bộ 12 Đơn Hàng)"
+      />
 
       {/* Assumption Disclosure Banner */}
       <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
@@ -88,20 +136,59 @@ export function ChannelEconomicsPage() {
         />
       </div>
 
-      {/* Chart: Channel Comparison */}
+      {/* Chart: Channel Comparison with Metric Switcher */}
       <AnalyticsCard
-        title="So Sánh Doanh Thu Thuần vs Lợi Nhuận CM2 & CM3 Theo Kênh"
-        subtitle="Phát hiện kênh nào có doanh thu cao nhưng sau khi trừ phí sàn, phí vận hành và Ads thì biên lợi nhuận mỏng"
-        formulaExplanation="CM2 = CM1 - Fees - Fulfillment - Shipping - Returns; CM3 = CM2 - Ads"
+        title={
+          chartView === 'margin_percent'
+            ? 'So Sánh Biên Lợi Nhuận Tỷ Lệ % Theo Kênh (Margin % Breakdown)'
+            : chartView === 'cost_per_order'
+            ? 'So Sánh Chi Phí Biến Đổi Trung Bình Trên Mỗi Đơn Hàng'
+            : 'So Sánh Doanh Thu Thuần vs Lợi Nhuận CM2 & CM3 Theo Kênh'
+        }
+        subtitle="Chuyển đổi góc nhìn giữa Doanh thu / CM3 / Biên % / Biến phí đơn hàng để đánh giá sức khỏe kênh bán"
+        formulaExplanation="CM1 = Net - COGS; CM2 = CM1 - Variable Costs; CM3 = CM2 - Marketing"
+        action={
+          <div className="flex items-center gap-1.5 bg-ink-100 p-1 rounded-xl">
+            <button
+              onClick={() => setChartView('revenue_cm3')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all',
+                chartView === 'revenue_cm3'
+                  ? 'bg-white text-ink-900 shadow-xs'
+                  : 'text-ink-600 hover:text-ink-900'
+              )}
+            >
+              Doanh Thu & CM3
+            </button>
+            <button
+              onClick={() => setChartView('margin_percent')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all',
+                chartView === 'margin_percent'
+                  ? 'bg-white text-ink-900 shadow-xs'
+                  : 'text-ink-600 hover:text-ink-900'
+              )}
+            >
+              Biên Lợi Nhuận %
+            </button>
+            <button
+              onClick={() => setChartView('cost_per_order')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all',
+                chartView === 'cost_per_order'
+                  ? 'bg-white text-ink-900 shadow-xs'
+                  : 'text-ink-600 hover:text-ink-900'
+              )}
+            >
+              Biến Phí / Đơn
+            </button>
+          </div>
+        }
       >
         <GroupedBarChart
           data={chartData}
           xKey="name"
-          series={[
-            { key: 'netRevenue', label: 'Doanh thu thuần (₫)', color: '#27B4A0' },
-            { key: 'cm2', label: 'Lợi nhuận CM2 (₫)', color: '#0284C7' },
-            { key: 'cm3', label: 'Lợi nhuận CM3 sau Ads (₫)', color: '#10B981' }
-          ]}
+          series={chartSeries}
         />
       </AnalyticsCard>
 

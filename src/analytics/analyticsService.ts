@@ -38,12 +38,15 @@ class AnalyticsService {
     else if (period === 'this_month') daysCount = 30;
     else if (period === 'last_month') daysCount = 30;
 
+    const endOfPeriod = new Date(now);
+    endOfPeriod.setHours(23, 59, 59, 999);
+
     const currentStart = new Date(now.getTime() - daysCount * 24 * 60 * 60 * 1000);
     const previousStart = new Date(now.getTime() - daysCount * 2 * 24 * 60 * 60 * 1000);
 
     const current = orders.filter(o => {
       const d = parseDate(o.created_at || o.placed_at);
-      return d >= currentStart && d <= now;
+      return d >= currentStart && d <= endOfPeriod;
     });
 
     const previous = orders.filter(o => {
@@ -64,15 +67,15 @@ class AnalyticsService {
     return orders.map(order => {
       const orderItems = mockStore.getOrderWithCustomer(order.id)?.items || [];
       
-      // Calculate COGS from products
+      // Calculate COGS strictly from order items (MAC snapshot) or product master
       let totalCogs = 0;
       orderItems.forEach(item => {
         const prod = products.find(p => p.id === item.product_id);
-        const unitCost = prod?.moving_avg_cost ?? prod?.cost ?? 0;
+        const unitCost = (item as any).unit_cost_mac_snapshot ?? prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price ?? 0;
         totalCogs += unitCost * (item.quantity || 1);
       });
 
-      // If order items were empty, fallback to estimated 50% COGS
+      // If order items were empty, fallback to estimated 48% COGS
       if (totalCogs === 0 && order.total > 0) {
         totalCogs = Math.round(order.total * 0.48);
       }
@@ -146,7 +149,7 @@ class AnalyticsService {
         const prodId = it.product_id;
         const cur = salesMap.get(prodId) || { unitsSold: 0, totalGross: 0, totalDiscounts: 0, totalCogs: 0 };
         const prod = products.find(p => p.id === prodId);
-        const cost = prod?.moving_avg_cost ?? prod?.cost ?? 0;
+        const cost = prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price ?? 0;
         cur.unitsSold += it.quantity || 1;
         cur.totalGross += (it.unit_price || 0) * (it.quantity || 1);
         cur.totalCogs += cost * (it.quantity || 1);
@@ -155,15 +158,15 @@ class AnalyticsService {
     });
 
     const skus: SkuUnitEconomics[] = products.map(p => {
+      const cogs = p.moving_avg_cost ?? p.cost ?? (p as any)?.cost_price ?? 0;
       const sales = salesMap.get(p.id) || {
         unitsSold: Math.max(2, Math.round(p.stock * 0.15)),
         totalGross: (p.price || 500000) * Math.max(2, Math.round(p.stock * 0.15)),
         totalDiscounts: 0,
-        totalCogs: (p.cost || 250000) * Math.max(2, Math.round(p.stock * 0.15))
+        totalCogs: cogs * Math.max(2, Math.round(p.stock * 0.15))
       };
 
       const asp = p.price || 0;
-      const cogs = p.moving_avg_cost || p.cost || 0;
       const avgFees = Math.round(asp * 0.095); // Blended marketplace fee ~9.5%
       const avgFulfillment = 18000;
       const cmPerUnit = asp - cogs - avgFees - avgFulfillment;
@@ -419,38 +422,38 @@ class AnalyticsService {
         prescriptive: 'Giảm 25% ngân sách Ads mở rộng tệp mới; chỉ tập trung ngân sách retargeting vào 3 SKU có CM2 > 40%; chặn voucher cộng dồn.',
         calculationFormula: 'CM3 = CM2 (1.980.000 ₫) - Marketing Costs (1.485.000 ₫) = 495.000 ₫ (6.2%)',
         financialImpactEstimate: 850000,
-        confidenceScore: 92,
-        dataAttribution: 'ACTUAL',
+        dataAttribution: 'ESTIMATED',
+        attributionNote: 'Đơn hàng thực tế từ TikTok Shop; chi phí Marketing ước tính phân bổ theo tỷ lệ 8% doanh thu',
         relatedEntityLink: { page: 'channelEconomics', label: 'Xem Chi Tiết Kênh' }
       },
       {
         id: 'ins_02',
         category: 'inventory_risk',
         severity: 'CRITICAL',
-        title: 'SKU Bán chạy NEXUS-PRO-01 đối mặt nguy cơ đứt hàng trong 5 ngày',
-        descriptive: 'Tồn kho khả dụng (Sellable) của NEXUS-PRO-01 còn 28 cái, vận tốc bán bình quân 5.6 cái/ngày.',
-        diagnostic: 'Thời gian đặt hàng và giao hàng từ nhà cung cấp (Lead time) là 7 ngày, trong khi đơn PO-2026-004 vẫn chưa được phê duyệt đặt hàng.',
-        predictive: 'Kho sẽ đứt hàng vào ngày thứ 5, ước tính thiệt hại mất doanh thu cơ hội khoảng 4.200.000 ₫ và tụt hạng thuật toán sàn.',
-        prescriptive: 'Bấm phê duyệt khẩn cấp đơn mua hàng PO-2026-004 ngay hôm nay; tạm thời tắt chiến dịch Flash Sale cho SKU này để kéo dài runway.',
-        calculationFormula: 'Runway = Sellable (28) / Velocity (5.6/ngày) = 5.0 ngày < Lead Time (7 ngày)',
+        title: 'SKU Bán chạy NX-AIR-PRO đối mặt nguy cơ đứt hàng trong 5 ngày',
+        descriptive: 'Tồn kho khả dụng (Sellable) của NX-AIR-PRO còn 128 cái, vận tốc bán bình quân 8.5 cái/ngày.',
+        diagnostic: 'Thời gian đặt hàng và giao hàng từ nhà cung cấp (Lead time) là 15 ngày, trong khi PO-2026-004 vẫn chưa phê duyệt.',
+        predictive: 'Kho sẽ đứt hàng vào ngày thứ 15 nếu không kích hoạt PO bổ sung kịp thời.',
+        prescriptive: 'Bấm phê duyệt khẩn cấp đơn mua hàng PO ngay hôm nay; tạm thời giảm ngân sách Ads Flash Sale.',
+        calculationFormula: 'Runway = Sellable (128) / Velocity (8.5/ngày) = 15.0 ngày ~ Lead Time',
         financialImpactEstimate: 4200000,
-        confidenceScore: 98,
-        dataAttribution: 'ACTUAL',
+        dataAttribution: 'OBSERVED',
+        attributionNote: 'Số liệu tồn kho thực tế và vận tốc bán 30 ngày tại Kho Tổng Miền Bắc',
         relatedEntityLink: { page: 'inventoryAnalytics', label: 'Xem Tồn Kho' }
       },
       {
         id: 'ins_03',
         category: 'unit_economics',
         severity: 'OPPORTUNITY',
-        title: 'SKU NEXUS-ACC-02 có biên lãi gộp CM1 vượt trội (68.4%) nhưng ít được đẩy Marketing',
-        descriptive: 'Phụ kiện Tai Nghe Type-C đạt CM1 68.4% và CM2 48.2%, nhưng chỉ bán được 12 đơn do thiếu traffic.',
-        diagnostic: 'Hiện chưa có chiến dịch Ads hay chương trình Mua kèm giảm giá (Bundle) nào liên kết sản phẩm này với dòng Flagship.',
-        predictive: 'Nếu thiết lập Bundle bán kèm giảm 15% cho khách mua Điện thoại Flagship, có thể tăng AOV thêm 220.000 ₫ mỗi đơn.',
-        prescriptive: 'Tạo combo tự động trên OMS kết nối Shopee/TikTok: Tặng voucher giảm 30k khi mua kèm Flagship, tăng lợi nhuận gộp thêm 1.8M/tháng.',
-        calculationFormula: 'CM2 Bundle = ASP (280.000 ₫) - COGS (90.000 ₫) - Fees (42.000 ₫) = 148.000 ₫ (52.8%)',
+        title: 'SKU Cáp Sạc NX-CABLE-100W có biên lãi gộp CM1 vượt trội (63.3%)',
+        descriptive: 'Cáp sạc Type-C 100W đạt CM1 63.3% và CM2 45.2%, tốc độ bán tốt nhưng có thể gia tăng giá trị đơn hàng.',
+        diagnostic: 'Hiện chưa có chiến dịch Ads hay chương trình Mua kèm giảm giá (Bundle) nào liên kết sản phẩm này với dòng Tai nghe.',
+        predictive: 'Nếu thiết lập Bundle bán kèm giảm 15% cho khách mua NX-AIR-PRO, có thể tăng AOV thêm 120.000 ₫ mỗi đơn.',
+        prescriptive: 'Tạo combo tự động trên OMS kết nối Shopee/TikTok: Giảm 20k khi mua kèm Tai nghe, tăng lợi nhuận thêm 1.8M/tháng.',
+        calculationFormula: 'CM2 Bundle = ASP (130.000 ₫) - COGS (55.000 ₫) - Fees (22.000 ₫) = 53.000 ₫ (40.8%)',
         financialImpactEstimate: 1800000,
-        confidenceScore: 88,
-        dataAttribution: 'ACTUAL',
+        dataAttribution: 'SIMULATED',
+        attributionNote: 'Mô phỏng kịch bản What-If tạo combo bán kèm trên các sàn thương mại điện tử',
         relatedEntityLink: { page: 'skuEconomics', label: 'Xem SKU Economics' }
       }
     ];

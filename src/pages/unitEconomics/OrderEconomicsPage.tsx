@@ -4,6 +4,7 @@ import { analyticsService } from '@/analytics/analyticsService';
 import type { OrderUnitEconomics } from '@/analytics/types';
 import { AnalyticsCard } from '@/components/charts/AnalyticsCard';
 import { KPICard } from '@/components/charts/KPICard';
+import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBanner';
 import { cn } from '@/lib/cn';
 
 export function OrderEconomicsPage() {
@@ -44,6 +45,13 @@ export function OrderEconomicsPage() {
           </p>
         </div>
       </div>
+
+      {/* Snapshot Metadata Gate */}
+      <SnapshotMetadataBanner
+        currentModule="Order Economics"
+        orderCount={filteredOrders.length}
+        dateFilter={selectedChannel === 'all' ? 'Toàn Bộ 12 Đơn Hàng (Đa Kênh)' : `Kênh: ${selectedChannel}`}
+      />
 
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">

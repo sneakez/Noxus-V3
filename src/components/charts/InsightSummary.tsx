@@ -24,7 +24,7 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
           </h3>
         </div>
         <span className="text-[11px] text-ink-500 font-medium">
-          Mô hình chuẩn đoán 4 tầng (Descriptive • Diagnostic • Predictive • Prescriptive)
+          Mô hình chuẩn đoán 4 tầng • Minh bạch nguồn dữ liệu [OBSERVED / ESTIMATED / SIMULATED]
         </span>
       </div>
 
@@ -62,8 +62,8 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
                     {item.severity}
                   </span>
 
-                  <span className="text-[10px] text-ink-500 font-mono">
-                    Độ tin cậy: {item.confidenceScore}% • {item.dataAttribution}
+                  <span className="text-[10px] text-ink-600 font-mono font-bold px-1.5 py-0.5 rounded bg-ink-100 border border-ink-200" title={item.attributionNote || item.dataAttribution}>
+                    [{item.dataAttribution}]
                   </span>
                 </div>
 

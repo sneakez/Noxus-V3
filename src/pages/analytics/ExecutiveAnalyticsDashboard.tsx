@@ -20,6 +20,7 @@ import { LineAreaChart } from '@/components/charts/LineAreaChart';
 import { WaterfallChart } from '@/components/charts/WaterfallChart';
 import { GroupedBarChart } from '@/components/charts/GroupedBarChart';
 import { InsightSummary } from '@/components/charts/InsightSummary';
+import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBanner';
 
 interface ExecutiveAnalyticsDashboardProps {
   onNavigate?: (pageId: string) => void;
@@ -30,6 +31,29 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
   const [comparison, setComparison] = useState<ComparisonDimension>('previous_period');
 
   const data = analyticsService.getExecutiveDashboardData(period, comparison);
+
+  const periodComparisonData = [
+    {
+      metric: 'Doanh Thu',
+      'Kỳ Trước': data.kpis.netRevenue.previous,
+      'Kỳ Này': data.kpis.netRevenue.value
+    },
+    {
+      metric: 'Lãi Gộp CM1',
+      'Kỳ Trước': data.kpis.cm1.previous,
+      'Kỳ Này': data.kpis.cm1.value
+    },
+    {
+      metric: 'Đóng Góp CM2',
+      'Kỳ Trước': data.kpis.cm2.previous,
+      'Kỳ Này': data.kpis.cm2.value
+    },
+    {
+      metric: 'CM3 Sau Ads',
+      'Kỳ Trước': data.kpis.cm3.previous,
+      'Kỳ Này': data.kpis.cm3.value
+    }
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-fade-in-up">
@@ -54,6 +78,13 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
           <ComparisonSelector value={comparison} onChange={setComparison} />
         </div>
       </div>
+
+      {/* Snapshot Metadata Gate */}
+      <SnapshotMetadataBanner
+        currentModule="Executive Analytics Dashboard"
+        orderCount={data.kpis.orderVolume.value}
+        dateFilter={period === 'last_30_days' ? '30 Ngày Qua (Toàn Bộ Đơn Hàng)' : period}
+      />
 
       {/* Row 1: High Level Revenue & Volume KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -164,6 +195,22 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
           />
         </AnalyticsCard>
       </div>
+
+      {/* Row 4b: Period Comparison (Revenue & CM3 Growth) */}
+      <AnalyticsCard
+        title="So Sánh Tăng Trưởng Doanh Thu Thuần vs Lợi Nhuận CM3 Theo Kỳ"
+        subtitle={`Đối chiếu trực tiếp hiệu quả giữa Kỳ Này (${period}) và Kỳ Trước (${comparison})`}
+        formulaExplanation="Biến động: Doanh thu thuần Δ, Lãi gộp CM1 Δ, Đóng góp CM2 Δ và Lợi nhuận CM3 sau Ads Δ"
+      >
+        <GroupedBarChart
+          data={periodComparisonData}
+          xKey="metric"
+          series={[
+            { key: 'Kỳ Trước', label: 'Kỳ Trước (₫)', color: '#94A3B8' },
+            { key: 'Kỳ Này', label: 'Kỳ Này (₫)', color: '#27B4A0' }
+          ]}
+        />
+      </AnalyticsCard>
 
       {/* Row 5: Multi-Channel Performance Matrix */}
       <AnalyticsCard

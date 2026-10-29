@@ -104,4 +104,37 @@ describe('V6 Unit Economics & Analytics Engine', () => {
       expect(s.breakEvenPrice).toBeGreaterThan(0);
     });
   });
+
+  it('guarantees 100% unified reproducible snapshot reconciliation across Dashboard, Channel, and Order Economics', () => {
+    const dash = analyticsService.getExecutiveDashboardData('last_30_days');
+    const orderEcon = analyticsService.getOrderEconomics();
+    const channels = analyticsService.getChannelEconomics();
+    const skus = analyticsService.getSkuEconomics();
+    const inv5 = mockStore.getInventory5State();
+
+    const orderNet = orderEcon.reduce((sum, o) => sum + o.netRevenue, 0);
+    const channelNet = channels.reduce((sum, c) => sum + c.netRevenue, 0);
+    const dashNet = dash.kpis.netRevenue.value;
+
+    const orderCm3 = orderEcon.reduce((sum, o) => sum + o.cm3, 0);
+    const channelCm3 = channels.reduce((sum, c) => sum + c.cm3, 0);
+    const dashCm3 = dash.kpis.cm3.value;
+
+    // Cross-module Net Revenue equality (0 VND gap)
+    expect(orderNet).toBe(channelNet);
+    expect(dashNet).toBe(orderNet);
+    expect(dashNet).toBe(23400000);
+
+    // Cross-module CM3 equality (0 VND gap)
+    expect(orderCm3).toBe(channelCm3);
+    expect(dashCm3).toBe(orderCm3);
+    expect(dashCm3).toBe(6652250);
+
+    // Inventory valuation and physical invariant
+    const totalPhysical = inv5.reduce((sum, i) => sum + i.physical, 0);
+    const totalStockValue = skus.reduce((sum, s) => sum + s.stockValue, 0);
+    expect(totalPhysical).toBe(980);
+    expect(totalStockValue).toBe(304575000);
+    expect(totalStockValue).toBeGreaterThan(0);
+  });
 });

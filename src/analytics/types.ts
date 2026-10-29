@@ -4,7 +4,7 @@ import type { SkuInventory5State } from '@/mock/types';
 // ============ Data Dimension Enums ============
 export type TimeDimension = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month' | 'last_month' | 'custom';
 export type ComparisonDimension = 'previous_period' | 'same_period_last_year' | 'target' | 'none';
-export type DataAttributionType = 'ACTUAL' | 'ESTIMATED' | 'ASSUMPTION' | 'SIMULATED';
+export type DataAttributionType = 'OBSERVED' | 'ESTIMATED' | 'ASSUMPTION' | 'SIMULATED' | 'INSUFFICIENT DATA' | 'ACTUAL';
 
 // ============ Unit Economics Core ============
 export interface OrderUnitEconomics {
@@ -214,8 +214,9 @@ export interface DecisionInsight {
   prescriptive: string;          // Cần làm gì tiếp theo? (Actionable steps)
   calculationFormula: string;
   financialImpactEstimate: number; // Estimated VND saved or gained
-  confidenceScore: number;       // 0 - 100%
+  confidenceScore?: number;       // Legacy score (deprecated)
   dataAttribution: DataAttributionType;
+  attributionNote?: string;
   relatedEntityLink?: {
     page: string;
     label: string;

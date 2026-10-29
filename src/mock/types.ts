@@ -240,6 +240,7 @@ export interface ScenarioValidationResult {
 // ============ Database Snapshot Structure ============
 export interface MockDatabaseSnapshot {
   schemaVersion: number;
+  snapshotId?: string;
   lastUpdated: string;
   activeTenantId: string;
   activeRole: TenantRole;
