@@ -4,7 +4,7 @@ import type { SkuInventory5State } from '@/mock/types';
 // ============ Data Dimension Enums ============
 export type TimeDimension = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month' | 'last_month' | 'custom';
 export type ComparisonDimension = 'previous_period' | 'same_period_last_year' | 'target' | 'none';
-export type DataAttributionType = 'OBSERVED' | 'ESTIMATED' | 'ASSUMPTION' | 'SIMULATED' | 'INSUFFICIENT DATA' | 'ACTUAL';
+export type DataAttributionType = 'DEMO-OBSERVED' | 'ESTIMATED' | 'ASSUMPTION' | 'SIMULATED' | 'INSUFFICIENT DATA' | 'ACTUAL';
 
 // ============ Unit Economics Core ============
 export interface OrderUnitEconomics {

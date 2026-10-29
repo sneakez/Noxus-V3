@@ -24,7 +24,7 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
           </h3>
         </div>
         <span className="text-[11px] text-ink-500 font-medium">
-          Mô hình chuẩn đoán 4 tầng • Minh bạch nguồn dữ liệu [OBSERVED / ESTIMATED / SIMULATED]
+          Mô hình chuẩn đoán 4 tầng • Minh bạch nguồn dữ liệu [DEMO-OBSERVED / ESTIMATED / SIMULATED]
         </span>
       </div>
 

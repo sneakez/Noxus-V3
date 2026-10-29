@@ -86,6 +86,19 @@ class AnalyticsService {
       const shippingSubsidies = order.shipping > 0 ? 0 : 15000;
       const returnCosts = returnsRefunds > 0 ? 25000 : 0;
 
+      // RMA & Return Accounting Policy:
+      // If goods are restocked to sellable in good condition or order was cancelled prior to shipping:
+      // COGS is reversed back to inventory asset (totalCogs = 0), avoiding false damage loss write-off.
+      // If goods were damaged / scrapped upon return inspection, COGS is retained as inventory loss.
+      const rmas = mockStore.getReturns().filter(r => r.order_id === order.id);
+      const returnItems = (mockStore as any).state?.returnItems?.filter((ri: any) => rmas.some(r => r.id === ri.return_id)) || [];
+      const hasDamagedScrap = returnItems.some((ri: any) => ri.disposition === 'scrap');
+      const isRestockedGood = order.status === 'cancelled' || (rmas.length > 0 && !hasDamagedScrap);
+
+      if (isRestockedGood && returnsRefunds >= grossSales && grossSales > 0) {
+        totalCogs = 0;
+      }
+
       // Estimated marketing allocation per order (~8% for ecommerce)
       const attributedMarketing = Math.round(grossSales * 0.08);
 
@@ -423,7 +436,7 @@ class AnalyticsService {
         calculationFormula: 'CM3 = CM2 (1.980.000 ₫) - Marketing Costs (1.485.000 ₫) = 495.000 ₫ (6.2%)',
         financialImpactEstimate: 850000,
         dataAttribution: 'ESTIMATED',
-        attributionNote: 'Đơn hàng thực tế từ TikTok Shop; chi phí Marketing ước tính phân bổ theo tỷ lệ 8% doanh thu',
+        attributionNote: 'Đơn hàng mô phỏng từ TikTok Shop; chi phí Marketing ước tính phân bổ 8% doanh thu',
         relatedEntityLink: { page: 'channelEconomics', label: 'Xem Chi Tiết Kênh' }
       },
       {
@@ -437,8 +450,8 @@ class AnalyticsService {
         prescriptive: 'Bấm phê duyệt khẩn cấp đơn mua hàng PO ngay hôm nay; tạm thời giảm ngân sách Ads Flash Sale.',
         calculationFormula: 'Runway = Sellable (128) / Velocity (8.5/ngày) = 15.0 ngày ~ Lead Time',
         financialImpactEstimate: 4200000,
-        dataAttribution: 'OBSERVED',
-        attributionNote: 'Số liệu tồn kho thực tế và vận tốc bán 30 ngày tại Kho Tổng Miền Bắc',
+        dataAttribution: 'DEMO-OBSERVED',
+        attributionNote: 'Dữ liệu quan sát trong kịch bản demo kiểm kê Kho Tổng Miền Bắc',
         relatedEntityLink: { page: 'inventoryAnalytics', label: 'Xem Tồn Kho' }
       },
       {

@@ -57,26 +57,46 @@ export function DemoControlPanel() {
   };
 
   return (
-    <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 font-sans max-w-[calc(100vw-24px)]">
-      {/* Floating Trigger Pill */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#081B2C] via-[#123A52] to-[#1E647F] text-white text-xs font-bold shadow-2xl border border-[#27B4A0]/60 hover:scale-105 transition-all group"
-        >
-          <span className="w-2.5 h-2.5 rounded-full bg-[#27B4A0] animate-pulse" />
-          <span className="tracking-wide hidden sm:inline">BẢNG ĐIỀU KHIỂN DEMO & KỊCH BẢN</span>
-          <span className="tracking-wide sm:hidden">DEMO V5</span>
-          <span className="px-2 py-0.5 rounded-full bg-[#27B4A0]/20 text-[#27B4A0] text-[10px] font-mono uppercase">
-            {activeRole}
-          </span>
-          <ChevronUp size={14} className="group-hover:-translate-y-0.5 transition-transform" />
-        </button>
+    <>
+      {/* Mobile Backdrop when open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 sm:hidden"
+          onClick={() => setIsOpen(false)}
+        />
       )}
 
-      {/* Expanded Control Drawer */}
-      {isOpen && (
-        <div className="w-[360px] sm:w-[420px] rounded-3xl bg-[#081B2C] border border-[#1E647F]/80 shadow-2xl text-white overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 font-sans max-w-[calc(100vw-24px)]">
+        {/* Floating Trigger Pill */}
+        {!isOpen && (
+          <>
+            {/* Desktop / Tablet Pill */}
+            <button
+              onClick={() => setIsOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#081B2C] via-[#123A52] to-[#1E647F] text-white text-xs font-bold shadow-2xl border border-[#27B4A0]/60 hover:scale-105 transition-all group"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-[#27B4A0] animate-pulse" />
+              <span className="tracking-wide">BẢNG ĐIỀU KHIỂN DEMO & KỊCH BẢN</span>
+              <span className="px-2 py-0.5 rounded-full bg-[#27B4A0]/20 text-[#27B4A0] text-[10px] font-mono uppercase">
+                {activeRole}
+              </span>
+              <ChevronUp size={14} className="group-hover:-translate-y-0.5 transition-transform" />
+            </button>
+
+            {/* Mobile Discreet Floating Button (Never covers content) */}
+            <button
+              onClick={() => setIsOpen(true)}
+              className="sm:hidden w-10 h-10 rounded-full bg-[#081B2C]/90 backdrop-blur-md border border-[#27B4A0]/80 text-[#27B4A0] shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+              title="Mở bảng điều khiển Demo"
+            >
+              <Sparkles size={16} />
+            </button>
+          </>
+        )}
+
+        {/* Expanded Control Drawer */}
+        {isOpen && (
+          <div className="w-[calc(100vw-24px)] sm:w-[420px] max-h-[85vh] rounded-3xl bg-[#081B2C] border border-[#1E647F]/80 shadow-2xl text-white overflow-y-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-[#0C2739] to-[#123A52] border-b border-gray-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -225,5 +245,6 @@ export function DemoControlPanel() {
         </div>
       )}
     </div>
+    </>
   );
 }

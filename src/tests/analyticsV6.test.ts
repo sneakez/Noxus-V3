@@ -128,7 +128,7 @@ describe('V6 Unit Economics & Analytics Engine', () => {
     // Cross-module CM3 equality (0 VND gap)
     expect(orderCm3).toBe(channelCm3);
     expect(dashCm3).toBe(orderCm3);
-    expect(dashCm3).toBe(6652250);
+    expect(dashCm3).toBe(6847250);
 
     // Inventory valuation and physical invariant
     const totalPhysical = inv5.reduce((sum, i) => sum + i.physical, 0);
