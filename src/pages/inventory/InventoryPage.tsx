@@ -348,7 +348,7 @@ function StatCard({
       </div>
       <div>
         <p className="text-xs text-ink-400 font-medium">{label}</p>
-        <p className="text-lg font-bold text-ink-900 tabular-nums">{value.toLocaleString()}</p>
+        <p className="text-lg font-bold text-ink-900 tabular-nums">{(value ?? 0).toLocaleString()}</p>
       </div>
     </Card>
   );
@@ -405,7 +405,7 @@ function QtyCell({
                   : 'text-ink-800'
         )}
       >
-        {value.toLocaleString()}
+        {(value ?? 0).toLocaleString()}
       </span>
     </td>
   );

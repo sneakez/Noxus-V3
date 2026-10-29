@@ -63,7 +63,7 @@ export function OrdersPage({ search }: OrdersPageProps) {
     loadOrders();
     return onPrimaryAction('orders', () => setShowForm(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeTenant?.id]);
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {

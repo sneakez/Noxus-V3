@@ -207,7 +207,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
             <h1 className="text-base font-bold text-white tracking-tight">NexusOMS</h1>
             <p className="text-[11px] text-ink-400 font-medium flex items-center gap-1">
               <Sparkles size={9} className="text-brand-400" />
-              Enterprise v3.0
+              Enterprise v5.0 Prototype
             </p>
           </div>
         </div>

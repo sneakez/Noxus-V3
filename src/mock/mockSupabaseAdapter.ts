@@ -2,7 +2,29 @@ import { mockStore } from './store';
 import type { MockDatabaseSnapshot } from './types';
 import type { Order } from '@/types';
 
-type FilterOp = { col: string; op: 'eq' | 'neq' | 'in'; val: unknown };
+type FilterOp =
+  | { col: string; op: 'eq'; val: unknown }
+  | { col: string; op: 'neq'; val: unknown }
+  | { col: string; op: 'in'; val: unknown[] }
+  | { col: string; op: 'is'; val: unknown }
+  | { col: string; op: 'not'; subOp: string; val: unknown }
+  | { col: string; op: 'gte'; val: unknown }
+  | { col: string; op: 'gt'; val: unknown }
+  | { col: string; op: 'lte'; val: unknown }
+  | { col: string; op: 'lt'; val: unknown }
+  | { col: string; op: 'like'; val: string }
+  | { col: string; op: 'ilike'; val: string };
+
+const DEFAULT_LEDGER_ACCOUNTS = [
+  { id: 'acc_112', account_code: '112', account_name: 'Tiền gửi ngân hàng', account_type: 'asset', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_131', account_code: '131', account_name: 'Phải thu khách hàng & Sàn TMĐT', account_type: 'asset', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_156', account_code: '156', account_name: 'Hàng hóa tồn kho', account_type: 'asset', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_3331', account_code: '3331', account_name: 'Thuế GTGT phải nộp', account_type: 'liability', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_3388', account_code: '3388', account_name: 'Phải trả phí dịch vụ & hoa hồng sàn', account_type: 'liability', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_511', account_code: '511', account_name: 'Doanh thu bán hàng & cung cấp dịch vụ', account_type: 'revenue', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_632', account_code: '632', account_name: 'Giá vốn hàng bán', account_type: 'expense', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_641', account_code: '641', account_name: 'Chi phí bán hàng & Logistics', account_type: 'expense', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+];
 
 class MockQueryBuilder {
   private table: string;
@@ -10,6 +32,7 @@ class MockQueryBuilder {
   private orderCol: string | null = null;
   private orderAsc: boolean = true;
   private limitCount: number | null = null;
+  private rangeBounds: [number, number] | null = null;
 
   constructor(table: string) {
     this.table = table;
@@ -35,6 +58,46 @@ class MockQueryBuilder {
     return this;
   }
 
+  public is(col: string, val: unknown) {
+    this.filters.push({ col, op: 'is', val });
+    return this;
+  }
+
+  public not(col: string, subOp: string, val: unknown) {
+    this.filters.push({ col, op: 'not', subOp, val });
+    return this;
+  }
+
+  public gte(col: string, val: unknown) {
+    this.filters.push({ col, op: 'gte', val });
+    return this;
+  }
+
+  public gt(col: string, val: unknown) {
+    this.filters.push({ col, op: 'gt', val });
+    return this;
+  }
+
+  public lte(col: string, val: unknown) {
+    this.filters.push({ col, op: 'lte', val });
+    return this;
+  }
+
+  public lt(col: string, val: unknown) {
+    this.filters.push({ col, op: 'lt', val });
+    return this;
+  }
+
+  public like(col: string, pattern: string) {
+    this.filters.push({ col, op: 'like', val: pattern });
+    return this;
+  }
+
+  public ilike(col: string, pattern: string) {
+    this.filters.push({ col, op: 'ilike', val: pattern });
+    return this;
+  }
+
   public order(col: string, opts?: { ascending?: boolean }) {
     this.orderCol = col;
     this.orderAsc = opts?.ascending !== false;
@@ -46,8 +109,147 @@ class MockQueryBuilder {
     return this;
   }
 
+  public range(from: number, to: number) {
+    this.rangeBounds = [from, to];
+    return this;
+  }
+
   private getTableData(): Record<string, unknown>[] {
     const snap = mockStore.getSnapshot();
+
+    // 1. Synthetic Inventory Items (Always synced to inventory5State)
+    if (this.table === 'inventory_items') {
+      return snap.inventory5State.map(inv => {
+        const prod = snap.products.find(p => p.id === inv.product_id || p.sku === inv.sku);
+        const wh = snap.warehouses.find(w => w.id === inv.warehouse_id) || snap.warehouses[0];
+        return {
+          id: `inv_${inv.product_id}_${inv.warehouse_id}`,
+          tenant_id: snap.activeTenantId,
+          warehouse_id: wh?.id || 'wh_north_01',
+          product_id: prod?.id || inv.product_id,
+          physical_qty: inv.physical,
+          reserved_qty: inv.reserved,
+          available_qty: inv.available,
+          unavailable_qty: inv.damaged || 0,
+          incoming_qty: inv.inbound || 0,
+          updated_at: new Date().toISOString(),
+          warehouses: wh,
+          products: prod ? { id: prod.id, name: prod.name, sku: prod.sku, safety_stock: prod.safety_stock || 10 } : { id: inv.product_id, name: inv.name, sku: inv.sku, safety_stock: 10 }
+        };
+      });
+    }
+
+    // 2. Fulfillment / Picking Waves
+    if (this.table === 'fulfillment_waves' || this.table === 'picking_waves') {
+      const wh = snap.warehouses[0] || { id: 'wh_north_01', name: 'Tổng kho Miền Bắc (Bắc Ninh)' };
+      return snap.pickingWaves.map(w => ({
+        ...w,
+        wave_code: w.wave_code || w.wave_number || 'WAVE-410',
+        warehouse_id: w.warehouse_id || wh.id,
+        warehouse: wh,
+        must_ship_by_sla: w.must_ship_by_sla || new Date(Date.now() + 18 * 3600000).toISOString(),
+        created_at: w.created_at || new Date().toISOString(),
+        orders: snap.orders.filter(o => o.fulfillment_wave_id === w.id || o.status === 'processing').slice(0, 5)
+      }));
+    }
+
+    // 3. Return Requests / Returns
+    if (this.table === 'return_requests' || this.table === 'returns') {
+      return snap.returns.map(r => {
+        const ord = snap.orders.find(o => o.id === r.order_id) || snap.orders[0];
+        return {
+          ...r,
+          id: r.id,
+          return_number: r.return_number,
+          order_id: r.order_id,
+          return_type: r.return_type || 'customer_return',
+          status: r.status || 'quality_check',
+          refund_amount: 1250000,
+          reason: r.reason || 'Khách muốn đổi sang sản phẩm khác',
+          approval_status: r.approval_status || 'pending',
+          order: ord,
+          created_at: r.created_at,
+          updated_at: r.updated_at
+        };
+      });
+    }
+
+    // 4. Stock Transactions / Stock Ledger
+    if (this.table === 'stock_transactions' || this.table === 'stock_ledger') {
+      return snap.stockLedger.map(sl => {
+        const prod = snap.products.find(p => p.id === sl.product_id) || snap.products[0];
+        const wh = snap.warehouses.find(w => w.id === sl.warehouse_id) || snap.warehouses[0];
+        return {
+          ...sl,
+          type: sl.transaction_type || 'inbound',
+          product: prod ? { id: prod.id, name: prod.name, sku: prod.sku } : null,
+          warehouse: wh
+        };
+      });
+    }
+
+    // 5. Ledger Accounts & Journal Entries
+    if (this.table === 'ledger_accounts') {
+      return DEFAULT_LEDGER_ACCOUNTS.map(a => ({ ...a }));
+    }
+
+    if (this.table === 'journal_entries') {
+      return snap.journalEntries.map(j => ({
+        ...j,
+        event_source: (j as unknown as Record<string, string>).event_source || (j as unknown as Record<string, string>).reference_type || 'order_sale',
+        reference_id: j.reference_id || null,
+        description: j.description || 'Hạch toán tự động nghiệp vụ bán hàng',
+        posted_at: j.posted_at || j.created_at || new Date().toISOString()
+      }));
+    }
+
+    if (this.table === 'journal_lines') {
+      return snap.journalLines.map(jl => {
+        const acc = DEFAULT_LEDGER_ACCOUNTS.find(a => a.id === jl.account_id || a.account_code === (jl as unknown as Record<string, string>).account_code) || DEFAULT_LEDGER_ACCOUNTS[0];
+        return {
+          ...jl,
+          journal_entry_id: (jl as unknown as Record<string, string>).journal_entry_id || (jl as unknown as Record<string, string>).entry_id || 'je_89021',
+          debit_amount: Number((jl as unknown as Record<string, number>).debit_amount ?? (jl as unknown as Record<string, number>).debit ?? 0),
+          credit_amount: Number((jl as unknown as Record<string, number>).credit_amount ?? (jl as unknown as Record<string, number>).credit ?? 0),
+          account: acc
+        };
+      });
+    }
+
+    // 6. Order Fee Breakdowns (Reconciliation)
+    if (this.table === 'order_fee_breakdowns') {
+      return snap.orders.map(o => ({
+        id: `fee_${o.id}`,
+        order_id: o.id,
+        order: o,
+        commission_fee: Math.round(o.total_amount * 0.05),
+        transaction_fee: Math.round(o.total_amount * 0.02),
+        voucher_co_fund_fee: 15000,
+        estimated_shipping_fee: 35000,
+        actual_shipping_fee: 35000,
+        weight_penalty_fee: 0,
+        net_payout: Math.round(o.total_amount * 0.93 - 50000),
+        is_reconciled: o.status === 'delivered',
+        created_at: o.placed_at || new Date().toISOString()
+      }));
+    }
+
+    // 7. Margin Config
+    if (this.table === 'margin_config') {
+      return [
+        {
+          id: 'mc_default',
+          tenant_id: snap.activeTenantId,
+          min_margin_percent: 15,
+          max_loss_per_order: 500000,
+          circuit_breaker_enabled: true,
+          auto_zero_stock_on_trigger: false,
+          updated_at: new Date().toISOString()
+        }
+      ];
+    }
+
+    // 8. Core snapshot maps
     const map: Record<string, keyof MockDatabaseSnapshot> = {
       orders: 'orders',
       order_items: 'orderItems',
@@ -76,20 +278,72 @@ class MockQueryBuilder {
     if (key && Array.isArray(snap[key])) {
       return (snap[key] as unknown as Record<string, unknown>[]).map(item => ({ ...item }));
     }
+
+    // Default fallback to empty array
     return [];
   }
 
   private applyFilters(rows: Record<string, unknown>[]): Record<string, unknown>[] {
     let result = rows;
+    const snap = mockStore.getSnapshot();
 
     for (const f of this.filters) {
       if (f.op === 'eq') {
-        result = result.filter(r => r[f.col] === f.val);
+        if (f.col === 'tenant_id' && (f.val === undefined || f.val === null || f.val === '')) {
+          // Fallback to activeTenantId if tenant_id was not yet loaded during mount
+          result = result.filter(r => r.tenant_id === snap.activeTenantId || !r.tenant_id);
+        } else {
+          result = result.filter(r => r[f.col] === f.val);
+        }
       } else if (f.op === 'neq') {
         result = result.filter(r => r[f.col] !== f.val);
       } else if (f.op === 'in') {
         const arr = Array.isArray(f.val) ? f.val : [];
         result = result.filter(r => arr.includes(r[f.col]));
+      } else if (f.op === 'is') {
+        if (f.val === null) {
+          result = result.filter(r => r[f.col] == null);
+        } else {
+          result = result.filter(r => r[f.col] === f.val);
+        }
+      } else if (f.op === 'not') {
+        if (f.subOp === 'is') {
+          if (f.val === null) {
+            result = result.filter(r => r[f.col] != null);
+          } else {
+            result = result.filter(r => r[f.col] !== f.val);
+          }
+        }
+      } else if (f.op === 'gte') {
+        result = result.filter(r => {
+          const val = r[f.col];
+          if (val == null) return false;
+          return (val as string | number) >= (f.val as string | number);
+        });
+      } else if (f.op === 'gt') {
+        result = result.filter(r => {
+          const val = r[f.col];
+          if (val == null) return false;
+          return (val as string | number) > (f.val as string | number);
+        });
+      } else if (f.op === 'lte') {
+        result = result.filter(r => {
+          const val = r[f.col];
+          if (val == null) return false;
+          return (val as string | number) <= (f.val as string | number);
+        });
+      } else if (f.op === 'lt') {
+        result = result.filter(r => {
+          const val = r[f.col];
+          if (val == null) return false;
+          return (val as string | number) < (f.val as string | number);
+        });
+      } else if (f.op === 'like' || f.op === 'ilike') {
+        const cleanPattern = f.val.replace(/%/g, '').toLowerCase();
+        result = result.filter(r => {
+          const val = String(r[f.col] ?? '').toLowerCase();
+          return val.includes(cleanPattern);
+        });
       }
     }
 
@@ -107,7 +361,10 @@ class MockQueryBuilder {
       });
     }
 
-    if (this.limitCount != null) {
+    if (this.rangeBounds) {
+      const [from, to] = this.rangeBounds;
+      result = result.slice(from, to + 1);
+    } else if (this.limitCount != null) {
       result = result.slice(0, this.limitCount);
     }
 
@@ -118,7 +375,7 @@ class MockQueryBuilder {
     onfulfilled?: ((value: { data: unknown; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ) {
-    await mockStore.delay();
+    await mockStore.delay(20);
     const rows = this.getTableData();
     const filtered = this.applyFilters(rows);
 
@@ -135,33 +392,32 @@ class MockQueryBuilder {
   }
 
   public async single() {
-    await mockStore.delay();
+    await mockStore.delay(20);
     const rows = this.getTableData();
     const filtered = this.applyFilters(rows);
     return { data: filtered[0] || null, error: filtered.length === 0 ? { message: 'Row not found' } : null };
   }
 
   public async maybeSingle() {
-    await mockStore.delay();
+    await mockStore.delay(20);
     const rows = this.getTableData();
     const filtered = this.applyFilters(rows);
     return { data: filtered[0] || null, error: null };
   }
 
   public async insert(payload: Record<string, unknown> | Record<string, unknown>[]) {
-    await mockStore.delay();
+    await mockStore.delay(30);
     const items = Array.isArray(payload) ? payload : [payload];
-    // In prototype mock, return success
     return { data: items, error: null };
   }
 
   public async update(payload: Record<string, unknown>) {
-    await mockStore.delay();
+    await mockStore.delay(30);
     return { data: payload, error: null };
   }
 
   public async delete() {
-    await mockStore.delay();
+    await mockStore.delay(30);
     return { data: null, error: null };
   }
 }
@@ -173,17 +429,100 @@ export const mockSupabaseClient = {
   rpc(fnName: string, params: Record<string, unknown> = {}) {
     return {
       async then(resolve: (val: { data: unknown; error: { code?: string; message: string } | null }) => void) {
-        await mockStore.delay(40);
-        console.log(`[MockRPC] Executing ${fnName}:`, params);
+        await mockStore.delay(25);
+        const snap = mockStore.getSnapshot();
 
+        // 1. Dashboard Metrics
+        if (fnName === 'get_dashboard_metrics') {
+          const rev = snap.orders.reduce((sum, o) => sum + (o.payment_status === 'paid' ? o.total_amount : 0), 0);
+          resolve({
+            data: {
+              revenue: rev || 842500000,
+              prev_revenue: 720000000,
+              total_orders: snap.orders.length,
+              recent_orders_count: snap.orders.length,
+              pending_orders: snap.orders.filter(o => o.status === 'pending').length,
+              active_customers: snap.customers.length,
+              total_customers: snap.customers.length,
+              total_products: snap.products.length,
+              low_stock_count: snap.products.filter(p => p.stock <= (p.safety_stock || 15)).length,
+              status_counts: {
+                pending: snap.orders.filter(o => o.status === 'pending').length,
+                processing: snap.orders.filter(o => o.status === 'processing').length,
+                shipped: snap.orders.filter(o => o.status === 'shipped').length,
+                delivered: snap.orders.filter(o => o.status === 'delivered').length,
+                cancelled: snap.orders.filter(o => o.status === 'cancelled').length,
+                refunded: snap.orders.filter(o => o.status === 'refunded').length,
+              }
+            },
+            error: null
+          });
+          return;
+        }
+
+        // 2. Dashboard Daily Revenue (7 Days Array)
+        if (fnName === 'get_dashboard_daily') {
+          const daily: Array<{ day: string; revenue: number; order_count: number }> = [];
+          const now = new Date();
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const dayStr = d.toISOString().split('T')[0];
+            daily.push({
+              day: dayStr,
+              revenue: 85000000 + (6 - i) * 14500000,
+              order_count: 22 + (6 - i) * 5
+            });
+          }
+          resolve({ data: daily, error: null });
+          return;
+        }
+
+        // 3. Low Stock Products
+        if (fnName === 'get_low_stock_products') {
+          const low = snap.products
+            .filter(p => p.stock <= (p.safety_stock || 20))
+            .map(p => ({
+              id: p.id,
+              name: p.name,
+              stock: p.stock,
+              reorder_level: p.safety_stock || 20
+            }));
+          resolve({ data: low, error: null });
+          return;
+        }
+
+        // 4. Inventory Consistency Check
+        if (fnName === 'verify_inventory_consistency') {
+          resolve({ data: { checked: true, discrepancies: [] }, error: null });
+          return;
+        }
+
+        // 5. Sequence Generators
         if (fnName === 'next_order_number') {
           resolve({ data: `ORD-${Math.floor(10000 + Math.random() * 90000)}`, error: null });
           return;
         }
 
+        if (fnName === 'next_return_number') {
+          resolve({ data: `RMA-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`, error: null });
+          return;
+        }
+
+        if (fnName === 'next_journal_entry_number') {
+          resolve({ data: `JE-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`, error: null });
+          return;
+        }
+
+        // 6. Audit Chain Verification
+        if (fnName === 'verify_audit_chain') {
+          resolve({ data: { valid: true, audited_records: snap.auditLogs.length || 128 }, error: null });
+          return;
+        }
+
+        // 7. Atomic Business Mutations
         if (fnName === 'place_order_atomic') {
           const rawItems = (params.p_items as Array<{ product_id: string; product_sku?: string; quantity: number; unit_price: number }>) || [];
-          const snap = mockStore.getSnapshot();
           const items = rawItems.map(i => {
             const prod = snap.products.find(p => p.id === i.product_id);
             return {
@@ -230,6 +569,11 @@ export const mockSupabaseClient = {
         if (fnName === 'process_return_restock_atomic') {
           const res = mockStore.inspectReturnQC(params.p_return_id as string, params.p_is_good !== false);
           resolve({ data: { success: res.success }, error: null });
+          return;
+        }
+
+        if (fnName === 'post_journal_entry_atomic') {
+          resolve({ data: { success: true, entry_id: `je_${Date.now()}` }, error: null });
           return;
         }
 

@@ -92,7 +92,7 @@ export function LedgerPage({ search }: LedgerPageProps) {
               {filtered.map((e) => (
                 <tr key={e.id} className="hover:bg-ink-50/50">
                   <td className="px-4 py-3 font-medium text-ink-800">{e.entry_number}</td>
-                  <td className="px-4 py-3 text-ink-600 capitalize">{e.event_source.replace(/_/g, ' ')}</td>
+                  <td className="px-4 py-3 text-ink-600 capitalize">{(e.event_source ?? 'order_sale').replace(/_/g, ' ')}</td>
                   <td className="px-4 py-3 text-ink-600">{e.description ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-500 text-xs">{e.reference_id ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-500 text-xs">{formatDateTime(e.posted_at)}</td>

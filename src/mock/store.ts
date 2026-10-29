@@ -486,3 +486,7 @@ class MockDataStore {
 }
 
 export const mockStore = new MockDataStore();
+
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__mockStore = mockStore;
+}
