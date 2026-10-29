@@ -29,6 +29,7 @@ import {
   Settings,
   LogOut,
   CircuitBoard,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth, useRole } from '@/providers/AuthProvider';
@@ -64,7 +65,8 @@ export type PageId =
   | 'routingRules'
   | 'settings'
   | 'flowGuide'
-  | 'businessRules';
+  | 'businessRules'
+  | 'ownerValidation';
 
 interface NavItem {
   id: PageId;
@@ -83,6 +85,7 @@ const navGroups: NavGroup[] = [
     label: 'Tổng quan',
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'ownerValidation', label: 'Nghiệm Thu Nghiệp Vụ', icon: CheckCircle2 },
       { id: 'businessRules', label: 'Phê Duyệt Quy Tắc (Review)', icon: ShieldCheck },
       { id: 'flowGuide', label: 'Luồng hoạt động', icon: CircuitBoard },
     ],

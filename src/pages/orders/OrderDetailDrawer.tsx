@@ -83,6 +83,7 @@ export function OrderDetailDrawer({
   const [podRecipient, setPodRecipient] = useState('');
   const [podSignature, setPodSignature] = useState(true);
   const [podNotes, setPodNotes] = useState('Khách hàng đã kiểm tra ngoại quan và ký nhận nguyên vẹn');
+  const [podSource, setPodSource] = useState<'carrier_webhook_verified' | 'demo_manual'>('carrier_webhook_verified');
 
   useEffect(() => {
     if (!order) return;
@@ -198,7 +199,8 @@ export function OrderDetailDrawer({
       recipient_name: podRecipient.trim(),
       signature_verified: podSignature,
       notes: podNotes,
-      submitted_by: `${activeRole.toUpperCase()} (${activeTenant?.name || 'NexusOMS'})`,
+      source: podSource,
+      submitted_by: podSource === 'carrier_webhook_verified' ? 'CARRIER_WEBHOOK_API' : `${activeRole.toUpperCase()} (Demo Thủ Công)`,
       verified_at: now
     };
 
@@ -547,9 +549,20 @@ export function OrderDetailDrawer({
                       <p className="text-[11px] text-emerald-700">Đã đối soát xác thực với đơn vị vận chuyển</p>
                     </div>
                   </div>
-                  <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold text-[11px]">
-                    ✓ Hợp lệ (POD Attached)
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {order.pod_evidence?.source === 'carrier_webhook_verified' ? (
+                      <span className="badge bg-blue-100 text-blue-800 border-blue-300 font-semibold text-[10px]">
+                        WEBHOOK XÁC THỰC
+                      </span>
+                    ) : (
+                      <span className="badge bg-amber-100 text-amber-800 border-amber-300 font-semibold text-[10px]">
+                        DEMO THỦ CÔNG
+                      </span>
+                    )}
+                    <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold text-[11px]">
+                      ✓ Hợp lệ (POD Attached)
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs pt-1">
@@ -963,6 +976,20 @@ export function OrderDetailDrawer({
           </div>
 
           <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-ink-700 mb-1">
+                Phân loại Nguồn Bằng Chứng Giao Hàng (POD Source) *
+              </label>
+              <select
+                value={podSource}
+                onChange={(e) => setPodSource(e.target.value as any)}
+                className="input text-xs w-full font-semibold bg-brand-50/40 border-brand-300 text-brand-900"
+              >
+                <option value="carrier_webhook_verified">Webhook Đối Tác Vận Chuyển (Xác thực API tự động)</option>
+                <option value="demo_manual">Demo Thủ Công (Người dùng nhập thử nghiệm)</option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-ink-700 mb-1">
                 Mã vận đơn đối soát (Carrier Tracking Code) *

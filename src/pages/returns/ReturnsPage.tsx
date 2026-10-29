@@ -77,6 +77,8 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const rmaConfig = mockStore.getRmaConfig();
+  const threshold = rmaConfig.approvalThreshold;
 
   async function load() {
     setLoading(true);
@@ -246,7 +248,7 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
                   const isWarranty = branchKey === 'warranty';
                   const isTransitDamage = branchKey === 'transit_damage';
                   const amount = Number(r.refund_amount || 0);
-                  const requiresChecker = amount >= 1000000;
+                  const requiresChecker = amount >= threshold;
 
                   return (
                     <tr key={r.id} className="hover:bg-ink-50/50 transition-colors">
@@ -355,7 +357,7 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
                               onClick={() => handleApprove(r.id, 'checker')}
                               className="px-2.5 py-1 rounded-md text-xs font-semibold bg-violet-600 text-white hover:bg-violet-700 flex items-center gap-1"
                             >
-                              <ShieldCheck size={12} /> Checker Duyệt (&ge; 1M)
+                              <ShieldCheck size={12} /> Checker Duyệt (&ge; {threshold / 1000000}M)
                             </button>
                           )}
 
@@ -412,14 +414,25 @@ function NewReturnModal({ open, onClose, orders, onSaved }: {
 
   async function handleSave() {
     if (!orderId) { toast('Vui lòng chọn đơn hàng cần đổi trả', 'error'); return; }
-    setSaving(true);
+    
+    // Strict business validation
+    const validation = mockStore.validateRmaRequest({
+      orderId,
+      refundAmount
+    });
 
+    if (!validation.valid) {
+      validation.errors.forEach(err => toast(err, 'error'));
+      return;
+    }
+
+    setSaving(true);
     const res = mockStore.createMultiBranchRma({
       orderId,
       rmaBranch,
       reason: reason || `Yêu cầu RMA nhánh ${rmaBranch}`,
       refundAmount,
-      notes: `Tạo RMA qua giao diện đa nhánh`,
+      notes: `Tạo RMA qua giao diện đa nhánh — ${validation.ruleExplanation}`,
     });
 
     setSaving(false);
@@ -427,7 +440,7 @@ function NewReturnModal({ open, onClose, orders, onSaved }: {
       toast('Tạo RMA thất bại', 'error');
       return;
     }
-    toast(`✓ Đã tạo yêu cầu RMA thành công: ${res.rmaNumber}`, 'success');
+    toast(`✓ Đã tạo yêu cầu RMA thành công: ${res.rmaNumber} (${validation.ruleExplanation})`, 'success');
     onSaved();
   }
 

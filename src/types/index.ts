@@ -81,6 +81,7 @@ export interface PodEvidence {
   signature_verified: boolean;
   notes?: string;
   evidence_url?: string;
+  source?: 'demo_manual' | 'carrier_webhook_verified';
   submitted_by: string;
   verified_at: string;
 }

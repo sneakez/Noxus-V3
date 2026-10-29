@@ -291,4 +291,131 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     const cancellation = await executeScenario('SCENARIO_CANCELLATION');
     expect(cancellation.success).toBe(true);
   });
+
+  it('runs all 10 inventory scenarios and validates canonical invariant on every mutation', () => {
+    mockStore.resetToBaseline();
+
+    const scenarios = [
+      'receive_dock_pending_qc',
+      'qc_pass_partial',
+      'qc_fail_partial',
+      'reserve_stock',
+      'cancel_reservation',
+      'dispatch_stock',
+      'transfer_stock',
+      'transfer_with_loss',
+      'rma_restock_pass',
+      'rma_restock_fail'
+    ] as const;
+
+    for (const sc of scenarios) {
+      const result = mockStore.runInventoryScenario(sc, 'NX-AIR-PRO', 10);
+      expect(result.passed).toBe(true);
+      expect(result.invariantsChecked[0].passed).toBe(true);
+      expect(result.invariantsChecked[1].passed).toBe(true);
+    }
+  });
+
+  it('runs 9 order scenarios and verifies 5 separated lifecycle dimensions', () => {
+    mockStore.resetToBaseline();
+
+    const orderScenarios = [
+      'place_order',
+      'confirm_order',
+      'pick_pack_order',
+      'handover_carrier',
+      'deliver_with_pod',
+      'delivery_failed',
+      'customer_refused',
+      'partial_delivery',
+      'rts_return_to_sender'
+    ] as const;
+
+    for (const sc of orderScenarios) {
+      const result = mockStore.runOrderScenario(sc, undefined, { source: 'carrier_webhook_verified' });
+      expect(result.passed).toBe(true);
+      expect(result.invariantsChecked[0].passed).toBe(true);
+    }
+  });
+
+  it('verifies RMA validation prevents double refund and exceeding order quantity', () => {
+    mockStore.resetToBaseline();
+    const snap = mockStore.getSnapshot();
+    const order = snap.orders[0]; // ord_90214 total: 1,250,000
+
+    // 1. Normal valid request (< 1.25M)
+    const validRes = mockStore.validateRmaRequest({
+      orderId: order.id,
+      refundAmount: 500000
+    });
+    expect(validRes.valid).toBe(true);
+    expect(validRes.requiresChecker).toBe(false); // 500k < 1M threshold
+
+    // 2. Request requiring checker (>= 1M)
+    const checkerRes = mockStore.validateRmaRequest({
+      orderId: order.id,
+      refundAmount: 1100000
+    });
+    expect(checkerRes.valid).toBe(true);
+    expect(checkerRes.requiresChecker).toBe(true); // 1.1M >= 1M threshold
+
+    // 3. Exceeding total order value (1.5M > 1.25M) -> Blocked
+    const exceedRes = mockStore.validateRmaRequest({
+      orderId: order.id,
+      refundAmount: 1500000
+    });
+    expect(exceedRes.valid).toBe(false);
+    expect(exceedRes.errors[0]).toContain('CẢNH BÁO CHẶN HOÀN TIỀN VƯỢT GIÁ TRỊ');
+  });
+
+  it('verifies 4 revenue policies comparison metrics and segregated quantities', () => {
+    mockStore.resetToBaseline();
+    const metrics = mockStore.getRevenueComparisonMetrics();
+
+    expect(metrics.totalOrderValue).toBeGreaterThan(0);
+    expect(metrics.totalCashCollected).toBeGreaterThan(0);
+    expect(metrics.totalReceivables).toBeGreaterThanOrEqual(0);
+    expect(metrics.policies.FOB_DESTINATION).toBeDefined();
+    expect(metrics.policies.FOB_SHIPPING_POINT).toBeDefined();
+    expect(metrics.policies.POST_CLEARANCE_7D).toBeDefined();
+    expect(metrics.policies.CASH_BASIS).toBeDefined();
+
+    // FOB Shipping Point >= FOB Destination (since in-transit is counted in shipping point)
+    expect(metrics.policies.FOB_SHIPPING_POINT.recognizedRevenue).toBeGreaterThanOrEqual(
+      metrics.policies.FOB_DESTINATION.recognizedRevenue
+    );
+  });
+
+  it('verifies business rules governance: default ASSUMPTION, change history, and reset', () => {
+    mockStore.resetToBaseline();
+    const rules = mockStore.getBusinessRules();
+    expect(rules.length).toBeGreaterThanOrEqual(4);
+
+    // Initial status must be assumption, approvedOptionId must be null
+    for (const r of rules) {
+      expect(r.currentStatus).toBe('assumption');
+      expect(r.approvedOptionId).toBeNull();
+    }
+
+    // Update rule to approved
+    const targetRule = rules[0];
+    const updateRes = mockStore.updateBusinessRule(
+      targetRule.id,
+      targetRule.selectedOptionId,
+      'approved',
+      'Chủ dự án duyệt sau khi nghiệm thu'
+    );
+    expect(updateRes.success).toBe(true);
+
+    const updated = mockStore.getBusinessRules().find(r => r.id === targetRule.id)!;
+    expect(updated.currentStatus).toBe('approved');
+    expect(updated.approvedOptionId).toBe(targetRule.selectedOptionId);
+    expect(updated.history.length).toBeGreaterThan(0);
+
+    // Reset back to assumption
+    mockStore.resetBusinessRuleToAssumption(targetRule.id);
+    const reset = mockStore.getBusinessRules().find(r => r.id === targetRule.id)!;
+    expect(reset.currentStatus).toBe('assumption');
+    expect(reset.approvedOptionId).toBeNull();
+  });
 });

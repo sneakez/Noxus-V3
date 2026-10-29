@@ -1406,7 +1406,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
     }
   ],
 
-  // ============ Business Rules Config & Assumptions ============
+  // ============ Business Rules Config & Governance ============
   businessRules: [
     {
       id: 'rule_inv_invariant',
@@ -1414,107 +1414,320 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       name: 'Bất biến Tồn kho 5 trạng thái (Inventory Invariant)',
       code: 'INV-CANONICAL-INVARIANT',
       summary: 'Physical = Sellable + Reserved + Unavailable (Pending QC + Damaged). Pipeline (Incoming + In-transit) không tính gộp vào Physical.',
-      currentStatus: 'approved',
+      currentStatus: 'assumption',
+      proposedOptionId: 'opt_inv_strict',
       selectedOptionId: 'opt_inv_strict',
+      approvedOptionId: null,
+      version: 'v1.0',
+      effectiveDate: '2026-10-29',
+      tenantScope: 'global',
+      changeReason: 'Khởi tạo đề xuất ban đầu chờ Chủ Doanh Nghiệp phê duyệt',
       options: [
         {
           id: 'opt_inv_strict',
-          label: 'Mô hình chuẩn Nexus 5 Trạng Thái (Khuyến nghị)',
-          description: 'Physical thực tế trên kệ = Sellable + Reserved + (Pending QC + Damaged). Hàng Incoming từ PO và In-transit chuyển kho nằm ở trạng thái Pipeline riêng biệt, không tính trùng.',
-          isAssumption: false
+          label: 'Mô hình chuẩn Nexus 5 Trạng Thái [ĐỀ XUẤT]',
+          description: 'Physical thực tế trên kệ = Sellable + Reserved + (Pending QC + Damaged). Hàng Incoming từ PO và In-transit chuyển kho nằm ở Pipeline riêng biệt, không tính trùng.',
+          isAssumption: true,
+          financialImpact: 'Ngăn chặn hoàn toàn bán âm và sai lệch kiểm kê kho.'
         },
         {
           id: 'opt_inv_loose',
-          label: 'Gộp In-transit vào Physical',
-          description: 'Tính hàng đang vận chuyển vào tổng Physical on-hand. Rủi ro: sai lệch vị trí bin khi nhân viên kho đi nhặt hàng.',
-          isAssumption: true
+          label: 'Gộp In-transit vào Physical on-hand',
+          description: 'Tính hàng đang vận chuyển vào tổng Physical. Rủi ro: sai lệch vị trí bin khi nhân viên kho đi nhặt hàng thực tế.',
+          isAssumption: true,
+          financialImpact: 'Dễ gây nhầm lẫn tài sản hiện hữu tại kho với hàng đang lưu thông.'
         }
       ],
-      complianceNotes: 'Đã chuẩn hóa toán học. Đảm bảo Sellable = Physical - Reserved - Unavailable.',
-      updatedAt: '2026-10-28T10:00:00Z'
+      complianceNotes: '[ASSUMPTION: CHỜ DUYỆT] Cần chủ dự án xác nhận công thức toán học trước khi đóng gói logic backend.',
+      history: [
+        {
+          id: 'hist_inv_01',
+          timestamp: '2026-10-29T08:00:00Z',
+          actor: 'System Architect',
+          fromStatus: 'none',
+          toStatus: 'assumption',
+          fromOptionId: '',
+          toOptionId: 'opt_inv_strict',
+          reason: 'Thiết lập mô hình bất biến 5 trạng thái theo chuẩn WMS',
+          version: 'v1.0'
+        }
+      ],
+      updatedAt: '2026-10-29T08:00:00Z'
     },
     {
       id: 'rule_rev_recognition',
       category: 'revenue',
       name: 'Thời điểm Ghi nhận Doanh thu (Revenue Recognition Point)',
-      code: 'ACC-REVENUE-FOB-DESTINATION',
-      summary: 'Ghi nhận Doanh thu Có 511 tại thời điểm đối soát Bằng chứng giao hàng (POD) thành công theo nguyên tắc FOB Điểm đến.',
+      code: 'ACC-REVENUE-RECOGNITION-TIMING',
+      summary: 'Xác định thời điểm chính thức ghi nhận Doanh thu Có 511 (FOB Điểm đến, FOB Điểm gửi, Hết hạn đổi trả 7 ngày, hoặc Tiền về).',
       currentStatus: 'assumption',
+      proposedOptionId: 'opt_rev_pod',
       selectedOptionId: 'opt_rev_pod',
+      approvedOptionId: null,
+      version: 'v1.0',
+      effectiveDate: '2026-10-29',
+      tenantScope: 'global',
+      changeReason: 'Đang chạy mô phỏng đối chiếu giữa 4 chính sách tài chính',
       options: [
         {
           id: 'opt_rev_pod',
-          label: 'Ghi nhận khi xác nhận POD — FOB Destination [ASSUMPTION]',
-          description: 'Doanh thu (Có 511) chỉ phát sinh khi khách đã nhận hàng có bằng chứng POD. Tiền thu trước ghi Có 131 / 3387; khi xuất kho ghi Nợ 632 / Có 156 (hoặc Có 157).',
-          isAssumption: true
+          label: 'Chính sách 1: FOB Destination (Giao thành công có POD) [ĐỀ XUẤT]',
+          description: 'Doanh thu Có 511 chỉ ghi nhận khi khách đã nhận hàng có xác thực POD. Tiền thu trước ghi Nợ 112 / Có 131. Hàng gửi bán ghi Có 156 / Nợ 157.',
+          isAssumption: true,
+          financialImpact: 'Doanh thu chuẩn xác, không bị biến động ảo nếu giao thất bại.'
         },
         {
           id: 'opt_rev_dispatch',
-          label: 'Ghi nhận ngay khi Xuất kho — FOB Shipping Point',
-          description: 'Doanh thu ghi nhận ngay khi kho đóng gói bàn giao bưu tá. Nếu khách từ chối nhận (RTS), phải hạch toán giảm trừ doanh thu 521.',
-          isAssumption: false
+          label: 'Chính sách 2: FOB Shipping Point (Bàn giao bưu tá xuất kho)',
+          description: 'Ghi nhận Có 511 ngay khi kho xuất giao bưu tá. Nếu khách từ chối nhận (RTS), phải hạch toán bút toán hàng bán bị trả lại Nợ 521.',
+          isAssumption: true,
+          financialImpact: 'Ghi nhận doanh thu sớm hơn 2-4 ngày nhưng chịu rủi ro hoàn đơn RTS cao.'
         },
         {
-          id: 'opt_rev_order',
-          label: 'Ghi nhận tại lúc Đặt đơn (Order Creation)',
-          description: 'Hạch toán Có 511 ngay khi khách bấm đặt đơn. Cực kỳ rủi ro và phóng đại doanh thu ảo nếu khách hủy đơn.',
-          isAssumption: true
+          id: 'opt_rev_7d_window',
+          label: 'Chính sách 3: Post-Clearance Window (Hết 7 ngày đổi trả)',
+          description: 'Ghi nhận Có 511 sau khi đơn hàng giao thành công đủ 7 ngày mà không phát sinh khiếu nại/đổi trả.',
+          isAssumption: true,
+          financialImpact: 'Doanh thu cực kỳ an toàn nhưng độ trễ báo cáo tài chính lên đến 7-10 ngày.'
+        },
+        {
+          id: 'opt_rev_cash_basis',
+          label: 'Chính sách 4: Cash Basis / Prepayment (Ghi nhận khi khách thanh toán)',
+          description: 'Ghi nhận Có 511 ngay thời điểm tiền chuyển khoản thành công từ cổng thanh toán.',
+          isAssumption: true,
+          financialImpact: 'Phù hợp doanh nghiệp dịch vụ, không phù hợp bán buôn/bán lẻ vật chất.'
         }
       ],
-      complianceNotes: '[ASSUMPTION] Chưa được Chủ Doanh Nghiệp duyệt chính thức. Cần chốt giữa FOB Destination vs FOB Shipping Point.',
-      updatedAt: '2026-10-28T10:00:00Z'
+      complianceNotes: '[ASSUMPTION: CHỜ DUYỆT] Chủ dự án cần lựa chọn 1 trong 4 phương án cho từng kênh bán.',
+      history: [
+        {
+          id: 'hist_rev_01',
+          timestamp: '2026-10-29T08:00:00Z',
+          actor: 'Finance Lead',
+          fromStatus: 'none',
+          toStatus: 'assumption',
+          fromOptionId: '',
+          toOptionId: 'opt_rev_pod',
+          reason: 'Đề xuất chính sách FOB Destination chuẩn mực kế toán VAS/IFRS',
+          version: 'v1.0'
+        }
+      ],
+      updatedAt: '2026-10-29T08:00:00Z'
     },
     {
       id: 'rule_warehouse_pod_gate',
       category: 'delivery_pod',
       name: 'Kiểm soát Bằng chứng Giao hàng POD (POD Enforced Gate)',
       code: 'OPS-POD-VERIFICATION-MANDATORY',
-      summary: 'Nhân viên kho (Warehouse) không được tự ý đổi trạng thái đơn sang Delivered nếu thiếu mã vận đơn hoặc ảnh ký nhận POD.',
-      currentStatus: 'approved',
+      summary: 'Cơ chế xác thực giao hàng thành công: Chặn thao tác thủ công, phân biệt Demo nhập tay vs Webhook đối tác vận chuyển.',
+      currentStatus: 'assumption',
+      proposedOptionId: 'opt_pod_enforced',
       selectedOptionId: 'opt_pod_enforced',
+      approvedOptionId: null,
+      version: 'v1.0',
+      effectiveDate: '2026-10-29',
+      tenantScope: 'global',
+      changeReason: 'Chặn gian lận giao nhận nội bộ',
       options: [
         {
           id: 'opt_pod_enforced',
-          label: 'Bắt buộc xác thực POD (Gate Enforced)',
-          description: 'Hệ thống chặn nút đánh dấu Đã nhận của nhân viên Kho trừ khi nhập mã vận đơn đối soát hãng vận chuyển hoặc tải ảnh/chữ ký nhận hàng.',
-          isAssumption: false
+          label: 'Bắt buộc xác thực POD phân loại nguồn gốc [ĐỀ XUẤT]',
+          description: 'Hệ thống chặn nút đánh dấu Đã nhận của Kho. Phân biệt rõ: POD Demo người dùng nhập tay vs Bằng chứng Webhook xác thực từ ViettelPost/GHN/Shopee Xpress.',
+          isAssumption: true,
+          financialImpact: 'Loại bỏ tình trạng hạch toán khống doanh thu khi chưa có chữ ký người nhận.'
         },
         {
           id: 'opt_pod_manual',
-          label: 'Cho phép cập nhật thủ công tự do',
-          description: 'Bất kỳ nhân viên nào cũng có thể bấm hoàn tất đơn. Dễ xảy ra sai sót hoặc gian lận nội bộ.',
-          isAssumption: true
+          label: 'Cho phép nhân viên kho tự bấm xác nhận giao hàng',
+          description: 'Bất kỳ nhân viên nào cũng có thể bấm hoàn tất đơn mà không cần mã vận đơn hay chữ ký.',
+          isAssumption: true,
+          financialImpact: 'Rủi ro thất thoát hàng hóa và sai lệch công nợ COD.'
         }
       ],
-      complianceNotes: 'Đã kích hoạt trên Order Detail Drawer. Thao tác giao hàng yêu cầu Modal POD.',
-      updatedAt: '2026-10-28T10:00:00Z'
+      complianceNotes: '[ASSUMPTION: CHỜ DUYỆT] Cần chủ dự án phê duyệt cơ chế phân loại nguồn POD.',
+      history: [
+        {
+          id: 'hist_pod_01',
+          timestamp: '2026-10-29T08:00:00Z',
+          actor: 'Logistics Director',
+          fromStatus: 'none',
+          toStatus: 'assumption',
+          fromOptionId: '',
+          toOptionId: 'opt_pod_enforced',
+          reason: 'Yêu cầu kiểm soát chặt chẽ quy trình POD',
+          version: 'v1.0'
+        }
+      ],
+      updatedAt: '2026-10-29T08:00:00Z'
     },
     {
-      id: 'rule_rma_multibranch',
+      id: 'rule_rma_approval_threshold',
       category: 'rma',
-      name: 'Định tuyến Đổi trả 6 Nhánh (Multi-Branch RMA Engine)',
-      code: 'RMA-6BRANCH-ROUTING',
-      summary: 'Tách biệt: Hoàn tiền, Đổi hàng mới, Bảo hành, Trả một phần, Hàng vỡ vận chuyển, Hoàn tiền không trả hàng. QC và Maker/Checker tùy biến.',
+      name: 'Hạn mức Phê duyệt Maker/Checker Đổi trả (RMA Approval Matrix)',
+      code: 'RMA-APPROVAL-THRESHOLD-CONFIG',
+      summary: 'Thiết lập hạn mức phân quyền Maker/Checker cho 6 nhánh đổi trả: Hoàn tiền, Đổi mới, Bảo hành, Vỡ hỏng, Returnless.',
       currentStatus: 'assumption',
-      selectedOptionId: 'opt_rma_branching',
+      proposedOptionId: 'opt_rma_thresh_1m',
+      selectedOptionId: 'opt_rma_thresh_1m',
+      approvedOptionId: null,
+      version: 'v1.0',
+      effectiveDate: '2026-10-29',
+      tenantScope: 'global',
+      changeReason: 'Thiết lập ngưỡng kiểm soát tài chính đổi trả',
       options: [
         {
-          id: 'opt_rma_branching',
-          label: 'Định tuyến 6 nhánh thông minh [ASSUMPTION]',
-          description: 'Returnless Refund bỏ qua QC; Đổi hàng kích hoạt đơn xuất bù; Hàng vỡ chuyển thẳng kho Damaged Scrap; Hạn mức >= 1.000.000đ yêu cầu Checker.',
-          isAssumption: true
+          id: 'opt_rma_thresh_1m',
+          label: 'Hạn mức 1.000.000 ₫ (Maker duyệt < 1M; Checker duyệt >= 1M) [ĐỀ XUẤT]',
+          description: 'Đơn hoàn dưới 1.000.000đ do Maker (Kho/CSKH) duyệt giải quyết nhanh; từ 1.000.000đ trở lên bắt buộc Checker (Owner/Admin) kiểm tra.',
+          isAssumption: true,
+          financialImpact: 'Cân bằng giữa tốc độ xử lý khiếu nại khách hàng và an toàn quỹ tiền.'
         },
         {
-          id: 'opt_rma_single',
-          label: 'Quy trình đơn luồng truyền thống',
-          description: 'Mọi đơn hoàn đều phải chờ bưu tá gom về kho, mở kiện kiểm định QC rồi mới hoàn tiền.',
-          isAssumption: false
+          id: 'opt_rma_thresh_500k',
+          label: 'Hạn mức chặt chẽ 500.000 ₫ (Checker duyệt từ 500k)',
+          description: 'Áp dụng cho giai đoạn đầu kiểm soát dòng tiền, hạn chế tối đa chi tiền hoàn.',
+          isAssumption: true,
+          financialImpact: 'Giảm 40% rủi ro chi hoàn sai lệch nhưng có thể làm chậm khâu CSKH.'
+        },
+        {
+          id: 'opt_rma_thresh_always',
+          label: 'Luôn luôn bắt buộc Checker duyệt 100% mọi khoản hoàn tiền',
+          description: 'Mọi yêu cầu hoàn tiền bất kể số tiền đều phải có chữ ký của Chủ Doanh Nghiệp.',
+          isAssumption: true,
+          financialImpact: 'Kiểm soát 100% dòng tiền chi ra.'
+        },
+        {
+          id: 'opt_rma_thresh_no_checker',
+          label: 'Không cần Checker — Phân quyền hoàn toàn cho Maker',
+          description: 'Nhân viên CSKH/Kho tự quyết định toàn bộ việc hoàn tiền và đổi hàng.',
+          isAssumption: true,
+          financialImpact: 'Tốc độ tức thì nhưng rủi ro thất thoát ngân sách hoàn tiền.'
         }
       ],
-      complianceNotes: '[ASSUMPTION] Cần chủ dự án phê duyệt hạn mức Maker/Checker 1.000.000đ và chính sách Returnless Refund.',
-      updatedAt: '2026-10-28T10:00:00Z'
+      complianceNotes: '[ASSUMPTION: CHỜ DUYỆT] Ngưỡng 1.000.000đ chỉ là giả định đề xuất, cần Chủ Doanh Nghiệp trực tiếp xác nhận.',
+      history: [
+        {
+          id: 'hist_rma_01',
+          timestamp: '2026-10-29T08:00:00Z',
+          actor: 'Risk & Compliance Lead',
+          fromStatus: 'none',
+          toStatus: 'assumption',
+          fromOptionId: '',
+          toOptionId: 'opt_rma_thresh_1m',
+          reason: 'Đề xuất ma trận kiểm duyệt Maker/Checker theo phân cấp rủi ro',
+          version: 'v1.0'
+        }
+      ],
+      updatedAt: '2026-10-29T08:00:00Z'
+    },
+    {
+      id: 'rule_accounting_cogs_timing',
+      category: 'accounting',
+      name: 'Thời điểm Hạch toán Giá vốn Hàng bán COGS (Inventory to COGS)',
+      code: 'ACC-COGS-RECOGNITION-TIMING',
+      summary: 'Xác định thời điểm chuyển giá trị tồn kho 156 sang Giá vốn hàng bán 632 theo giá bình quân gia quyền MAC.',
+      currentStatus: 'assumption',
+      proposedOptionId: 'opt_cogs_dispatch',
+      selectedOptionId: 'opt_cogs_dispatch',
+      approvedOptionId: null,
+      version: 'v1.0',
+      effectiveDate: '2026-10-29',
+      tenantScope: 'global',
+      changeReason: 'Làm rõ hạch toán kho và giá vốn',
+      options: [
+        {
+          id: 'opt_cogs_dispatch',
+          label: 'Hạch toán Nợ 632 / Có 156 ngay khi Xuất kho Dispatch [ĐỀ XUẤT]',
+          description: 'Tại thời điểm xuất hàng bàn giao vận chuyển, hàng ra khỏi kho vật lý và ghi nhận giá vốn ngay.',
+          isAssumption: true,
+          financialImpact: 'Kho phản ánh đúng lượng hàng thực còn lại.'
+        },
+        {
+          id: 'opt_cogs_pod_matching',
+          label: 'Đồng bộ với POD (Gửi bán Nợ 157 / Có 156; khi POD mới ghi Nợ 632 / Có 157)',
+          description: 'Tuân thủ chặt chẽ nguyên tắc phù hợp (Matching Principle): Doanh thu và Giá vốn phát sinh cùng lúc khi POD xác thực.',
+          isAssumption: true,
+          financialImpact: 'Báo cáo lãi gộp từng kỳ khớp 100% về mặt thời gian.'
+        }
+      ],
+      complianceNotes: '[ASSUMPTION: CHỜ DUYỆT] Cần chốt giữa ghi nhận đơn giản tại Dispatch hay ghi nhận qua TK 157 Hàng gửi bán.',
+      history: [
+        {
+          id: 'hist_cogs_01',
+          timestamp: '2026-10-29T08:00:00Z',
+          actor: 'Chief Accountant',
+          fromStatus: 'none',
+          toStatus: 'assumption',
+          fromOptionId: '',
+          toOptionId: 'opt_cogs_dispatch',
+          reason: 'Đề xuất hạch toán MAC khi Dispatch',
+          version: 'v1.0'
+        }
+      ],
+      updatedAt: '2026-10-29T08:00:00Z'
+    },
+    {
+      id: 'rule_channel_fee_recognition',
+      category: 'accounting',
+      name: 'Hạch toán Phí sàn TMĐT & Phí vận chuyển (Marketplace Fees)',
+      code: 'ACC-MARKETPLACE-FEE-TIMING',
+      summary: 'Thời điểm ghi nhận chi phí hoa hồng sàn Shopee, TikTok Shop, Lazada (Nợ 641 / Có 338).',
+      currentStatus: 'assumption',
+      proposedOptionId: 'opt_fee_settlement',
+      selectedOptionId: 'opt_fee_settlement',
+      approvedOptionId: null,
+      version: 'v1.0',
+      effectiveDate: '2026-10-29',
+      tenantScope: 'global',
+      changeReason: 'Quy tắc đối soát công nợ sàn',
+      options: [
+        {
+          id: 'opt_fee_settlement',
+          label: 'Ghi nhận theo Báo cáo Quyết toán Kỳ đối soát (Settlement Statement) [ĐỀ XUẤT]',
+          description: 'Hàng ngày ước tính tạm tính; khi sàn trả bảng đối soát kỳ (7 ngày) thì hạch toán chính xác số thực trừ.',
+          isAssumption: true,
+          financialImpact: 'Khớp 100% với sao kê ngân hàng và bảng thanh toán của sàn TMĐT.'
+        },
+        {
+          id: 'opt_fee_per_order',
+          label: 'Tự động tính và trừ phí sàn ngay trên từng đơn hàng',
+          description: 'Áp dụng biểu phí cố định (ví dụ 8.5% Shopee) ghi nhận ngay vào chi phí bán hàng khi tạo đơn.',
+          isAssumption: true,
+          financialImpact: 'Dễ bị lệch nếu sàn phát sinh phạt cân nặng hoặc trợ giá voucher tài trợ chung.'
+        }
+      ],
+      complianceNotes: '[ASSUMPTION: CHỜ DUYỆT] Cần thống nhất quy trình đối soát phí sàn định kỳ.',
+      history: [
+        {
+          id: 'hist_fee_01',
+          timestamp: '2026-10-29T08:00:00Z',
+          actor: 'Reconciliation Specialist',
+          fromStatus: 'none',
+          toStatus: 'assumption',
+          fromOptionId: '',
+          toOptionId: 'opt_fee_settlement',
+          reason: 'Đề xuất hạch toán phí sàn theo kỳ đối soát thực tế',
+          version: 'v1.0'
+        }
+      ],
+      updatedAt: '2026-10-29T08:00:00Z'
     }
   ],
+
+  // ============ RMA Dynamic Configuration ============
+  rmaConfig: {
+    approvalThreshold: 1000000,
+    thresholdStatus: 'assumption',
+    makerRoles: ['warehouse', 'manager'],
+    checkerRoles: ['owner', 'admin'],
+    enabledBranches: ['refund', 'exchange', 'warranty', 'partial_return', 'transit_damage', 'returnless_refund'],
+    preventDoubleRefund: true,
+    preventDoubleRestock: true,
+    preventExceedingOrderQty: true
+  },
+
+  // ============ Revenue Policy Selection ============
+  revenuePolicy: 'FOB_DESTINATION',
 
   // ============ Audit Logs ============
   auditLogs: [

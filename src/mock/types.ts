@@ -155,22 +155,80 @@ export interface MockEvent<T = unknown> {
 }
 
 // ============ Business Rules Review Configuration ============
+export interface BusinessRuleHistoryEntry {
+  id: string;
+  timestamp: string;
+  actor: string;
+  fromStatus: string;
+  toStatus: string;
+  fromOptionId: string;
+  toOptionId: string;
+  reason: string;
+  version: string;
+}
+
 export interface BusinessRuleConfig {
   id: string;
-  category: 'inventory' | 'revenue' | 'delivery_pod' | 'rma';
+  category: 'inventory' | 'revenue' | 'delivery_pod' | 'rma' | 'accounting';
   name: string;
   code: string;
   summary: string;
   currentStatus: 'approved' | 'assumption' | 'under_review';
-  selectedOptionId: string;
+  proposedOptionId: string;       // Phương án ban đầu được hệ thống đề xuất
+  selectedOptionId: string;       // Phương án đang được chọn để mô phỏng (Simulating)
+  approvedOptionId: string | null;// Phương án đã được Chủ Doanh Nghiệp phê duyệt chính thức (null nếu chưa duyệt)
+  version: string;                // Ví dụ: v1.0, v1.1
+  effectiveDate: string;          // Ngày bắt đầu áp dụng
+  tenantScope: 'global' | 'single_tenant'; // Phạm vi áp dụng
+  changeReason: string;           // Lý do thay đổi gần nhất
   options: Array<{
     id: string;
     label: string;
     description: string;
     isAssumption?: boolean;
+    financialImpact?: string;
   }>;
   complianceNotes: string;
+  history: BusinessRuleHistoryEntry[];
   updatedAt: string;
+}
+
+// ============ RMA Dynamic Configuration ============
+export interface RmaGovernanceConfig {
+  approvalThreshold: number; // e.g. 1000000 VND
+  thresholdStatus: 'approved' | 'assumption' | 'under_review';
+  makerRoles: string[];      // ['warehouse', 'manager']
+  checkerRoles: string[];    // ['owner', 'admin']
+  enabledBranches: import('@/types').RmaBranch[];
+  preventDoubleRefund: boolean;
+  preventDoubleRestock: boolean;
+  preventExceedingOrderQty: boolean;
+}
+
+// ============ Revenue Policies Comparison ============
+export type RevenuePolicyType =
+  | 'FOB_DESTINATION'     // Ghi nhận Có 511 khi có POD giao thành công
+  | 'FOB_SHIPPING_POINT'  // Ghi nhận Có 511 khi xuất kho bàn giao vận chuyển
+  | 'POST_CLEARANCE_7D'   // Ghi nhận Có 511 sau 7 ngày kết thúc hạn đổi trả
+  | 'CASH_BASIS';         // Ghi nhận Có 511 ngay khi khách thanh toán xong
+
+// ============ Validation Scenario Result ============
+export interface ScenarioValidationResult {
+  scenarioId: string;
+  title: string;
+  category: 'inventory' | 'order_pod' | 'revenue' | 'rma' | 'cross_module';
+  passed: boolean;
+  timestamp: string;
+  before: Record<string, number | string>;
+  after: Record<string, number | string>;
+  deltas: Record<string, number | string>;
+  invariantsChecked: Array<{
+    name: string;
+    passed: boolean;
+    details: string;
+  }>;
+  affectedModules: string[];
+  notes: string;
 }
 
 // ============ Database Snapshot Structure ============
@@ -202,6 +260,8 @@ export interface MockDatabaseSnapshot {
   journalLines: JournalLine[];
   reconciliations: MarketplaceReconciliation[];
   businessRules?: BusinessRuleConfig[];
+  rmaConfig?: RmaGovernanceConfig;
+  revenuePolicy?: RevenuePolicyType;
   auditLogs: Array<{
     id: string;
     action: string;

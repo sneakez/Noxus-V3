@@ -63,6 +63,7 @@ const RoutingRulesPage = lazy(() => import('@/pages/routingRules/RoutingRulesPag
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const FlowGuidePage = lazy(() => import('@/pages/flowGuide/FlowGuidePage').then(m => ({ default: m.FlowGuidePage })));
 const BusinessRulesReviewPage = lazy(() => import('@/pages/businessRules/BusinessRulesReviewPage').then(m => ({ default: m.BusinessRulesReviewPage })));
+const OwnerValidationCenterPage = lazy(() => import('@/pages/businessValidation/OwnerValidationCenterPage').then(m => ({ default: m.OwnerValidationCenterPage })));
 
 interface PageMeta {
   title: string;
@@ -102,6 +103,7 @@ const PAGE_META: Record<PageId, PageMeta> = {
   settings: { title: 'Cài đặt & Phân quyền', subtitle: 'Quản lý người dùng & vai trò RBAC', searchPlaceholder: 'Tìm người dùng...', primaryLabel: '' },
   flowGuide: { title: 'Luồng hoạt động', subtitle: 'Hướng dẫn luồng end-to-end & phân quyền', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   businessRules: { title: 'Phê duyệt Quy tắc Nghiệp vụ', subtitle: 'Rà soát, lựa chọn phương án & gắn cờ giả định ASSUMPTION', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: '' },
+  ownerValidation: { title: 'Trung tâm Nghiệm thu Nghiệp vụ', subtitle: 'Mô phỏng trực tiếp, đối soát Before/After và phê duyệt quy tắc cho Chủ dự án', searchPlaceholder: 'Tìm kịch bản...', primaryLabel: '' },
 };
 
 function AuthenticatedWorkspace() {
@@ -214,6 +216,7 @@ function AuthenticatedWorkspace() {
               {page === 'settings' && <SettingsPage search={search} />}
               {page === 'flowGuide' && <FlowGuidePage />}
               {page === 'businessRules' && <BusinessRulesReviewPage />}
+              {page === 'ownerValidation' && <OwnerValidationCenterPage />}
             </Suspense>
           </ErrorBoundary>
         </main>

@@ -118,8 +118,34 @@ async function run() {
   await page.screenshot({ path: path.join(OUT_DIR, 'verified_07_business_rules_review.png'), fullPage: false });
   console.log('✓ Captured verified_07_business_rules_review.png');
 
+  console.log('8. Navigating to Owner Validation Center page...');
+  await page.goto('http://localhost:5173/app?page=ownerValidation', { waitUntil: 'networkidle2' });
+  await page.waitForSelector('main');
+  await new Promise(r => setTimeout(r, 1500));
+  await page.screenshot({ path: path.join(OUT_DIR, 'verified_08_owner_validation_center.png'), fullPage: false });
+  console.log('✓ Captured verified_08_owner_validation_center.png');
+
+  console.log('9. Switching to Tab 3 (Revenue & 4 Policies) in Owner Validation...');
+  const valTabs = await page.$$('button');
+  for (const btn of valTabs) {
+    const text = await page.evaluate(el => el.textContent, btn);
+    if (text && text.includes('3. Doanh Thu')) {
+      await btn.click();
+      break;
+    }
+  }
+  await new Promise(r => setTimeout(r, 1200));
+  await page.screenshot({ path: path.join(OUT_DIR, 'verified_09_owner_validation_revenue.png'), fullPage: false });
+  console.log('✓ Captured verified_09_owner_validation_revenue.png');
+
+  console.log('10. Capturing Owner Validation Center on Mobile Viewport (390x844)...');
+  await page.setViewport({ width: 390, height: 844, isMobile: true });
+  await new Promise(r => setTimeout(r, 1000));
+  await page.screenshot({ path: path.join(OUT_DIR, 'verified_10_owner_validation_mobile.png'), fullPage: false });
+  console.log('✓ Captured verified_10_owner_validation_mobile.png');
+
   await browser.close();
-  console.log('=== All 7 browser acceptance screenshots captured successfully! ===');
+  console.log('=== All 10 browser acceptance screenshots captured successfully! ===');
 }
 
 run().catch(err => {
