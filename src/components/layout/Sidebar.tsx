@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -26,10 +26,13 @@ import {
   Activity,
   CheckSquare,
   Building2,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Check,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { useAuth, useRole } from '@/providers/AuthProvider';
+import { useAuth } from '@/providers/AuthProvider';
 import type { UserRole, TenantRole } from '@/types';
 
 export type PageId =
@@ -119,7 +122,7 @@ export const navGroups: NavGroup[] = [
       { id: 'customers', label: 'Khách hàng (CRM)', icon: Users },
     ],
   },
-  // 3. Product & Inventory
+  // 3. Kho Vận & Sản Phẩm
   {
     label: '03 — Kho Vận & Sản Phẩm',
     items: [
@@ -187,13 +190,34 @@ const ROLE_LABELS: Record<TenantRole, string> = {
   manager: '📊 Trưởng Phòng OMS',
   warehouse: '📦 Nhân Viên Kho',
   finance: '💰 Kế Toán Tài Chính',
+  growth: '🚀 Tăng Trưởng & Ads',
   viewer: '👁️ Người Xem (Chỉ Đọc)',
 };
 
+const ALL_ROLES: Array<{ id: TenantRole; label: string; desc: string }> = [
+  { id: 'owner', label: '👑 Chủ Doanh Nghiệp (Owner)', desc: 'Toàn quyền quản trị & duyệt tài chính' },
+  { id: 'admin', label: '⚡ Admin Quản Trị', desc: 'Quản trị hệ thống & nhân sự' },
+  { id: 'manager', label: '📊 Trưởng Phòng OMS', desc: 'Quản lý đơn hàng, xuất nhập tồn' },
+  { id: 'warehouse', label: '📦 Nhân Viên Kho', desc: 'Soạn hàng, đóng gói & kiểm định' },
+  { id: 'finance', label: '💰 Kế Toán Tài Chính', desc: 'Sổ kép, đối soát sàn & chi phí' },
+  { id: 'growth', label: '🚀 Tăng Trưởng & Ads', desc: 'Chiến dịch, ROAS & Cohorts' },
+  { id: 'viewer', label: '👁️ Người Xem (Chỉ Đọc)', desc: 'Chỉ đọc, không được sửa đổi' },
+];
+
 export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose }: SidebarProps) {
-  const { profile, signOut } = useAuth();
-  const { tenantRole } = useRole();
-  const activeRole: TenantRole = tenantRole ?? 'owner';
+  const { profile, signOut, switchRole, activeRole } = useAuth();
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
+  const roleSwitcherRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (roleSwitcherRef.current && !roleSwitcherRef.current.contains(e.target as Node)) {
+        setShowRoleSwitcher(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const filteredGroups = navGroups
     .map((group) => ({
@@ -207,6 +231,9 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
         }
         if (activeRole === 'warehouse') {
           return ['dashboard', 'orders', 'inventory', 'fulfillment', 'transfers', 'returns', 'operationsAnalytics'].includes(item.id);
+        }
+        if (activeRole === 'growth') {
+          return ['dashboard', 'orders', 'products', 'inventory', 'marketingAnalytics', 'customerAnalytics', 'salesAnalytics', 'skuEconomics', 'channelEconomics', 'founderExecution'].includes(item.id);
         }
         return item.roles.includes(activeRole as UserRole);
       }),
@@ -315,22 +342,65 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
           ))}
         </nav>
 
-        {/* User Profile & Role Footer */}
-        <div className="relative p-3 border-t border-white/5 shrink-0 bg-[#081B2C]">
-          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white/5">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-[#1E647F]/40 border border-[#1E647F]/60 flex items-center justify-center font-bold text-teal-200 text-xs shrink-0">
+        {/* User Profile & Interactive Role Switcher Footer */}
+        <div className="relative p-3 border-t border-white/5 shrink-0 bg-[#081B2C]" ref={roleSwitcherRef}>
+          {/* Quick Role Switcher Popover */}
+          {showRoleSwitcher && (
+            <div className="absolute bottom-full left-3 right-3 mb-2 p-2 bg-[#0C2739] border border-[#1E647F] rounded-2xl shadow-2xl z-50 animate-scale-in text-xs space-y-1">
+              <div className="px-2 py-1.5 text-[10px] font-bold text-teal-300 uppercase tracking-wider border-b border-slate-700/60 mb-1 flex items-center justify-between">
+                <span>Chuyển Đổi Vai Trò</span>
+                <span className="text-slate-400 font-mono">7 ROLES</span>
+              </div>
+              <div className="max-h-60 overflow-y-auto space-y-0.5">
+                {ALL_ROLES.map((r) => {
+                  const isCurrent = activeRole === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        switchRole(r.id);
+                        setShowRoleSwitcher(false);
+                      }}
+                      className={cn(
+                        'w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer group',
+                        isCurrent
+                          ? 'bg-[#1E647F] text-white font-bold'
+                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                      )}
+                    >
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="text-xs truncate">{r.label}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{r.desc}</p>
+                      </div>
+                      {isCurrent && <Check size={14} className="text-[#27B4A0] shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+            <button
+              onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+              className="flex items-center gap-2.5 min-w-0 text-left flex-1 cursor-pointer group"
+              title="Nhấn để chuyển đổi vai trò (Role Switcher)"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#1E647F]/40 border border-[#1E647F]/60 flex items-center justify-center font-bold text-teal-200 text-xs shrink-0 group-hover:border-teal-400 transition-colors">
                 {profile?.full_name?.charAt(0) || 'U'}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-white truncate">
                   {profile?.full_name || 'Phan Phúc Thịnh'}
                 </p>
-                <p className="text-[10px] text-[#27B4A0] truncate font-mono">
-                  {ROLE_LABELS[activeRole]}
-                </p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] text-[#27B4A0] truncate font-mono">
+                    {ROLE_LABELS[activeRole]}
+                  </p>
+                  <ChevronDown size={11} className={cn('text-slate-400 transition-transform', showRoleSwitcher && 'rotate-180')} />
+                </div>
               </div>
-            </div>
+            </button>
 
             <button
               onClick={() => signOut()}

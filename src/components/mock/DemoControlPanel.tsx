@@ -32,6 +32,7 @@ export function DemoControlPanel() {
     { id: 'manager', label: 'Manager', icon: '📊', desc: 'Quản lý đơn hàng' },
     { id: 'warehouse', label: 'Thủ Kho', icon: '📦', desc: 'Soạn hàng, đóng gói' },
     { id: 'finance', label: 'Kế Toán', icon: '💰', desc: 'Tài chính & đối soát' },
+    { id: 'growth', label: 'Tăng Trưởng', icon: '🚀', desc: 'Marketing & Ads' },
     { id: 'viewer', label: 'Chỉ Xem', icon: '👁️', desc: 'Chỉ đọc số liệu' },
   ];
 
@@ -145,7 +146,7 @@ export function DemoControlPanel() {
                 <div className="text-[10px] font-bold text-teal-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                   <Users size={12} /> 1. Chuyển vai trò (Role Switcher)
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {roles.map(r => {
                     const isActive = activeRole === r.id;
                     return (
