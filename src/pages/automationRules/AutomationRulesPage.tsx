@@ -30,7 +30,7 @@ const CONDITION_FIELDS: { value: ConditionField; label: string; inputType: 'numb
     { value: 'momo', label: 'MoMo' },
   ]},
   { value: 'channel', label: 'Kenh ban hang', inputType: 'select', options: [
-    { value: 'manual', label: 'truc tiep' },
+    { value: 'website', label: 'Website D2C' },
     { value: 'shopee', label: 'Shopee' },
     { value: 'tiktok', label: 'TikTok' },
     { value: 'lazada', label: 'Lazada' },

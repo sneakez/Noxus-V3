@@ -35,7 +35,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       badge: 'Lựa chọn phổ biến nhất',
       priceMonthly: '3.500.000 ₫',
       priceYearly: '2.800.000 ₫',
-      desc: 'Dành cho doanh nghiệp bán lẻ mở rộng chuỗi, cần quản lý đa kho, quản lý số lô FEFO và đối soát sàn.',
+      desc: 'Dành cho doanh nghiệp thương mại số đa kênh, cần quản lý đa kho, quản lý số lô FEFO và đối soát sàn.',
       orders: 'Tối đa 25.000 đơn/tháng',
       warehouses: 'Lên đến 5 Kho hàng chi nhánh',
       users: '15 Tài khoản (Phân quyền RBAC)',

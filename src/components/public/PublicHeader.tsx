@@ -91,7 +91,7 @@ export function PublicHeader({ currentPath, onNavigate }: PublicHeaderProps) {
                   </div>
                   <div>
                     <div className="font-semibold text-white text-sm">Đơn hàng đa kênh (OMS)</div>
-                    <div className="text-xs text-gray-400">Đồng bộ Shopee, TikTok, Lazada & POS</div>
+                    <div className="text-xs text-gray-400">Đồng bộ Shopee, TikTok, Lazada & Website D2C</div>
                   </div>
                 </button>
 

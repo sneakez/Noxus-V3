@@ -18,7 +18,7 @@ interface MappingRow extends ChannelSkuMapping {
   internal_product?: Product;
 }
 
-const CHANNELS: Channel[] = ['website', 'shopee', 'tiktok', 'lazada', 'manual'];
+const CHANNELS: Channel[] = ['website', 'shopee', 'tiktok', 'lazada', 'other_digital'];
 
 export function ChannelMappingPage({ search }: ChannelMappingPageProps) {
   const toast = useToast();

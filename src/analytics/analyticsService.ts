@@ -236,7 +236,7 @@ class AnalyticsService {
   }
 
   /**
-   * Channel Economics across Shopee, TikTok Shop, Lazada, Website, Manual
+   * Channel Economics across Shopee, TikTok Shop, Lazada, Website D2C
    */
   public getChannelEconomics(tenantId?: string): ChannelUnitEconomics[] {
     const orders = mockStore.getOrders(tenantId);
@@ -246,8 +246,7 @@ class AnalyticsService {
       { id: 'shopee', name: 'Shopee Mall' },
       { id: 'tiktok', name: 'TikTok Shop' },
       { id: 'lazada', name: 'Lazada Flagship' },
-      { id: 'website', name: 'Website D2C' },
-      { id: 'manual', name: 'POS & Bán Trực Tiếp' }
+      { id: 'website', name: 'Website D2C' }
     ];
 
     return channels.map(ch => {
@@ -259,9 +258,9 @@ class AnalyticsService {
       const marketplaceFees = chOrders.reduce((sum, o) => sum + o.marketplaceFees, 0);
       const fulfillmentCosts = chOrders.reduce((sum, o) => sum + o.fulfillmentCosts, 0);
       const marketingSpend = chOrders.reduce((sum, o) => sum + o.attributedMarketingCosts, 0);
-      const cm1 = netRevenue - cogs;
-      const cm2 = cm1 - marketplaceFees - fulfillmentCosts;
-      const cm3 = cm2 - marketingSpend;
+      const cm1 = chOrders.reduce((sum, o) => sum + o.cm1, 0);
+      const cm2 = chOrders.reduce((sum, o) => sum + o.cm2, 0);
+      const cm3 = chOrders.reduce((sum, o) => sum + o.cm3, 0);
 
       const returnedOrders = chOrders.filter(o => o.orderStatus === 'refunded' || o.returnsRefunds > 0).length;
 

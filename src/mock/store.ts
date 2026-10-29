@@ -228,7 +228,7 @@ class MockDataStore {
         discount: 0,
         total,
         total_amount: total,
-        channel: (newOrder as unknown as Record<string, unknown>).channel as unknown as Order['channel'] || 'direct',
+        channel: (newOrder as unknown as Record<string, unknown>).channel as unknown as Order['channel'] || 'website',
         ...newOrder,
         id: orderId,
         order_items: orderItemsList,

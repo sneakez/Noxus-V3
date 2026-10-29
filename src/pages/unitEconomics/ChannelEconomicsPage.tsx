@@ -35,7 +35,7 @@ export function ChannelEconomicsPage() {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            So sánh thực tế biên lợi nhuận giữa Shopee, TikTok Shop, Lazada, Website D2C và POS để phân bổ nguồn lực tối ưu.
+            So sánh thực tế biên lợi nhuận giữa Shopee, TikTok Shop, Lazada và Website D2C để phân bổ nguồn lực tối ưu.
           </p>
         </div>
       </div>
@@ -45,7 +45,7 @@ export function ChannelEconomicsPage() {
         <KPICard
           title="Tổng Doanh Thu Đa Kênh"
           value={`${totalNet.toLocaleString()} ₫`}
-          subtitle="Tất cả các sàn & kênh trực tiếp"
+          subtitle="Hợp nhất 100% các sàn TMĐT & Website D2C"
         />
         <KPICard
           title="Tổng Phí Sàn TMĐT"

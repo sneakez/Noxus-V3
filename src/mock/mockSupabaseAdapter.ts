@@ -651,7 +651,7 @@ export const mockSupabaseClient = {
               discount,
               total,
               total_amount: total,
-              channel: 'direct',
+              channel: 'website',
               notes: (params.p_notes as string) || null,
               shipping_address: (params.p_shipping_address as string) || null,
               placed_at: new Date().toISOString()

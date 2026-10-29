@@ -76,7 +76,7 @@ describe('V6 Unit Economics & Analytics Engine', () => {
     expect(dash.kpis.netRevenue.value).toBeGreaterThan(0);
     expect(dash.kpis.orderVolume.value).toBeGreaterThan(0);
     expect(dash.waterfallPnL.length).toBe(11);
-    expect(dash.channelComparison.length).toBe(5);
+    expect(dash.channelComparison.length).toBe(4);
     expect(dash.decisionInsights.length).toBeGreaterThanOrEqual(3);
   });
 

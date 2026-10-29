@@ -40,7 +40,7 @@ export const CHANNEL_FEE_BENCHMARKS: Record<Channel, { commissionRate: number; p
   tiktok: { commissionRate: 0.060, paymentRate: 0.015, avgFulfillmentCost: 20000, defaultReturnRate: 0.070 },
   lazada: { commissionRate: 0.075, paymentRate: 0.02, avgFulfillmentCost: 19000, defaultReturnRate: 0.035 },
   website: { commissionRate: 0.000, paymentRate: 0.025, avgFulfillmentCost: 22000, defaultReturnRate: 0.020 },
-  manual: { commissionRate: 0.000, paymentRate: 0.010, avgFulfillmentCost: 15000, defaultReturnRate: 0.010 }
+  other_digital: { commissionRate: 0.050, paymentRate: 0.020, avgFulfillmentCost: 18000, defaultReturnRate: 0.025 }
 };
 
 // ============ Unit Economics Calculations ============

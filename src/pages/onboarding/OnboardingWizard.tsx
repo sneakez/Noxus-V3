@@ -340,7 +340,7 @@ export function OnboardingWizard({ onComplete, onNavigate }: OnboardingWizardPro
                   { id: 'shopee', name: 'Shopee Mall / Shop', desc: 'Đồng bộ đơn & tồn kho thời gian thực' },
                   { id: 'tiktok', name: 'TikTok Shop VN', desc: 'Tự động in vận đơn & trừ tồn kho' },
                   { id: 'lazada', name: 'Lazada Open Platform', desc: 'Khóa tồn nguyên tử và đối soát' },
-                  { id: 'pos', name: 'Cửa hàng Bán lẻ / Website', desc: 'Đồng bộ đơn hàng tại quầy POS' }
+                  { id: 'website', name: 'Website D2C / Brand Portal', desc: 'Đồng bộ đơn hàng trực tiếp qua Headless Webhook' }
                 ].map((ch) => {
                   const selected = selectedChannels.includes(ch.id);
                   return (

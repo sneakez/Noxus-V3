@@ -168,7 +168,7 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
       {/* Row 5: Multi-Channel Performance Matrix */}
       <AnalyticsCard
         title="Hiệu Quả Kinh Doanh & Phí Sàn Theo Từng Kênh (Channel Economics)"
-        subtitle="So sánh Doanh thu, Tỷ lệ phí sàn (Take Rate), Lợi nhuận CM2 & CM3 giữa Shopee, TikTok, Lazada, D2C và POS"
+        subtitle="So sánh Doanh thu, Tỷ lệ phí sàn (Take Rate), Lợi nhuận CM2 & CM3 giữa Shopee, TikTok Shop, Lazada và Website D2C"
         action={
           <button
             onClick={() => onNavigate?.('channelEconomics')}

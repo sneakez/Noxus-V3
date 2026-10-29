@@ -21,7 +21,7 @@ export function OrdersFeaturePage({ onNavigate }: FeaturePageProps) {
             Trung Tâm Xử Lý Đơn Hàng Đa Kênh Tốc Độ Cao
           </h1>
           <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto">
-            Hợp nhất đơn hàng từ Shopee, TikTok Shop, Lazada, Haravan và POS. Xử lý đồng thời hàng nghìn đơn/phút với độ tin cậy chuẩn ngân hàng.
+            Hợp nhất đơn hàng từ Shopee, TikTok Shop, Lazada, Haravan và Website D2C. Xử lý đồng thời hàng nghìn đơn/phút với độ tin cậy chuẩn ngân hàng.
           </p>
         </div>
       </section>

@@ -115,7 +115,7 @@ const PHASES: Phase[] = [
       {
         num: 1, page: 'Don hang', icon: ShoppingCart,
         title: 'Tao don hang dau tien',
-        what: 'Vao Don hang > "Tao don". Chon khach hang, chon san pham, nhap so luong. He thong tu tinh subtotal, VAT 10%, phi ship. Chon kho giao, chon kenh (manual/shopee/tiktok). An Luu.',
+        what: 'Vao Don hang > "Tao don". Chon khach hang, chon san pham, nhap so luong. He thong tu tinh subtotal, VAT 10%, phi ship. Chon kho giao, chon kenh (website/shopee/tiktok/lazada). An Luu.',
         why: 'Khi luu don, he thong tu dong: (1) tru ton kho Reserved, (2) tao log trang thai "pending", (3) gan ma don DH-XXXX.',
         tips: 'Don COD mac dinh payment_status = unpaid. Don bank_transfer/momo mac dinh = paid. SLA = 3 ngay ke tu khi tao.',
       },

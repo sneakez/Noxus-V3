@@ -88,7 +88,7 @@ export interface PodEvidence {
 
 // ============ Enterprise Types (v3.0) ============
 
-export type Channel = 'website' | 'shopee' | 'tiktok' | 'lazada' | 'manual';
+export type Channel = 'website' | 'shopee' | 'tiktok' | 'lazada' | 'other_digital';
 export type SkuType = 'physical' | 'virtual_bundle';
 export type WarehouseStatus = 'active' | 'inactive';
 export type TransferStatus = 'requested' | 'in_transit' | 'received' | 'cancelled';

@@ -140,7 +140,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   shopee: 'Shopee',
   tiktok: 'TikTok Shop',
   lazada: 'Lazada',
-  manual: 'Thu cong',
+  other_digital: 'Kênh Số Khác',
 };
 
 export const CHANNEL_COLORS: Record<Channel, string> = {
@@ -148,7 +148,7 @@ export const CHANNEL_COLORS: Record<Channel, string> = {
   shopee: 'bg-orange-100 text-orange-800 border-orange-200',
   tiktok: 'bg-slate-100 text-slate-800 border-slate-300',
   lazada: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  manual: 'bg-ink-100 text-ink-600 border-ink-200',
+  other_digital: 'bg-cyan-100 text-cyan-800 border-cyan-200',
 };
 
 export const TRANSFER_STATUS_LABELS: Record<TransferStatus, string> = {

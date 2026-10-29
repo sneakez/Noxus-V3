@@ -19,7 +19,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             {/* Eyebrow */}
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#123A52] border border-[#1E647F]/50 text-xs font-semibold text-wood-aqua tracking-wide">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>NỀN TẢNG QUẢN TRỊ BÁN HÀNG & KHO VẬN</span>
+              <span>MULTICHANNEL DIGITAL OMS + WMS + UNIT ECONOMICS</span>
             </div>
 
             {/* Benefit Headline */}
@@ -32,8 +32,8 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
 
             {/* Supporting Copy (Max 2-3 lines) */}
             <p className="text-base text-gray-300 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Hợp nhất đơn hàng từ các sàn TMĐT và điểm bán, kiểm soát tồn kho phân tán chuẩn 5 trạng thái 
-              và tự động hóa sổ kế toán kép. Đảm bảo dữ liệu kinh doanh luôn chuẩn xác đến từng giao dịch.
+              Hợp nhất đơn hàng từ các sàn TMĐT (Shopee, TikTok Shop, Lazada, D2C), kiểm soát tồn kho phân tán chuẩn 5 trạng thái 
+              và tự động hóa Unit Economics đa tầng và kế toán kép.
             </p>
 
             {/* Two Visible CTAs */}
@@ -58,7 +58,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             {/* Trust Note - No unverified claims */}
             <div className="pt-4 border-t border-gray-800/80">
               <p className="text-xs text-gray-400">
-                Thiết kế chuyên sâu cho thương hiệu D2C, chuỗi cửa hàng bán lẻ và đơn vị quản lý kho phân tán.
+                Thiết kế chuyên sâu cho thương hiệu D2C, các nhà bán lẻ thương mại số đa sàn và đơn vị fulfillment phân tán.
               </p>
             </div>
           </div>

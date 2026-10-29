@@ -19,7 +19,7 @@ export function RealWorkflowSection() {
       actor: 'Khách Hàng / Sàn TMĐT',
       icon: ShoppingCart,
       title: 'Đơn Hàng Khởi Tạo Từ Đa Sàn',
-      desc: 'Khách hàng đặt hàng qua Shopee, TikTok Shop, Lazada hoặc tại quầy POS. Webhook gửi tín hiệu về cổng tích hợp của NexusOMS.',
+      desc: 'Khách hàng đặt hàng qua Shopee, TikTok Shop, Lazada hoặc Website D2C. Webhook gửi tín hiệu về cổng tích hợp của NexusOMS.',
       actionDetail: 'Webhook Ingestion với mã định danh Idempotency Key duy nhất.',
       systemState: 'Status: Pending (Chờ xác nhận)',
       ledgerImpact: 'Chưa phát sinh bút toán tài chính.',

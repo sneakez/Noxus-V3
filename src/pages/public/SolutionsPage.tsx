@@ -23,16 +23,16 @@ export function SolutionsPage({ onNavigate }: SolutionsPageProps) {
     },
     {
       icon: Building2,
-      badge: 'Chuỗi Bán Lẻ & Đa Chi Nhánh',
-      title: 'Hợp Nhất Tồn Kho Online & Cửa Hàng Vật Lý (Omnichannel)',
-      desc: 'Xóa bỏ khoảng cách giữa kho trung tâm và hệ thống cửa hàng. Điều chuyển hàng hóa minh bạch với quy trình duyệt phiếu 2 chiều.',
+      badge: 'Thương Mại Số Đa Chi Nhánh & Kho Vệ Tinh',
+      title: 'Hợp Nhất Tồn Kho Đa Kênh & Mạng Lưới Kho Phân Tán',
+      desc: 'Xóa bỏ khoảng cách giữa kho trung tâm và hệ thống kho fulfillment vệ tinh. Điều chuyển hàng hóa minh bạch với quy trình duyệt phiếu 2 chiều.',
       features: [
-        'Định tuyến đơn tự động đến cửa hàng gần người mua nhất',
+        'Định tuyến đơn tự động đến kho gần người mua nhất',
         'Chuyển kho nội bộ (Inter-warehouse transfer) theo dõi in-transit',
         'Kiểm kê định kỳ không cần dừng hoạt động bán hàng',
         'Phân quyền chặt chẽ theo từng chi nhánh kho'
       ],
-      cta: 'Khám phá giải pháp Chuỗi'
+      cta: 'Khám phá giải pháp Kho Phân Tán'
     },
     {
       icon: Warehouse,

@@ -65,7 +65,7 @@ export function PublicFooter({ onNavigate }: PublicFooterProps) {
               </li>
               <li>
                 <button onClick={() => onNavigate('/solutions')} className="hover:text-wood-aqua transition-colors">
-                  Chuỗi Cửa hàng Đa Chi nhánh
+                  Thương Hiệu TMĐT Đa Kênh & D2C
                 </button>
               </li>
               <li>
@@ -80,7 +80,7 @@ export function PublicFooter({ onNavigate }: PublicFooterProps) {
               </li>
               <li>
                 <button onClick={() => onNavigate('/solutions')} className="hover:text-wood-aqua transition-colors">
-                  Bán lẻ Đa Sàn (Omnichannel)
+                  Thương Mại Đa Sàn (Multichannel Digital Commerce)
                 </button>
               </li>
             </ul>

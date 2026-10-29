@@ -98,12 +98,11 @@ export function OrderEconomicsPage() {
               onChange={(e) => setSelectedChannel(e.target.value)}
               className="input text-xs py-1.5 px-2.5 bg-white border border-ink-200"
             >
-              <option value="all">Tất cả sàn</option>
-              <option value="shopee">Shopee</option>
+              <option value="all">Tất cả kênh số</option>
+              <option value="shopee">Shopee Mall</option>
               <option value="tiktok">TikTok Shop</option>
-              <option value="lazada">Lazada</option>
+              <option value="lazada">Lazada Flagship</option>
               <option value="website">Website D2C</option>
-              <option value="manual">POS / Trực tiếp</option>
             </select>
           </div>
         }

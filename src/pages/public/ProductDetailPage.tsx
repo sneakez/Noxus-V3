@@ -141,7 +141,7 @@ export function ProductDetailPage({ productId = 'prod_air_pro', onNavigate }: Pr
               <div className="p-8 rounded-3xl bg-[#0C2739] border border-[#1E647F]/60 shadow-2xl">
                 <div className="flex flex-wrap items-baseline justify-between gap-4 pb-6 border-b border-gray-800">
                   <div>
-                    <span className="text-xs font-semibold text-wood-aqua uppercase tracking-wider">Giá niêm yết bán lẻ</span>
+                    <span className="text-xs font-semibold text-wood-aqua uppercase tracking-wider">Giá niêm yết (List Price)</span>
                     <div className="text-3xl sm:text-4xl font-extrabold text-white mt-1">
                       {product.price.toLocaleString('vi-VN')} ₫
                     </div>

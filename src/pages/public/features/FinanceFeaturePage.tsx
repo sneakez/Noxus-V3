@@ -49,7 +49,7 @@ export function FinanceFeaturePage({ onNavigate }: FeaturePageProps) {
               <div className="text-gray-300 mt-3 font-semibold">Đơn ORD-7729 (Shopee - 850.000 ₫)</div>
               <div className="mt-2 text-emerald-400">NỢ TK 131 (Phải thu Shopee): 790.000 ₫</div>
               <div className="text-amber-400">NỢ TK 641 (Chi phí sàn & Voucher): 60.000 ₫</div>
-              <div className="text-cyan-400">CÓ TK 511 (Doanh thu bán lẻ): 850.000 ₫</div>
+              <div className="text-cyan-400">CÓ TK 511 (Doanh thu bán hàng TMĐT): 850.000 ₫</div>
               <div className="mt-3 pt-3 border-t border-gray-800 text-[11px] text-gray-400">
                 Tổng Nợ: 850.000 ₫ == Tổng Có: 850.000 ₫ <span className="text-emerald-400 font-bold">[CÂN ĐỐI]</span>
               </div>

@@ -92,7 +92,7 @@ export function SimulatorPage() {
               order_number: `SIM-MARGIN-${Date.now()}-${i}`,
               customer_id: c.id,
               status: 'on_hold',
-              channel: 'manual',
+              channel: 'website',
               total: 10,
               estimated_margin: -50 - i * 10,
               hold_reason: 'negative_margin',

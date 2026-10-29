@@ -9,7 +9,7 @@ export function ProductOverviewSection({ onNavigate }: ProductOverviewSectionPro
     {
       icon: Layers,
       title: 'Đơn Hàng Đa Kênh (OMS)',
-      subtitle: 'Hợp nhất Shopee, TikTok, Lazada & POS',
+      subtitle: 'Hợp nhất Shopee, TikTok, Lazada & Website D2C',
       desc: 'Tập trung mọi đơn hàng vào một giao diện điều phối duy nhất. Tự động nhận diện và chặn trùng lặp đơn từ webhook sàn TMĐT.',
       points: [
         'Khử trùng lặp đơn bằng Idempotency Key',
@@ -36,7 +36,7 @@ export function ProductOverviewSection({ onNavigate }: ProductOverviewSectionPro
       icon: Calculator,
       title: 'Tài Chính & Sổ Kép',
       subtitle: 'Hạch toán tự động chuẩn mực kế toán',
-      desc: 'Mỗi giao dịch bán lẻ và nhập kho tự động sinh bút toán kép Debit = Credit cân bằng, đối soát chi tiết hoa hồng sàn.',
+      desc: 'Mỗi giao dịch đơn hàng số và nhập kho tự động sinh bút toán kép Debit = Credit cân bằng, đối soát chi tiết hoa hồng sàn.',
       points: [
         'Kiểm tra cân đối tổng Nợ == tổng Có',
         'Đối soát chi phí sàn, phí vận chuyển và công nợ',
