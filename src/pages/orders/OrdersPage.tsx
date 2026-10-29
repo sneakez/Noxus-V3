@@ -621,7 +621,6 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
             </select>
           </div>
         }
-        onRowClick={openOrder}
         renderExpandedRow={(order) => {
           const items = order.order_items || [];
           const econ = orderEconsMap.get(order.id);
