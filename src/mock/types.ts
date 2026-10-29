@@ -29,15 +29,21 @@ export interface SkuInventory5State {
   name: string;
   warehouse_id: string;
   warehouse_name: string;
-  physical: number;    // Actual items on shelf
+  // Non-overlapping Invariant: physical = sellable + reserved + unavailable (pending_qc + damaged)
+  physical: number;    // Actual items on shelf in warehouse = sellable + reserved + unavailable
+  sellable: number;    // Free stock available for new sales (alias: available)
+  available: number;   // Backward compatibility: available === sellable
   reserved: number;    // Locked for pending/processing orders
-  available: number;   // physical - reserved (safe to sell)
-  damaged: number;     // Quarantined / QC failed / defective
-  inbound: number;     // En-route from PO / supplier
+  unavailable: number; // Quarantined = pending_qc + damaged
+  pending_qc: number;  // Arrived at warehouse dock, awaiting QC inspection
+  damaged: number;     // QC failed / defective / scrap quarantine
+  in_transit: number;  // In transit between warehouses or carrier dispatch (NOT counted in physical)
+  incoming: number;    // Confirmed PO from supplier en route to dock (alias: inbound)
+  inbound: number;     // Backward compatibility: inbound === incoming
   safety_stock: number;
   reorder_level: number;
   sales_velocity: number; // Avg units sold per day
-  runway_days: number;    // available / sales_velocity
+  runway_days: number;    // sellable / sales_velocity
   status: 'Healthy' | 'Warning' | 'Critical';
 }
 
@@ -148,6 +154,25 @@ export interface MockEvent<T = unknown> {
   payload: T;
 }
 
+// ============ Business Rules Review Configuration ============
+export interface BusinessRuleConfig {
+  id: string;
+  category: 'inventory' | 'revenue' | 'delivery_pod' | 'rma';
+  name: string;
+  code: string;
+  summary: string;
+  currentStatus: 'approved' | 'assumption' | 'under_review';
+  selectedOptionId: string;
+  options: Array<{
+    id: string;
+    label: string;
+    description: string;
+    isAssumption?: boolean;
+  }>;
+  complianceNotes: string;
+  updatedAt: string;
+}
+
 // ============ Database Snapshot Structure ============
 export interface MockDatabaseSnapshot {
   schemaVersion: number;
@@ -176,6 +201,7 @@ export interface MockDatabaseSnapshot {
   journalEntries: JournalEntry[];
   journalLines: JournalLine[];
   reconciliations: MarketplaceReconciliation[];
+  businessRules?: BusinessRuleConfig[];
   auditLogs: Array<{
     id: string;
     action: string;

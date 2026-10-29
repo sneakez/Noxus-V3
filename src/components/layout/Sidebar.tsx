@@ -63,7 +63,8 @@ export type PageId =
   | 'bufferRules'
   | 'routingRules'
   | 'settings'
-  | 'flowGuide';
+  | 'flowGuide'
+  | 'businessRules';
 
 interface NavItem {
   id: PageId;
@@ -82,6 +83,7 @@ const navGroups: NavGroup[] = [
     label: 'Tổng quan',
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'businessRules', label: 'Phê Duyệt Quy Tắc (Review)', icon: ShieldCheck },
       { id: 'flowGuide', label: 'Luồng hoạt động', icon: CircuitBoard },
     ],
   },

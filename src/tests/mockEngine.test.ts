@@ -16,7 +16,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
 
     const airPro = snap.inventory5State.find(i => i.sku === 'NX-AIR-PRO');
     expect(airPro).toBeDefined();
-    expect(airPro!.available).toBe(airPro!.physical - airPro!.reserved - (airPro!.damaged || 0));
+    expect(airPro!.available).toBe(airPro!.physical - airPro!.reserved - (airPro!.unavailable || (airPro!.damaged || 0)));
   });
 
   it('verifies order data integrity: every order has valid numeric totals and items', () => {
@@ -76,8 +76,8 @@ describe('Centralized Mock Data Engine & Workflows', () => {
   it('verifies strict inventory domain invariants across mutations', () => {
     const beforeStock = mockStore.getInventory5State().find(i => i.sku === 'NX-AIR-PRO')!;
     
-    // Invariant 1: Available = Physical - Reserved - Damaged
-    expect(beforeStock.available).toBe(beforeStock.physical - beforeStock.reserved - (beforeStock.damaged || 0));
+    // Invariant 1: Available = Physical - Reserved - Unavailable
+    expect(beforeStock.available).toBe(beforeStock.physical - beforeStock.reserved - (beforeStock.unavailable || (beforeStock.damaged || 0)));
 
     // Place Order for 5 items
     const orderRes = mockStore.placeOrderAtomic(
@@ -104,7 +104,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     expect(afterOrderStock.physical).toBe(beforeStock.physical);
     expect(afterOrderStock.reserved).toBe(beforeStock.reserved + 5);
     expect(afterOrderStock.available).toBe(beforeStock.available - 5);
-    expect(afterOrderStock.available).toBe(afterOrderStock.physical - afterOrderStock.reserved - (afterOrderStock.damaged || 0));
+    expect(afterOrderStock.available).toBe(afterOrderStock.physical - afterOrderStock.reserved - (afterOrderStock.unavailable || (afterOrderStock.damaged || 0)));
 
     // Dispatch Order
     const dispatchRes = mockStore.dispatchOrder(orderRes.orderId!, 'TRACK-999');
@@ -115,7 +115,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     expect(afterDispatchStock.physical).toBe(afterOrderStock.physical - 5);
     expect(afterDispatchStock.reserved).toBe(afterOrderStock.reserved - 5);
     expect(afterDispatchStock.available).toBe(afterOrderStock.available);
-    expect(afterDispatchStock.available).toBe(afterDispatchStock.physical - afterDispatchStock.reserved - (afterDispatchStock.damaged || 0));
+    expect(afterDispatchStock.available).toBe(afterDispatchStock.physical - afterDispatchStock.reserved - (afterDispatchStock.unavailable || (afterDispatchStock.damaged || 0)));
   });
 
   it('placeOrderAtomic locks reservation and decrements available stock', () => {
@@ -241,7 +241,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
   it('verifies inventory invariant holds for all initial SKUs', () => {
     const snap = mockStore.getSnapshot();
     for (const inv of snap.inventory5State) {
-      expect(inv.available).toBe(inv.physical - inv.reserved - (inv.damaged || 0));
+      expect(inv.available).toBe(inv.physical - inv.reserved - (inv.unavailable || (inv.damaged || 0)));
     }
   });
 
@@ -259,7 +259,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     const invAfter = mockStore.getInventory5State().find(i => i.product_id === 'prod_mouse_pro')!;
     expect(invAfter.physical).toBe(invBefore.physical + 1);
     expect(invAfter.available).toBe(invBefore.available + 1);
-    expect(invAfter.available).toBe(invAfter.physical - invAfter.reserved - (invAfter.damaged || 0));
+    expect(invAfter.available).toBe(invAfter.physical - invAfter.reserved - (invAfter.unavailable || (invAfter.damaged || 0)));
 
     // 2. Double-entry refund posting
     const refundJe = mockStore.postJournalEntry(

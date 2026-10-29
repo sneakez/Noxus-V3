@@ -57,6 +57,34 @@ export type OrderStatus =
 export type PaymentStatus = 'unpaid' | 'paid' | 'partially_paid' | 'refunded';
 export type CustomerTier = 'standard' | 'silver' | 'gold' | 'platinum';
 
+// ============ Separated Lifecycle Dimensions ============
+export type DetailedOrderStatus = 'draft' | 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled';
+export type FulfillmentStatus = 'unfulfilled' | 'allocated' | 'picking' | 'packed' | 'dispatched' | 'fulfilled';
+export type DeliveryStatus = 'pending_pickup' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'delivery_failed' | 'returned_to_sender';
+export type ReturnLifecycleStatus = 'none' | 'return_requested' | 'return_approved' | 'in_transit_back' | 'qc_inspection' | 'refunded' | 'exchange_dispatched' | 'rejected';
+
+// ============ Multi-Branch RMA ============
+export type RmaBranch =
+  | 'refund'              // Hoàn tiền tiêu chuẩn
+  | 'exchange'            // Đổi hàng mới
+  | 'warranty'            // Bảo hành / Sửa chữa
+  | 'partial_return'      // Trả một phần sản phẩm
+  | 'transit_damage'      // Hàng bể vỡ / Hư hỏng vận chuyển
+  | 'returnless_refund';  // Hoàn tiền không yêu cầu trả hàng
+
+export interface PodEvidence {
+  tracking_code: string;
+  carrier_name: string;
+  delivered_at: string;
+  recipient_name: string;
+  recipient_phone?: string;
+  signature_verified: boolean;
+  notes?: string;
+  evidence_url?: string;
+  submitted_by: string;
+  verified_at: string;
+}
+
 // ============ Enterprise Types (v3.0) ============
 
 export type Channel = 'website' | 'shopee' | 'tiktok' | 'lazada' | 'manual';
@@ -387,6 +415,15 @@ export interface Order {
   must_ship_by_sla: string | null;
   hold_reason: string | null;
   fulfillment_wave_id: string | null;
+  // Segregated status dimensions & POD
+  order_status?: DetailedOrderStatus;
+  fulfillment_status?: FulfillmentStatus;
+  delivery_status?: DeliveryStatus;
+  return_status?: ReturnLifecycleStatus;
+  pod_evidence?: PodEvidence | null;
+  revenue_recognized?: boolean;
+  revenue_recognized_at?: string | null;
+  accounting_notes?: string;
   customer?: Customer | null;
   order_items?: OrderItem[];
 }
@@ -537,6 +574,10 @@ export interface ReturnRequest {
   carrier_deadline_date: string | null;
   evidence_media_id: string | null;
   is_refund_without_return: boolean;
+  rma_branch?: RmaBranch;
+  exchange_order_id?: string;
+  qc_notes?: string;
+  maker_checker_rule?: string;
   approval_status: ApprovalStatus;
   created_at: string;
   updated_at: string;

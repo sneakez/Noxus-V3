@@ -12,6 +12,12 @@ import {
   Waves,
   Warehouse as WarehouseIcon,
   Tag,
+  ShieldCheck,
+  FileCheck2,
+  Truck,
+  AlertCircle,
+  HelpCircle,
+  Sparkles,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -28,6 +34,7 @@ import {
   WAVE_STATUS_COLORS,
 } from '@/lib/utils';
 import { Drawer } from '@/components/ui/Drawer';
+import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -41,6 +48,7 @@ import type {
   FulfillmentWave,
   Warehouse,
   WaveStatus,
+  PodEvidence,
 } from '@/types';
 
 interface OrderDetailDrawerProps {
@@ -68,9 +76,30 @@ export function OrderDetailDrawer({
   const [updating, setUpdating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // POD Modal state
+  const [showPodModal, setShowPodModal] = useState(false);
+  const [podTracking, setPodTracking] = useState('');
+  const [podCarrier, setPodCarrier] = useState('Viettel Post');
+  const [podRecipient, setPodRecipient] = useState('');
+  const [podSignature, setPodSignature] = useState(true);
+  const [podNotes, setPodNotes] = useState('Khách hàng đã kiểm tra ngoại quan và ký nhận nguyên vẹn');
+
   useEffect(() => {
     if (!order) return;
     setLoading(true);
+    if (order.pod_evidence) {
+      setPodTracking(order.pod_evidence.tracking_code);
+      setPodCarrier(order.pod_evidence.carrier_name || 'Viettel Post');
+      setPodRecipient(order.pod_evidence.recipient_name);
+      setPodSignature(order.pod_evidence.signature_verified);
+      setPodNotes(order.pod_evidence.notes || '');
+    } else {
+      setPodTracking(`SPX-VN-${Math.floor(100000 + Math.random() * 900000)}`);
+      setPodRecipient(order.customer?.name || 'Khách nhận hàng');
+      setPodCarrier('Shopee Xpress (SPX)');
+      setPodNotes('Khách hàng đã kiểm tra ngoại quan và ký nhận nguyên vẹn');
+      setPodSignature(true);
+    }
     Promise.all([
       supabase.from('order_items').select('*').eq('order_id', order.id),
       supabase
@@ -95,15 +124,24 @@ export function OrderDetailDrawer({
 
   async function updateStatus(newStatus: OrderStatus) {
     if (!order) return;
+
+    // Delivery requires Verified Proof of Delivery (POD)
+    if (newStatus === 'delivered') {
+      setShowPodModal(true);
+      return;
+    }
+
     setUpdating(true);
     const oldStatus = order.status;
     const now = new Date().toISOString();
 
     if (newStatus === 'shipped') {
-      const trackingNumber = `VNPOST-${Date.now().toString().slice(-6)}`;
+      const trackingNumber = `SPX-VN-${Date.now().toString().slice(-6)}`;
       mockStore.dispatchOrder(order.id, trackingNumber);
       await supabase.from('orders').update({
         status: 'shipped',
+        fulfillment_status: 'dispatched',
+        delivery_status: 'in_transit',
         shipped_at: now,
         notes: (order.notes ? order.notes + ' | ' : '') + `Vận đơn: ${trackingNumber}`
       }).eq('id', order.id);
@@ -119,8 +157,11 @@ export function OrderDetailDrawer({
         return;
       }
     } else {
-      const updates: Record<string, unknown> = { status: newStatus, updated_at: now };
-      if (newStatus === 'delivered') updates.delivered_at = now;
+      const updates: Record<string, unknown> = {
+        status: newStatus,
+        fulfillment_status: newStatus === 'processing' ? 'allocated' : 'unfulfilled',
+        updated_at: now
+      };
       await supabase.from('orders').update(updates).eq('id', order.id);
     }
 
@@ -133,6 +174,56 @@ export function OrderDetailDrawer({
     });
 
     toast(`Đã cập nhật trạng thái đơn: ${ORDER_STATUS_LABELS[newStatus]}`, 'success');
+    setUpdating(false);
+    onUpdated();
+  }
+
+  async function handlePodSubmit() {
+    if (!order) return;
+    if (!podTracking.trim()) {
+      toast('Bắt buộc nhập mã vận đơn đối soát của hãng vận chuyển!', 'error');
+      return;
+    }
+    if (!podRecipient.trim()) {
+      toast('Bắt buộc nhập tên người ký nhận hàng!', 'error');
+      return;
+    }
+
+    setUpdating(true);
+    const now = new Date().toISOString();
+    const podData: PodEvidence = {
+      tracking_code: podTracking.trim(),
+      carrier_name: podCarrier,
+      delivered_at: now,
+      recipient_name: podRecipient.trim(),
+      signature_verified: podSignature,
+      notes: podNotes,
+      submitted_by: `${activeRole.toUpperCase()} (${activeTenant?.name || 'NexusOMS'})`,
+      verified_at: now
+    };
+
+    mockStore.markDeliveredWithPOD(order.id, podData);
+    await supabase.from('orders').update({
+      status: 'delivered',
+      delivery_status: 'delivered',
+      fulfillment_status: 'fulfilled',
+      delivered_at: now,
+      pod_evidence: podData,
+      revenue_recognized: true,
+      revenue_recognized_at: now
+    }).eq('id', order.id);
+
+    await supabase.from('order_status_log').insert({
+      tenant_id: activeTenant!.id,
+      order_id: order.id,
+      from_status: order.status,
+      to_status: 'delivered',
+      note: `Xác thực POD thành công [${podTracking}] — Ghi nhận Doanh thu Có 511 [ASSUMPTION: FOB Destination]`,
+      created_at: now
+    });
+
+    toast('✓ Xác thực POD thành công: Đơn hàng hoàn tất & Ghi nhận Doanh thu Có 511 [ASSUMPTION]', 'success');
+    setShowPodModal(false);
     setUpdating(false);
     onUpdated();
   }
@@ -204,20 +295,57 @@ export function OrderDetailDrawer({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Status + payment badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={`badge ${ORDER_STATUS_COLORS[order.status]}`}>
-                {ORDER_STATUS_LABELS[order.status]}
-              </span>
-              <span className={`badge ${PAYMENT_STATUS_COLORS[order.payment_status]}`}>
-                {PAYMENT_STATUS_LABELS[order.payment_status]}
-              </span>
-              {order.payment_method && (
-                <span className="badge bg-ink-100 text-ink-600 border-ink-200">
-                  <CreditCard size={12} />
-                  {order.payment_method.replace('_', ' ')}
+            {/* 5-Dimensional Lifecycle Separation */}
+            <div className="card p-4 bg-ink-50/70 border border-ink-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-ink-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-brand-600" />
+                  Phân định 5 Trạng Thái Độc Lập
                 </span>
-              )}
+                <span className="text-[11px] text-ink-400 font-mono">ID: {order.id.slice(0, 10)}</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                <div className="p-2 rounded-lg bg-white border border-ink-100 shadow-2xs">
+                  <span className="text-[10px] text-ink-400 font-semibold block uppercase">1. Đơn hàng</span>
+                  <span className={cn('badge text-[10px] mt-1 px-1.5 py-0.5', ORDER_STATUS_COLORS[order.status])}>
+                    {ORDER_STATUS_LABELS[order.status]}
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-white border border-ink-100 shadow-2xs">
+                  <span className="text-[10px] text-ink-400 font-semibold block uppercase">2. Thực hiện kho</span>
+                  <span className="badge text-[10px] mt-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                    {order.status === 'pending'
+                      ? 'Chưa xuất'
+                      : order.status === 'processing'
+                        ? 'Đã giữ tồn'
+                        : order.status === 'shipped'
+                          ? 'Đã xuất kho'
+                          : 'Hoàn tất kho'}
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-white border border-ink-100 shadow-2xs">
+                  <span className="text-[10px] text-ink-400 font-semibold block uppercase">3. Vận chuyển</span>
+                  <span className={cn(
+                    'badge text-[10px] mt-1 px-1.5 py-0.5',
+                    order.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    order.status === 'shipped' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-ink-100 text-ink-600'
+                  )}>
+                    {order.status === 'delivered' ? 'Đã giao (POD ✓)' : order.status === 'shipped' ? 'Đang trung chuyển' : 'Chờ bưu tá'}
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-white border border-ink-100 shadow-2xs">
+                  <span className="text-[10px] text-ink-400 font-semibold block uppercase">4. Thanh toán</span>
+                  <span className={cn('badge text-[10px] mt-1 px-1.5 py-0.5', PAYMENT_STATUS_COLORS[order.payment_status])}>
+                    {PAYMENT_STATUS_LABELS[order.payment_status]}
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-white border border-ink-100 shadow-2xs col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-ink-400 font-semibold block uppercase">5. Hậu mãi / RMA</span>
+                  <span className="badge text-[10px] mt-1 px-1.5 py-0.5 bg-ink-50 text-ink-600 border-ink-200">
+                    {order.return_status === 'return_requested' ? 'Yêu cầu RMA' : 'Bình thường'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Status workflow & Actions based on State Machine */}
@@ -331,17 +459,30 @@ export function OrderDetailDrawer({
                     )}
 
                     {order.status === 'shipped' && (
-                      <>
-                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'warehouse' || activeRole === 'manager') && (
+                      <div className="w-full space-y-2">
+                        <div className="flex flex-wrap gap-2.5">
                           <button
                             disabled={updating}
-                            onClick={() => updateStatus('delivered')}
-                            className="btn-primary text-xs py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => setShowPodModal(true)}
+                            className="btn-primary text-xs py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1.5 shadow-xs"
                           >
-                            🚚 Giao hàng thành công (Đã nhận)
+                            <FileCheck2 size={14} />
+                            <span>
+                              {activeRole === 'warehouse'
+                                ? 'Xác thực Bằng chứng Giao hàng (POD Bắt buộc)'
+                                : '🚚 Giao hàng thành công (Xác nhận POD)'}
+                            </span>
                           </button>
+                        </div>
+                        {activeRole === 'warehouse' && (
+                          <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+                            <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                            <p>
+                              <strong>Ràng buộc bảo mật Kho:</strong> Nhân viên Kho không được tự ý đánh dấu đơn hoàn tất nếu thiếu bằng chứng đối soát vận chuyển (POD). Bắt buộc nhập mã vận đơn đối soát hoặc chữ ký xác nhận.
+                            </p>
+                          </div>
                         )}
-                      </>
+                      </div>
                     )}
 
                     {order.status === 'delivered' && (
@@ -388,6 +529,152 @@ export function OrderDetailDrawer({
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* POD Evidence Section */}
+            {(order.pod_evidence || order.status === 'delivered') && (
+              <div className="card p-5 bg-emerald-50/60 border border-emerald-200/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                      <FileCheck2 size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wide">
+                        Bằng chứng Giao hàng (POD Verified)
+                      </h4>
+                      <p className="text-[11px] text-emerald-700">Đã đối soát xác thực với đơn vị vận chuyển</p>
+                    </div>
+                  </div>
+                  <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold text-[11px]">
+                    ✓ Hợp lệ (POD Attached)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs pt-1">
+                  <div className="p-2.5 rounded-lg bg-white/90 border border-emerald-100">
+                    <span className="text-[10px] text-ink-400 block font-medium uppercase">Mã vận đơn đối soát</span>
+                    <span className="font-mono font-bold text-ink-900 mt-0.5 block">
+                      {order.pod_evidence?.tracking_code || 'SPX-VN-88201'}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/90 border border-emerald-100">
+                    <span className="text-[10px] text-ink-400 block font-medium uppercase">Đơn vị vận chuyển</span>
+                    <span className="font-semibold text-ink-900 mt-0.5 block">
+                      {order.pod_evidence?.carrier_name || 'Shopee Xpress (SPX)'}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/90 border border-emerald-100">
+                    <span className="text-[10px] text-ink-400 block font-medium uppercase">Người ký nhận</span>
+                    <span className="font-semibold text-ink-900 mt-0.5 block">
+                      {order.pod_evidence?.recipient_name || order.customer?.name || 'Khách nhận'}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/90 border border-emerald-100">
+                    <span className="text-[10px] text-ink-400 block font-medium uppercase">Thời gian đối soát</span>
+                    <span className="text-ink-700 mt-0.5 block">
+                      {formatDateTime(order.pod_evidence?.delivered_at || order.delivered_at || order.updated_at)}
+                    </span>
+                  </div>
+                </div>
+
+                {order.pod_evidence?.notes && (
+                  <p className="text-[11px] text-emerald-800 bg-white/70 p-2 rounded-md border border-emerald-100">
+                    <strong>Ghi chú bưu tá:</strong> {order.pod_evidence.notes}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Accounting Simulation & Assumptions Section */}
+            <div className="card p-5 border-brand-200/80 bg-brand-50/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign size={16} className="text-brand-600" />
+                  <span className="text-xs font-bold text-ink-900 uppercase tracking-wide">
+                    Mô phỏng Kế toán & Sự kiện Doanh thu
+                  </span>
+                </div>
+                <span className="badge bg-amber-50 text-amber-700 border-amber-300 text-[10px] font-semibold">
+                  [ASSUMPTION: FOB Destination]
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                {/* Event 1 */}
+                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">Tạo đơn: Cam kết giá trị (Order Value)</span>
+                      <span className="font-bold text-ink-700">{formatCurrency(order.total)}</span>
+                    </div>
+                    <p className="text-[11px] text-ink-500 mt-0.5">
+                      Cam kết mua bán giữa hai bên. <strong>Chưa đủ điều kiện ghi nhận Doanh thu Có 511</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Event 2 */}
+                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
+                  <div className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">Khách thanh toán trước (Pre-payment)</span>
+                      <span className="badge bg-amber-50 text-amber-700 border-amber-200 text-[9px]">ASSUMPTION</span>
+                    </div>
+                    <p className="text-[11px] text-ink-600 mt-0.5">
+                      Hạch toán: <code className="font-mono text-ink-800">Nợ 112 (Tiền gửi) / Có 131 (Khách trả trước)</code>. Tiền về tài khoản nhưng chưa ghi Có 511.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Event 3 */}
+                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    3
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">Xuất kho: Giá vốn hàng bán (COGS)</span>
+                      <span className="badge bg-amber-50 text-amber-700 border-amber-200 text-[9px]">ASSUMPTION</span>
+                    </div>
+                    <p className="text-[11px] text-ink-600 mt-0.5">
+                      Hạch toán: <code className="font-mono text-ink-800">Nợ 632 / Có 156</code> theo giá vốn bình quân di động (MAC) ngay khi bàn giao đơn vị vận chuyển.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Event 4 */}
+                <div className={cn(
+                  'flex items-start gap-2.5 p-2 rounded-lg border transition-colors',
+                  order.status === 'delivered' ? 'bg-emerald-50/70 border-emerald-300' : 'bg-white border-ink-100'
+                )}>
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    4
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">
+                        Đối soát POD: Ghi nhận Doanh thu Chính thức
+                      </span>
+                      <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 text-[9px]">
+                        {order.status === 'delivered' ? 'Đã kích hoạt' : 'Chờ giao POD'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-ink-600 mt-0.5">
+                      Hạch toán: <code className="font-mono text-ink-800">Nợ 131 / Có 511</code> ({formatCurrency(order.total)}).
+                      <span className="text-amber-700 block mt-0.5 font-medium">
+                        ⚠️ [ASSUMPTION]: Doanh thu chỉ được ghi nhận khi có Bằng chứng giao hàng POD xác nhận theo nguyên tắc FOB Điểm đến.
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -656,6 +943,118 @@ export function OrderDetailDrawer({
           </div>
         )}
       </Drawer>
+
+      {/* Proof of Delivery (POD) Verification Modal */}
+      <Modal
+        open={showPodModal}
+        onClose={() => setShowPodModal(false)}
+        title="Xác thực Bằng chứng Giao hàng (POD)"
+        subtitle={`Đơn hàng #${order.order_number} — Ràng buộc ghi nhận Doanh thu Có 511`}
+      >
+        <div className="space-y-4 py-2">
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 flex items-start gap-2">
+            <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Kiểm soát chống gian lận & Phân quyền Kho:</p>
+              <p className="text-amber-800 mt-0.5">
+                Nhân viên Kho hoặc Quản trị viên bắt buộc phải đính kèm Bằng chứng Giao hàng (Proof of Delivery) từ đối tác vận chuyển để hoàn tất đơn và kích hoạt hạch toán Có 511.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-ink-700 mb-1">
+                Mã vận đơn đối soát (Carrier Tracking Code) *
+              </label>
+              <input
+                type="text"
+                value={podTracking}
+                onChange={(e) => setPodTracking(e.target.value)}
+                placeholder="VD: SPX-VN-88201 hoặc VTP-992144"
+                className="input text-sm w-full font-mono"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 mb-1">
+                  Đơn vị vận chuyển
+                </label>
+                <select
+                  value={podCarrier}
+                  onChange={(e) => setPodCarrier(e.target.value)}
+                  className="input text-sm w-full"
+                >
+                  <option value="Shopee Xpress (SPX)">Shopee Xpress (SPX)</option>
+                  <option value="Viettel Post">Viettel Post</option>
+                  <option value="Giao Hàng Nhanh (GHN)">Giao Hàng Nhanh (GHN)</option>
+                  <option value="Giao Hàng Tiết Kiệm (GHTK)">Giao Hàng Tiết Kiệm (GHTK)</option>
+                  <option value="J&T Express">J&T Express</option>
+                  <option value="Đội xe nội bộ Nexus">Đội xe nội bộ Nexus</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 mb-1">
+                  Họ tên người nhận / ký nhận *
+                </label>
+                <input
+                  type="text"
+                  value={podRecipient}
+                  onChange={(e) => setPodRecipient(e.target.value)}
+                  placeholder="Họ tên người nhận"
+                  className="input text-sm w-full"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-ink-700 mb-1">
+                Ghi chú đối soát hoặc tình trạng kiện hàng
+              </label>
+              <input
+                type="text"
+                value={podNotes}
+                onChange={(e) => setPodNotes(e.target.value)}
+                placeholder="VD: Khách hàng đồng kiểm ngoại quan nguyên vẹn"
+                className="input text-sm w-full"
+              />
+            </div>
+
+            <label className="flex items-center gap-2 p-3 bg-ink-50 rounded-lg border border-ink-200 cursor-pointer text-xs">
+              <input
+                type="checkbox"
+                checked={podSignature}
+                onChange={(e) => setPodSignature(e.target.checked)}
+                className="rounded border-ink-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="font-medium text-ink-800">
+                Xác thực chữ ký điện tử / Ảnh biên bản giao nhận đã kiểm tra hợp lệ
+              </span>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-ink-100">
+            <button
+              type="button"
+              onClick={() => setShowPodModal(false)}
+              className="btn-secondary text-xs"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              disabled={updating}
+              onClick={handlePodSubmit}
+              className="btn-primary text-xs bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1.5"
+            >
+              <FileCheck2 size={14} />
+              <span>Xác nhận POD & Ghi nhận Doanh thu</span>
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmDialog
         open={confirmDelete}

@@ -1,5 +1,19 @@
 import { useEffect, useState } from 'react';
-import { PackageCheck, Plus, CheckCircle2, XCircle, ArrowRight, ShieldCheck, DollarSign } from 'lucide-react';
+import {
+  PackageCheck,
+  Plus,
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  ShieldCheck,
+  DollarSign,
+  RefreshCw,
+  Wrench,
+  AlertTriangle,
+  FileCheck2,
+  Sparkles,
+  Truck,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { mockStore } from '@/mock/store';
 import { useAuth } from '@/providers/AuthProvider';
@@ -8,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/cn';
 import {
   formatCurrency,
   formatDate,
@@ -16,7 +31,40 @@ import {
   APPROVAL_STATUS_LABELS,
   APPROVAL_STATUS_COLORS,
 } from '@/lib/utils';
-import type { ReturnRequest, Order } from '@/types';
+import type { ReturnRequest, Order, RmaBranch } from '@/types';
+
+const RMA_BRANCH_LABELS: Record<RmaBranch, { label: string; color: string; desc: string }> = {
+  refund: {
+    label: 'Hoàn tiền tiêu chuẩn',
+    color: 'bg-blue-50 text-blue-700 border-blue-200',
+    desc: 'Thu hồi hàng về kho → QC → Maker/Checker → Chi hoàn tiền',
+  },
+  exchange: {
+    label: 'Đổi hàng mới',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    desc: 'Thu hồi hàng cũ → QC Đạt → Xuất đơn hàng mới thay thế',
+  },
+  warranty: {
+    label: 'Bảo hành / Sửa chữa',
+    color: 'bg-violet-50 text-violet-700 border-violet-200',
+    desc: 'Tiếp nhận thiết bị → Kiểm tra kỹ thuật → Sửa chữa → Trả khách',
+  },
+  partial_return: {
+    label: 'Trả một phần',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    desc: 'Thu hồi một phần số lượng dòng hàng → QC → Hoàn tiền tương ứng',
+  },
+  transit_damage: {
+    label: 'Vỡ do vận chuyển (Scrap)',
+    color: 'bg-rose-50 text-rose-700 border-rose-200',
+    desc: 'Biên bản bưu tá xác nhận hư hại → Chuyển thẳng kho phế phẩm → Bồi hoàn',
+  },
+  returnless_refund: {
+    label: 'Hoàn tiền không trả hàng',
+    color: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+    desc: 'Bỏ qua nhận kho & QC → Maker/Checker duyệt chi tiền ngay',
+  },
+};
 
 interface ReturnsPageProps {
   search: string;
@@ -87,20 +135,40 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
       approval_status: 'pending'
     }).eq('id', id);
 
-    toast(isGood ? '✓ QC Đạt chuẩn: Hàng đã tự động nhập lại kho khả dụng (Restock)' : '⚠️ QC Không đạt: Hàng đã chuyển vào kho cách ly phế phẩm (Scrap)', 'success');
+    toast(
+      isGood
+        ? '✓ QC Đạt chuẩn: Hàng đã tự động nhập lại kho khả dụng (Sellable Restock)'
+        : '⚠️ QC Không đạt: Hàng đã chuyển vào kho cách ly phế phẩm (Damaged Scrap)',
+      'success'
+    );
     load();
   }
 
-  // 4. Maker / Checker Approvals
+  // 4. Dispatch Replacement (for Exchange branch)
+  async function handleDispatchReplacement(r: ReturnRequest) {
+    await supabase.from('return_requests').update({
+      status: 'refunded',
+      exchange_order_id: `EXC-${Date.now().toString().slice(-4)}`
+    }).eq('id', r.id);
+    toast(`✓ Đã tạo đơn xuất hàng bù mới thay thế cho đơn #${r.order?.order_number}`, 'success');
+    load();
+  }
+
+  // 5. Maker / Checker Approvals
   async function handleApprove(id: string, level: 'maker' | 'checker') {
     const status = level === 'maker' ? 'maker_approved' : 'checker_approved';
     const { error } = await supabase.from('return_requests').update({ approval_status: status }).eq('id', id);
     if (error) { toast('Phê duyệt thất bại', 'error'); return; }
-    toast(level === 'maker' ? '✓ Maker (CS/Kho) đã duyệt đề xuất hoàn tiền' : '✓ Checker (Kế toán trưởng) đã phê duyệt hoàn tiền chính thức', 'success');
+    toast(
+      level === 'maker'
+        ? '✓ Maker (CS/Kho) đã duyệt đề xuất hoàn tiền'
+        : '✓ Checker (Kế toán trưởng) đã phê duyệt hoàn tiền chính thức',
+      'success'
+    );
     load();
   }
 
-  // 5. Complete Refund & Post Ledger
+  // 6. Complete Refund & Post Ledger
   async function handleCompleteRefund(r: ReturnRequest) {
     const now = new Date().toISOString();
     await supabase.from('return_requests').update({
@@ -115,7 +183,7 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
         entry_number: `JE-REFUND-${Date.now().toString().slice(-6)}`,
         reference_type: 'return',
         reference_id: r.id,
-        description: `Hoàn tiền khách hàng theo phiếu RMA #${r.return_number}`,
+        description: `Hoàn tiền khách hàng theo phiếu RMA #${r.return_number} [Nhánh: ${r.rma_branch || 'refund'}]`,
         posted_by: 'usr_finance_01',
       },
       [
@@ -133,13 +201,13 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-ink-900 tracking-tight">Quản Lý Đổi Trả / RMA</h1>
-          <p className="text-sm text-ink-500 mt-0.5">
-            Quy trình khép kín: Tiếp nhận → Nhận kho → Kiểm định QC → Maker/Checker → Hoàn tiền & Sổ kép
+          <h1 className="text-xl font-bold text-ink-900 tracking-tight">Hệ Thống Đổi Trả Đa Nhánh (Multi-Branch RMA Engine)</h1>
+          <p className="text-xs text-ink-500 mt-0.5">
+            6 Nhánh xử lý: Hoàn tiền · Đổi hàng · Bảo hành · Trả 1 phần · Hàng vỡ vận chuyển · Returnless Refund (Bỏ qua QC)
           </p>
         </div>
-        <button onClick={() => { loadOrders(); setShowModal(true); }} className="btn-primary">
-          <Plus size={16} /> Tạo yêu cầu RMA
+        <button onClick={() => { loadOrders(); setShowModal(true); }} className="btn-primary text-xs">
+          <Plus size={16} /> Tạo yêu cầu RMA đa nhánh
         </button>
       </div>
 
@@ -162,125 +230,158 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
                 <tr>
                   <th className="text-left px-5 py-3.5 font-semibold">Mã RMA</th>
                   <th className="text-left px-5 py-3.5 font-semibold">Đơn hàng</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Phân loại</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Trạng thái kho / QC</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Phê duyệt hoàn tiền</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Nhánh RMA</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Kho & QC</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Phê duyệt (Maker/Checker)</th>
                   <th className="text-right px-5 py-3.5 font-semibold">Tiền hoàn</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Ngày tạo</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Thao tác nghiệp vụ</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Hành động theo nhánh</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
-                {filtered.map((r) => (
-                  <tr key={r.id} className="hover:bg-ink-50/50 transition-colors">
-                    <td className="px-5 py-4 font-bold text-ink-900 font-mono">
-                      {r.return_number}
-                    </td>
-                    <td className="px-5 py-4 text-ink-700 font-medium">
-                      {r.order?.order_number ?? '—'}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-xs font-medium text-ink-600 bg-ink-100 px-2.5 py-1 rounded-md">
-                        {r.return_type === 'failed_delivery_rts' ? 'Hoàn giao thất bại (RTS)' : 'Khách yêu cầu (RMA)'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`badge ${RETURN_STATUS_COLORS[r.status] ?? 'bg-ink-100 text-ink-600'}`}>
-                        {RETURN_STATUS_LABELS[r.status] ?? r.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`badge ${APPROVAL_STATUS_COLORS[r.approval_status]}`}>
-                        {APPROVAL_STATUS_LABELS[r.approval_status]}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right font-bold tabular-nums text-ink-900">
-                      {formatCurrency(Number(r.refund_amount || 0))}
-                    </td>
-                    <td className="px-5 py-4 text-ink-500 text-xs">
-                      {formatDate(r.created_at)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {/* 1. Tiếp nhận */}
-                        {r.status === 'pending' && (
-                          <button
-                            onClick={() => handleAccept(r.id)}
-                            className="px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition-colors"
-                          >
-                            Tiếp nhận RMA
-                          </button>
-                        )}
+                {filtered.map((r) => {
+                  const branchKey = (r.rma_branch || 'refund') as RmaBranch;
+                  const branchInfo = RMA_BRANCH_LABELS[branchKey] || RMA_BRANCH_LABELS.refund;
+                  const isReturnless = branchKey === 'returnless_refund';
+                  const isExchange = branchKey === 'exchange';
+                  const isWarranty = branchKey === 'warranty';
+                  const isTransitDamage = branchKey === 'transit_damage';
+                  const amount = Number(r.refund_amount || 0);
+                  const requiresChecker = amount >= 1000000;
 
-                        {/* 2. Nhận hàng tại kho */}
-                        {r.status === 'approved' && (
-                          <button
-                            onClick={() => handleReceive(r.id)}
-                            className="px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors"
-                          >
-                            Đã nhận hàng tại kho
-                          </button>
-                        )}
-
-                        {/* 3. QC Kiểm định (Restock vs Scrap) */}
-                        {r.status === 'received' && (
-                          <>
-                            <button
-                              onClick={() => handleQC(r.id, true)}
-                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1"
-                              title="Hàng nguyên vẹn: Nhập lại kho khả dụng"
-                            >
-                              <CheckCircle2 size={12} /> QC Đạt (Restock)
-                            </button>
-                            <button
-                              onClick={() => handleQC(r.id, false)}
-                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center gap-1"
-                              title="Hàng lỗi/hỏng: Chuyển kho phế phẩm"
-                            >
-                              <XCircle size={12} /> QC Lỗi (Scrap)
-                            </button>
-                          </>
-                        )}
-
-                        {/* 4. Maker Duyệt */}
-                        {(r.status === 'qc_passed' || r.status === 'qc_failed' || r.status === 'quality_check') && r.approval_status === 'pending' && (
-                          <button
-                            onClick={() => handleApprove(r.id, 'maker')}
-                            className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-1"
-                          >
-                            <ShieldCheck size={12} /> Maker Duyệt
-                          </button>
-                        )}
-
-                        {/* 5. Checker Duyệt */}
-                        {r.approval_status === 'maker_approved' && (
-                          <button
-                            onClick={() => handleApprove(r.id, 'checker')}
-                            className="px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors flex items-center gap-1"
-                          >
-                            <ShieldCheck size={12} /> Checker Duyệt
-                          </button>
-                        )}
-
-                        {/* 6. Hoàn tiền hoàn tất */}
-                        {r.approval_status === 'checker_approved' && r.status !== 'refunded' && (
-                          <button
-                            onClick={() => handleCompleteRefund(r)}
-                            className="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-colors flex items-center gap-1"
-                          >
-                            <DollarSign size={12} /> Chi tiền hoàn
-                          </button>
-                        )}
-
-                        {r.status === 'refunded' && (
-                          <span className="text-xs text-emerald-600 font-semibold">
-                            ✓ Đã hoàn tất & Ghi sổ
+                  return (
+                    <tr key={r.id} className="hover:bg-ink-50/50 transition-colors">
+                      <td className="px-5 py-4 font-bold text-ink-900 font-mono">
+                        {r.return_number}
+                      </td>
+                      <td className="px-5 py-4 text-ink-700 font-medium">
+                        {r.order?.order_number ?? '—'}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={cn('badge text-[11px] font-semibold border', branchInfo.color)}>
+                          {branchInfo.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {isReturnless ? (
+                          <span className="badge bg-cyan-50 text-cyan-800 border-cyan-200 text-[10px]">
+                            ⚡ Bỏ qua kho & QC
+                          </span>
+                        ) : isTransitDamage ? (
+                          <span className="badge bg-rose-50 text-rose-800 border-rose-200 text-[10px]">
+                            ⚠️ Hàng vỡ kho Damaged
+                          </span>
+                        ) : (
+                          <span className={`badge ${RETURN_STATUS_COLORS[r.status] ?? 'bg-ink-100 text-ink-600'}`}>
+                            {RETURN_STATUS_LABELS[r.status] ?? r.status}
                           </span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="space-y-1">
+                          <span className={`badge ${APPROVAL_STATUS_COLORS[r.approval_status]}`}>
+                            {APPROVAL_STATUS_LABELS[r.approval_status]}
+                          </span>
+                          <p className="text-[10px] text-ink-400">
+                            {requiresChecker ? 'Cần Checker (>= 1M)' : 'Maker duyệt trực tiếp (< 1M)'}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-right font-bold tabular-nums text-ink-900">
+                        {formatCurrency(amount)}
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          {/* 1. Tiếp nhận */}
+                          {r.status === 'pending' && !isReturnless && (
+                            <button
+                              onClick={() => handleAccept(r.id)}
+                              className="px-2.5 py-1 rounded-md text-xs font-medium border border-ink-200 hover:bg-ink-100 text-ink-700"
+                            >
+                              Tiếp nhận
+                            </button>
+                          )}
+
+                          {/* 2. Nhận kho */}
+                          {r.status === 'approved' && !isReturnless && (
+                            <button
+                              onClick={() => handleReceive(r.id)}
+                              className="px-2.5 py-1 rounded-md text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
+                            >
+                              Nhận kiện tại kho
+                            </button>
+                          )}
+
+                          {/* 3. Kiểm định QC */}
+                          {(r.status === 'received' || r.status === 'quality_check') && !isReturnless && (
+                            <>
+                              <button
+                                onClick={() => handleQC(r.id, true)}
+                                className="px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800 hover:bg-emerald-200 flex items-center gap-1"
+                              >
+                                <CheckCircle2 size={12} /> QC Đạt (Restock)
+                              </button>
+                              <button
+                                onClick={() => handleQC(r.id, false)}
+                                className="px-2 py-1 rounded-md text-xs font-semibold bg-rose-100 text-rose-800 hover:bg-rose-200 flex items-center gap-1"
+                              >
+                                <XCircle size={12} /> QC Lỗi (Scrap)
+                              </button>
+                            </>
+                          )}
+
+                          {/* 4. Nhánh Đổi hàng: Sau QC đạt, cho phép xuất đơn bù */}
+                          {isExchange && (r.status === 'qc_passed' || r.status === 'approved') && r.status !== 'refunded' && (
+                            <button
+                              onClick={() => handleDispatchReplacement(r)}
+                              className="px-2.5 py-1 rounded-md text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-1"
+                            >
+                              <Truck size={12} /> Xuất đơn đổi hàng
+                            </button>
+                          )}
+
+                          {/* 5. Phê duyệt Maker / Checker */}
+                          {(r.status === 'qc_passed' || r.status === 'qc_failed' || isReturnless || isTransitDamage) &&
+                            r.approval_status === 'pending' && (
+                              <button
+                                onClick={() => handleApprove(r.id, 'maker')}
+                                className="px-2.5 py-1 rounded-md text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100"
+                              >
+                                Maker Duyệt
+                              </button>
+                            )}
+
+                          {r.approval_status === 'maker_approved' && requiresChecker && (
+                            <button
+                              onClick={() => handleApprove(r.id, 'checker')}
+                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-violet-600 text-white hover:bg-violet-700 flex items-center gap-1"
+                            >
+                              <ShieldCheck size={12} /> Checker Duyệt (&ge; 1M)
+                            </button>
+                          )}
+
+                          {/* 6. Chi tiền hoàn */}
+                          {((r.approval_status === 'checker_approved') ||
+                            (r.approval_status === 'maker_approved' && !requiresChecker)) &&
+                            r.status !== 'refunded' &&
+                            !isExchange && (
+                              <button
+                                onClick={() => handleCompleteRefund(r)}
+                                className="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm flex items-center gap-1"
+                              >
+                                <DollarSign size={12} /> Chi tiền hoàn
+                              </button>
+                            )}
+
+                          {r.status === 'refunded' && (
+                            <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                              <CheckCircle2 size={13} /> {isExchange ? 'Đã xuất đổi' : 'Đã hoàn tất & Ghi sổ'}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -304,7 +405,7 @@ function NewReturnModal({ open, onClose, orders, onSaved }: {
 }) {
   const toast = useToast();
   const [orderId, setOrderId] = useState('');
-  const [returnType, setReturnType] = useState<'customer_rma' | 'failed_delivery_rts'>('customer_rma');
+  const [rmaBranch, setRmaBranch] = useState<RmaBranch>('refund');
   const [reason, setReason] = useState('');
   const [refundAmount, setRefundAmount] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -312,57 +413,114 @@ function NewReturnModal({ open, onClose, orders, onSaved }: {
   async function handleSave() {
     if (!orderId) { toast('Vui lòng chọn đơn hàng cần đổi trả', 'error'); return; }
     setSaving(true);
-    const { data: rn } = await supabase.rpc('next_return_number');
-    const { error } = await supabase.from('return_requests').insert({
-      return_number: rn ?? `RMA-${Date.now().toString().slice(-6)}`,
-      order_id: orderId,
-      return_type: returnType,
-      reason: reason || 'Khách yêu cầu đổi trả',
-      refund_amount: refundAmount,
-      status: 'pending',
-      approval_status: 'pending',
+
+    const res = mockStore.createMultiBranchRma({
+      orderId,
+      rmaBranch,
+      reason: reason || `Yêu cầu RMA nhánh ${rmaBranch}`,
+      refundAmount,
+      notes: `Tạo RMA qua giao diện đa nhánh`,
     });
+
     setSaving(false);
-    if (error) { toast('Lỗi tạo yêu cầu: ' + error.message, 'error'); return; }
-    toast('✓ Đã tạo yêu cầu đổi trả RMA thành công', 'success');
+    if (!res.success) {
+      toast('Tạo RMA thất bại', 'error');
+      return;
+    }
+    toast(`✓ Đã tạo yêu cầu RMA thành công: ${res.rmaNumber}`, 'success');
     onSaved();
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Tạo Yêu Cầu Đổi Trả Mới (RMA)" size="md"
-      footer={<><button onClick={onClose} className="btn-secondary">Hủy bỏ</button>
-        <button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? <Spinner size={16} /> : null} Tạo yêu cầu</button></>}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Tạo Yêu Cầu Đổi Trả Đa Nhánh (Multi-Branch RMA)"
+      size="md"
+      footer={
+        <>
+          <button onClick={onClose} className="btn-secondary">Hủy bỏ</button>
+          <button onClick={handleSave} disabled={saving} className="btn-primary">
+            {saving ? <Spinner size={16} /> : null} Tạo yêu cầu RMA
+          </button>
+        </>
+      }
+    >
       <div className="space-y-4">
         <div>
           <label className="label">Đơn hàng liên quan *</label>
-          <select value={orderId} onChange={(e) => {
-            const id = e.target.value;
-            setOrderId(id);
-            const ord = orders.find(o => o.id === id);
-            if (ord) setRefundAmount(Number(ord.total || ord.total_amount || 0));
-          }} className="input">
+          <select
+            value={orderId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setOrderId(id);
+              const ord = orders.find(o => o.id === id);
+              if (ord) setRefundAmount(Number(ord.total || ord.total_amount || 0));
+            }}
+            className="input font-medium"
+          >
             <option value="">Chọn đơn hàng...</option>
             {orders.map((o) => (
               <option key={o.id} value={o.id}>
-                {o.order_number} — {formatCurrency(Number(o.total || o.total_amount || 0))}
+                {o.order_number} — {formatCurrency(Number(o.total || o.total_amount || 0))} ({o.status})
               </option>
             ))}
           </select>
         </div>
+
         <div>
-          <label className="label">Loại đổi trả</label>
-          <select value={returnType} onChange={(e) => setReturnType(e.target.value as 'customer_rma' | 'failed_delivery_rts')} className="input">
-            <option value="customer_rma">Khách hàng yêu cầu đổi trả (Customer RMA)</option>
-            <option value="failed_delivery_rts">Giao hàng thất bại / Trả về người gửi (RTS)</option>
+          <label className="label">Phân loại 6 Nhánh RMA nghiệp vụ *</label>
+          <select
+            value={rmaBranch}
+            onChange={(e) => {
+              const b = e.target.value as RmaBranch;
+              setRmaBranch(b);
+              if (b === 'exchange') {
+                setRefundAmount(0); // Exchange doesn't refund cash, replaces SKU
+              } else {
+                const ord = orders.find(o => o.id === orderId);
+                if (ord) setRefundAmount(Number(ord.total || 0));
+              }
+            }}
+            className="input font-semibold"
+          >
+            <option value="refund">1. Hoàn tiền tiêu chuẩn (Full Refund: Thu hồi → QC → Chi tiền)</option>
+            <option value="exchange">2. Đổi hàng mới (Replacement: QC Đạt → Xuất đơn bù mới)</option>
+            <option value="warranty">3. Bảo hành / Sửa chữa (Warranty: Nhận thiết bị → Sửa → Trả khách)</option>
+            <option value="partial_return">4. Trả một phần (Partial Return: Hoàn một phần giá trị đơn)</option>
+            <option value="transit_damage">5. Vỡ do vận chuyển (Transit Damage Scrap: Chuyển thẳng kho hỏng)</option>
+            <option value="returnless_refund">6. Hoàn tiền không trả hàng (Returnless Refund: Bỏ qua QC)</option>
           </select>
+          <p className="text-xs text-brand-600 mt-1 font-medium">
+            💡 {RMA_BRANCH_LABELS[rmaBranch]?.desc}
+          </p>
         </div>
+
         <div>
-          <label className="label">Số tiền hoàn (VND)</label>
-          <input type="number" step="1000" value={refundAmount} onChange={(e) => setRefundAmount(parseFloat(e.target.value) || 0)} className="input font-semibold" />
+          <label className="label">
+            Số tiền hoàn (VND) {rmaBranch === 'exchange' ? '(0 đ - Xuất bù hàng)' : ''}
+          </label>
+          <input
+            type="number"
+            step="1000"
+            value={refundAmount}
+            onChange={(e) => setRefundAmount(parseFloat(e.target.value) || 0)}
+            className="input font-semibold"
+          />
+          <p className="text-[11px] text-ink-400 mt-1">
+            Quy tắc phê duyệt: Dưới 1.000.000 ₫ Maker duyệt; Từ 1.000.000 ₫ bắt buộc Checker (Kế toán trưởng) duyệt.
+          </p>
         </div>
+
         <div>
-          <label className="label">Lý do đổi trả / Tình trạng ban đầu</label>
-          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} className="input" placeholder="Mô tả lý do đổi trả và phản hồi của khách hàng..." />
+          <label className="label">Lý do đổi trả & Ghi chú nghiệp vụ</label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            className="input text-sm"
+            placeholder="Mô tả lý do khiếu nại, tình trạng ngoại quan hoặc thỏa thuận với khách hàng..."
+          />
         </div>
       </div>
     </Modal>

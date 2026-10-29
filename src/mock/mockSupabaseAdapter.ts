@@ -199,8 +199,11 @@ class MockQueryBuilder {
           physical_qty: inv.physical,
           reserved_qty: inv.reserved,
           available_qty: inv.available,
-          unavailable_qty: inv.damaged || 0,
-          incoming_qty: inv.inbound || 0,
+          unavailable_qty: (inv.pending_qc || 0) + (inv.damaged || 0),
+          pending_qc_qty: inv.pending_qc || 0,
+          damaged_qty: inv.damaged || 0,
+          in_transit_qty: inv.in_transit || 0,
+          incoming_qty: inv.inbound || inv.incoming || 0,
           updated_at: new Date().toISOString(),
           warehouses: wh,
           products: prod ? { id: prod.id, name: prod.name, sku: prod.sku, safety_stock: prod.safety_stock || 10 } : { id: inv.product_id, name: inv.name, sku: inv.sku, safety_stock: 10 }
@@ -343,6 +346,7 @@ class MockQueryBuilder {
       batches: 'batches',
       reconciliations: 'reconciliations',
       audit_logs: 'auditLogs',
+      business_rules: 'businessRules',
       tenants: 'tenants',
       tenant_memberships: 'memberships',
       profiles: 'profiles'

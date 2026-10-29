@@ -316,13 +316,18 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       warehouse_name: 'Kho Tổng Miền Bắc',
       physical: 180,
       reserved: 45,
-      available: 133,
+      sellable: 128,
+      available: 128,
+      unavailable: 7,
+      pending_qc: 5,
       damaged: 2,
+      in_transit: 15,
+      incoming: 100,
       inbound: 100,
       safety_stock: 20,
       reorder_level: 30,
       sales_velocity: 8.5,
-      runway_days: 16,
+      runway_days: 15,
       status: 'Healthy'
     },
     {
@@ -333,13 +338,18 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       warehouse_name: 'Kho Tổng Miền Bắc',
       physical: 95,
       reserved: 25,
-      available: 68,
+      sellable: 65,
+      available: 65,
+      unavailable: 5,
+      pending_qc: 3,
       damaged: 2,
+      in_transit: 10,
+      incoming: 50,
       inbound: 50,
       safety_stock: 15,
       reorder_level: 25,
       sales_velocity: 6.2,
-      runway_days: 11,
+      runway_days: 10,
       status: 'Healthy'
     },
     {
@@ -350,8 +360,13 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       warehouse_name: 'Kho Tổng Miền Bắc',
       physical: 60,
       reserved: 18,
-      available: 41,
+      sellable: 39,
+      available: 39,
+      unavailable: 3,
+      pending_qc: 2,
       damaged: 1,
+      in_transit: 8,
+      incoming: 40,
       inbound: 40,
       safety_stock: 10,
       reorder_level: 20,
@@ -367,8 +382,13 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       warehouse_name: 'Kho Tổng Miền Bắc',
       physical: 120,
       reserved: 30,
-      available: 87,
+      sellable: 83,
+      available: 83,
+      unavailable: 7,
+      pending_qc: 4,
       damaged: 3,
+      in_transit: 12,
+      incoming: 60,
       inbound: 60,
       safety_stock: 15,
       reorder_level: 25,
@@ -384,13 +404,18 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       warehouse_name: 'Kho Tổng Miền Bắc',
       physical: 450,
       reserved: 120,
-      available: 330,
+      sellable: 320,
+      available: 320,
+      unavailable: 10,
+      pending_qc: 10,
       damaged: 0,
+      in_transit: 30,
+      incoming: 200,
       inbound: 200,
       safety_stock: 50,
       reorder_level: 80,
       sales_velocity: 24.0,
-      runway_days: 14,
+      runway_days: 13,
       status: 'Healthy'
     },
     {
@@ -401,13 +426,18 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       warehouse_name: 'Kho Tổng Miền Bắc',
       physical: 75,
       reserved: 15,
-      available: 58,
+      sellable: 56,
+      available: 56,
+      unavailable: 4,
+      pending_qc: 2,
       damaged: 2,
+      in_transit: 5,
+      incoming: 30,
       inbound: 30,
       safety_stock: 10,
       reorder_level: 20,
       sales_velocity: 3.5,
-      runway_days: 17,
+      runway_days: 16,
       status: 'Healthy'
     }
   ],
@@ -1373,6 +1403,116 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       discrepancy: 0,
       status: 'matched',
       settled_at: '2026-10-28T08:30:00Z'
+    }
+  ],
+
+  // ============ Business Rules Config & Assumptions ============
+  businessRules: [
+    {
+      id: 'rule_inv_invariant',
+      category: 'inventory',
+      name: 'Bất biến Tồn kho 5 trạng thái (Inventory Invariant)',
+      code: 'INV-CANONICAL-INVARIANT',
+      summary: 'Physical = Sellable + Reserved + Unavailable (Pending QC + Damaged). Pipeline (Incoming + In-transit) không tính gộp vào Physical.',
+      currentStatus: 'approved',
+      selectedOptionId: 'opt_inv_strict',
+      options: [
+        {
+          id: 'opt_inv_strict',
+          label: 'Mô hình chuẩn Nexus 5 Trạng Thái (Khuyến nghị)',
+          description: 'Physical thực tế trên kệ = Sellable + Reserved + (Pending QC + Damaged). Hàng Incoming từ PO và In-transit chuyển kho nằm ở trạng thái Pipeline riêng biệt, không tính trùng.',
+          isAssumption: false
+        },
+        {
+          id: 'opt_inv_loose',
+          label: 'Gộp In-transit vào Physical',
+          description: 'Tính hàng đang vận chuyển vào tổng Physical on-hand. Rủi ro: sai lệch vị trí bin khi nhân viên kho đi nhặt hàng.',
+          isAssumption: true
+        }
+      ],
+      complianceNotes: 'Đã chuẩn hóa toán học. Đảm bảo Sellable = Physical - Reserved - Unavailable.',
+      updatedAt: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'rule_rev_recognition',
+      category: 'revenue',
+      name: 'Thời điểm Ghi nhận Doanh thu (Revenue Recognition Point)',
+      code: 'ACC-REVENUE-FOB-DESTINATION',
+      summary: 'Ghi nhận Doanh thu Có 511 tại thời điểm đối soát Bằng chứng giao hàng (POD) thành công theo nguyên tắc FOB Điểm đến.',
+      currentStatus: 'assumption',
+      selectedOptionId: 'opt_rev_pod',
+      options: [
+        {
+          id: 'opt_rev_pod',
+          label: 'Ghi nhận khi xác nhận POD — FOB Destination [ASSUMPTION]',
+          description: 'Doanh thu (Có 511) chỉ phát sinh khi khách đã nhận hàng có bằng chứng POD. Tiền thu trước ghi Có 131 / 3387; khi xuất kho ghi Nợ 632 / Có 156 (hoặc Có 157).',
+          isAssumption: true
+        },
+        {
+          id: 'opt_rev_dispatch',
+          label: 'Ghi nhận ngay khi Xuất kho — FOB Shipping Point',
+          description: 'Doanh thu ghi nhận ngay khi kho đóng gói bàn giao bưu tá. Nếu khách từ chối nhận (RTS), phải hạch toán giảm trừ doanh thu 521.',
+          isAssumption: false
+        },
+        {
+          id: 'opt_rev_order',
+          label: 'Ghi nhận tại lúc Đặt đơn (Order Creation)',
+          description: 'Hạch toán Có 511 ngay khi khách bấm đặt đơn. Cực kỳ rủi ro và phóng đại doanh thu ảo nếu khách hủy đơn.',
+          isAssumption: true
+        }
+      ],
+      complianceNotes: '[ASSUMPTION] Chưa được Chủ Doanh Nghiệp duyệt chính thức. Cần chốt giữa FOB Destination vs FOB Shipping Point.',
+      updatedAt: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'rule_warehouse_pod_gate',
+      category: 'delivery_pod',
+      name: 'Kiểm soát Bằng chứng Giao hàng POD (POD Enforced Gate)',
+      code: 'OPS-POD-VERIFICATION-MANDATORY',
+      summary: 'Nhân viên kho (Warehouse) không được tự ý đổi trạng thái đơn sang Delivered nếu thiếu mã vận đơn hoặc ảnh ký nhận POD.',
+      currentStatus: 'approved',
+      selectedOptionId: 'opt_pod_enforced',
+      options: [
+        {
+          id: 'opt_pod_enforced',
+          label: 'Bắt buộc xác thực POD (Gate Enforced)',
+          description: 'Hệ thống chặn nút đánh dấu Đã nhận của nhân viên Kho trừ khi nhập mã vận đơn đối soát hãng vận chuyển hoặc tải ảnh/chữ ký nhận hàng.',
+          isAssumption: false
+        },
+        {
+          id: 'opt_pod_manual',
+          label: 'Cho phép cập nhật thủ công tự do',
+          description: 'Bất kỳ nhân viên nào cũng có thể bấm hoàn tất đơn. Dễ xảy ra sai sót hoặc gian lận nội bộ.',
+          isAssumption: true
+        }
+      ],
+      complianceNotes: 'Đã kích hoạt trên Order Detail Drawer. Thao tác giao hàng yêu cầu Modal POD.',
+      updatedAt: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'rule_rma_multibranch',
+      category: 'rma',
+      name: 'Định tuyến Đổi trả 6 Nhánh (Multi-Branch RMA Engine)',
+      code: 'RMA-6BRANCH-ROUTING',
+      summary: 'Tách biệt: Hoàn tiền, Đổi hàng mới, Bảo hành, Trả một phần, Hàng vỡ vận chuyển, Hoàn tiền không trả hàng. QC và Maker/Checker tùy biến.',
+      currentStatus: 'assumption',
+      selectedOptionId: 'opt_rma_branching',
+      options: [
+        {
+          id: 'opt_rma_branching',
+          label: 'Định tuyến 6 nhánh thông minh [ASSUMPTION]',
+          description: 'Returnless Refund bỏ qua QC; Đổi hàng kích hoạt đơn xuất bù; Hàng vỡ chuyển thẳng kho Damaged Scrap; Hạn mức >= 1.000.000đ yêu cầu Checker.',
+          isAssumption: true
+        },
+        {
+          id: 'opt_rma_single',
+          label: 'Quy trình đơn luồng truyền thống',
+          description: 'Mọi đơn hoàn đều phải chờ bưu tá gom về kho, mở kiện kiểm định QC rồi mới hoàn tiền.',
+          isAssumption: false
+        }
+      ],
+      complianceNotes: '[ASSUMPTION] Cần chủ dự án phê duyệt hạn mức Maker/Checker 1.000.000đ và chính sách Returnless Refund.',
+      updatedAt: '2026-10-28T10:00:00Z'
     }
   ],
 
