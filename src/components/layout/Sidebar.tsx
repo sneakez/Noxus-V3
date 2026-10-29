@@ -158,7 +158,7 @@ export const navGroups: NavGroup[] = [
     label: '6. Unit Economics',
     items: [
       { id: 'orderEconomics', label: 'Order Economics', icon: Receipt },
-      { id: 'skuEconomics', label: 'SKU Economics & BCG', icon: BadgePercent },
+      { id: 'skuEconomics', label: 'SKU Economics & Portfolio', icon: BadgePercent },
       { id: 'channelEconomics', label: 'Channel Economics', icon: Layers },
       { id: 'pricingCalculator', label: 'Pricing Intelligence', icon: Calculator, badge: 'Simulator' },
     ],

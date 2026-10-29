@@ -54,6 +54,7 @@ export function CustomerAnalyticsPage() {
           value={`${kpis.ltvCacRatio}x`}
           subtitle="Chuẩn an toàn thương mại điện tử > 3.0x"
           badge="Healthy"
+          sourceType="ESTIMATED"
           highlight
           icon={ShieldCheck}
         />
@@ -64,6 +65,7 @@ export function CustomerAnalyticsPage() {
         title="Ma Trận Giữ Chân Khách Hàng Theo Tháng Gia Nhập (Cohort Retention)"
         subtitle="Đo lường tỷ lệ % khách hàng từ nhóm tháng ban đầu tiếp tục quay lại mua sắm ở các tháng tiếp theo (M0 -> M3)"
         formulaExplanation="Retention Rate = Active Customers in Month N / Initial Cohort Size * 100"
+        sourceType="ESTIMATED"
       >
         <CohortHeatmap cohorts={cohorts} />
       </AnalyticsCard>
@@ -72,6 +74,7 @@ export function CustomerAnalyticsPage() {
       <AnalyticsCard
         title="Phân Khúc Khách Hàng Theo RFM (Recency • Frequency • Monetary)"
         subtitle="Hành động cụ thể cho từng nhóm khách để tối đa hóa doanh thu và ngăn chặn rời bỏ (Churn)"
+        sourceType="ESTIMATED"
       >
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[750px] border-collapse">

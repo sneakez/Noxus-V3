@@ -55,6 +55,7 @@ export function CashWorkingCapitalPage() {
           value={`${wc.cashConversionCycleDays} ngày`}
           subtitle="DIO (42) + DSO (8) - DPO (16)"
           badge="34 Ngày"
+          sourceType="ESTIMATED"
           icon={ShieldCheck}
           highlight
         />
@@ -66,6 +67,7 @@ export function CashWorkingCapitalPage() {
           title="Khoảng Cách Vốn Lưu Động (Working Capital Gap)"
           subtitle="Đo lường lượng vốn doanh nghiệp cần tài trợ để duy trì chuỗi cung ứng"
           formulaExplanation="Working Capital Gap = (Công Nợ Sàn Phải Thu + Hàng Tồn Kho) - Phải Trả Nhà Cung Cấp"
+          sourceType="ESTIMATED"
           className="lg:col-span-6"
         >
           <div className="space-y-3.5 pt-1 text-xs">
@@ -97,6 +99,7 @@ export function CashWorkingCapitalPage() {
           title="Bóc Tách Chu Kỳ Chuyển Đổi Tiền Mặt (CCC Formula)"
           subtitle="Thời gian tính từ lúc xuất tiền mua hàng cho đến khi thu được tiền mặt từ sàn TMĐT"
           formulaExplanation="CCC = DIO (Days Inventory) + DSO (Days Sales Outstanding) - DPO (Days Payables)"
+          sourceType="ESTIMATED"
           className="lg:col-span-6"
         >
           <div className="space-y-4 pt-1 text-xs">

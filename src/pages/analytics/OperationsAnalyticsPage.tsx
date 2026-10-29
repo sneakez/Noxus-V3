@@ -32,6 +32,7 @@ export function OperationsAnalyticsPage() {
           title="Thời Gian Xử Lý Đơn (Cycle Time)"
           value={`${ops.avgCycleTimeHours} giờ`}
           subtitle="Từ lúc khách đặt đến khi giao shipper"
+          sourceType="ESTIMATED"
           icon={Clock}
           highlight
         />
@@ -40,6 +41,7 @@ export function OperationsAnalyticsPage() {
           value={`${ops.slaComplianceRate}%`}
           subtitle="Giao hàng đúng hẹn cho đơn vị vận chuyển"
           badge="Đạt Chuẩn"
+          sourceType="ESTIMATED"
           icon={CheckCircle2}
           highlight
         />

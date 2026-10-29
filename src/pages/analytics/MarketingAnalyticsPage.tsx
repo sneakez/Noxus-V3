@@ -44,6 +44,7 @@ export function MarketingAnalyticsPage() {
           title="Doanh Thu Gán Thuộc (Attributed)"
           value={`${totalAttributedRevenue.toLocaleString()} ₫`}
           subtitle="Ghi nhận từ các nguồn traffic trả phí"
+          sourceType="ESTIMATED"
           highlight
           icon={TrendingUp}
         />
@@ -52,6 +53,7 @@ export function MarketingAnalyticsPage() {
           value={`${blendedRoas.toFixed(2)}x`}
           subtitle="Điểm hòa vốn thông thường: 2.8x - 3.2x"
           badge="Healthy"
+          sourceType="ESTIMATED"
           highlight
           icon={Target}
         />
@@ -59,6 +61,7 @@ export function MarketingAnalyticsPage() {
           title="Lợi Nhuận Ròng Sau Ads (CM3)"
           value={`${totalCmAfterAds.toLocaleString()} ₫`}
           subtitle="Doanh thu - COGS - Phí sàn - Ad Spend"
+          sourceType="ESTIMATED"
           icon={Sparkles}
           highlight
         />

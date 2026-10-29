@@ -39,7 +39,7 @@ export function SkuEconomicsPage() {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Đo lường biên lợi nhuận trên từng sản phẩm, giá hòa vốn (Break-even), vòng quay vốn và phân loại BCG / Pareto.
+            Đo lường biên lợi nhuận trên từng sản phẩm, giá hòa vốn (Break-even), vòng quay vốn và phân loại SKU Portfolio Matrix / Pareto.
           </p>
         </div>
       </div>

@@ -111,7 +111,7 @@ const PAGE_META: Record<PageId, PageMeta> = {
 
   // Unit Economics
   orderEconomics: { title: 'Order Economics', subtitle: 'Bóc tách chi phí & lợi nhuận đóng góp từng đơn hàng (CM1, CM2, CM3)', searchPlaceholder: 'Tìm mã đơn...', primaryLabel: '' },
-  skuEconomics: { title: 'SKU Economics', subtitle: 'Lợi nhuận đóng góp, giá hòa vốn & ma trận BCG sản phẩm', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
+  skuEconomics: { title: 'SKU Economics', subtitle: 'Lợi nhuận đóng góp, giá hòa vốn & SKU Portfolio Matrix', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
   channelEconomics: { title: 'Channel Economics', subtitle: 'So sánh doanh thu thuần, take rate phí sàn và lợi nhuận từng kênh', searchPlaceholder: 'Tìm kênh...', primaryLabel: '' },
   pricingCalculator: { title: 'Pricing Intelligence', subtitle: 'Máy tính định giá hòa vốn, giá đề xuất và trần voucher giảm giá', searchPlaceholder: 'Tìm sản phẩm...', primaryLabel: '' },
 
