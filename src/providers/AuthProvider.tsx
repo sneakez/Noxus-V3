@@ -355,6 +355,7 @@ export function useRole(): {
   isManager: boolean;
   isWarehouse: boolean;
   isFinance: boolean;
+  isGrowth: boolean;
   isViewer: boolean;
   canDelete: boolean;
   canManageFinance: boolean;
@@ -368,6 +369,7 @@ export function useRole(): {
   const isManager = tenantRole === 'manager' || isAdmin;
   const isWarehouse = tenantRole === 'warehouse';
   const isFinance = tenantRole === 'finance' || isAdmin;
+  const isGrowth = tenantRole === 'growth' || isAdmin;
   const isViewer = tenantRole === 'viewer';
 
   return {
@@ -377,6 +379,7 @@ export function useRole(): {
     isManager,
     isWarehouse,
     isFinance,
+    isGrowth,
     isViewer,
     canDelete: tenantRole === 'owner',
     canManageFinance: isFinance || isManager,

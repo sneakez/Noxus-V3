@@ -48,11 +48,19 @@ interface ActionTask {
 interface DecisionRecord {
   id: string;
   title: string;
-  rationale: string;
+  signalTrigger: string;          // 1. Signal
+  evidence: string;               // 2. Evidence
+  rationale: string;              // 3. Decision & Rationale
+  owner: string;                  // 4. Owner
+  deadline: string;               // 5. Deadline
+  actionTaken: string;            // 6. Action
+  outcome: string;                // 7. Outcome
+  learning: string;               // 8. Learning
   impactArea: string;
   actor: string;
   timestamp: string;
   financialImpact?: string;
+  status: 'proposed' | 'approved' | 'implemented' | 'reviewed';
 }
 
 const INITIAL_OKRS: OKRItem[] = [
@@ -138,29 +146,53 @@ const INITIAL_DECISIONS: DecisionRecord[] = [
   {
     id: 'dec_1',
     title: 'Thiết lập trần chiết khấu tối đa 15% cho dòng sản phẩm Titan',
-    rationale: 'Bảo vệ biên lợi nhuận đóng góp CM1 không rơi xuống dưới 35%.',
+    signalTrigger: 'Biên CM1 sản phẩm phụ kiện Titan tụt dưới 32% trong đợt sale đầu tháng',
+    evidence: 'Order Economics 14 ngày cho thấy voucher giảm giá sàn chồng chéo đã bào mòn lãi gộp',
+    rationale: 'Bảo vệ biên lợi nhuận đóng góp CM1 tối thiểu 35% để bù đắp phí sàn và đóng gói.',
+    owner: 'Phan Phúc Thịnh (Owner)',
+    deadline: '2026-10-28',
+    actionTaken: 'Đã cấu hình Discount Cap 15% trên Pricing Intelligence và khóa đồng tài trợ voucher',
+    outcome: 'Biên CM1 phục hồi lên 37.8%, đóng góp ròng +2.400.000 ₫ trong kỳ',
+    learning: 'Không áp dụng voucher phần trăm cho các SKU có giá vốn chiếm trên 50% giá niêm yết',
     impactArea: 'Pricing & Unit Economics',
     actor: 'Phan Phúc Thịnh (Owner)',
     timestamp: '2026-10-28 14:30',
-    financialImpact: '+2.400.000 ₫ CM1 dự kiến'
+    financialImpact: '+2.400.000 ₫ CM1 thực tế',
+    status: 'reviewed'
   },
   {
     id: 'dec_2',
-    title: 'Bắt buộc cơ chế kiểm duyệt kép (Maker/Checker) cho hoàn tiền >= 1.000.000 ₫',
-    rationale: 'Ngăn chặn gian lận và sai lệch tài khoản thanh toán khi hoàn hàng sàn.',
+    title: 'Bắt buộc kiểm duyệt kép (Maker/Checker) cho hoàn tiền >= 1.000.000 ₫',
+    signalTrigger: 'Xuất hiện 3 đơn hoàn tiền RMA giá trị cao trên TikTok Shop được duyệt đơn phương',
+    evidence: 'Kiểm toán thẻ kho và quỹ phát hiện nhân viên kho tự duyệt hoàn tiền không có đối soát',
+    rationale: 'Tách biệt nhiệm vụ: Kho chỉ kiểm tra hiện trạng hàng hóa, Kế toán xác thực số tài khoản và giải ngân.',
+    owner: 'Nguyễn Văn Thành (Kế toán Trưởng)',
+    deadline: '2026-10-27',
+    actionTaken: 'Kích hoạt hạn mức Maker/Checker trên RMA Engine, phân quyền checker cho Finance',
+    outcome: '100% yêu cầu hoàn tiền lớn đều có biên bản đối soát, không phát sinh sai lệch tiền',
+    learning: 'Nguyên tắc kiểm soát nội bộ 4 mắt (Four-eyes principle) là bắt buộc cho dòng tiền ra',
     impactArea: 'RMA Governance',
     actor: 'Phan Phúc Thịnh (Owner)',
     timestamp: '2026-10-27 09:15',
-    financialImpact: 'Giảm 100% rủi ro thất thoát chi hoàn tiền sai'
+    financialImpact: 'Triệt tiêu 100% rủi ro thất thoát quỹ hoàn tiền',
+    status: 'reviewed'
   },
   {
     id: 'dec_3',
-    title: 'Kích hoạt chính sách ghi nhận doanh thu Có 511 theo POD giao thành công',
-    rationale: 'Tuân thủ nguyên tắc thận trọng theo chuẩn VAS 14, không ghi nhận sớm khi hàng in-transit.',
+    title: 'Ghi nhận doanh thu Có 511 theo POD giao thành công (FOB Destination)',
+    signalTrigger: 'Báo cáo doanh thu bán hàng ghi nhận sớm không khớp với sao kê tài khoản ngân hàng sàn',
+    evidence: '5 đơn hàng khách từ chối nhận (RTS) khi in-transit đã lỡ hạch toán Có 511, gây sai lệch P&L',
+    rationale: 'Tuân thủ chuẩn mực VAS 14 và nguyên tắc kế toán thận trọng: chỉ ghi nhận doanh thu khi rủi ro và quyền sở hữu đã chuyển giao qua POD.',
+    owner: 'Phan Phúc Thịnh (Owner)',
+    deadline: '2026-10-26',
+    actionTaken: 'Chuyển hệ thống kế toán sang trigger webhook POD carrier, tạm treo Nợ 131/Có 3387 khi hàng đang đi',
+    outcome: 'Doanh thu thuần quản trị khớp 100% với dòng tiền thanh toán thực nhận từ Shopee và TikTok',
+    learning: 'Kinh doanh TMĐT bắt buộc phải theo dõi doanh thu theo Proof of Delivery',
     impactArea: 'Accounting Compliance',
     actor: 'Phan Phúc Thịnh (Owner)',
     timestamp: '2026-10-26 16:45',
-    financialImpact: 'Doanh thu thuần quản trị khớp 100% dòng tiền'
+    financialImpact: 'Doanh thu thuần quản trị chuẩn xác 100%',
+    status: 'reviewed'
   }
 ];
 
@@ -496,41 +528,99 @@ export function FounderExecutionPage() {
         </div>
       )}
 
-      {/* TAB 3: DECISIONS */}
+      {/* TAB 3: DECISIONS — 8-STEP DECISION LOOP */}
       {activeTab === 'decisions' && (
-        <div className="space-y-3">
-          {decisions.map(dec => (
-            <div key={dec.id} className="card p-5 border-slate-200 bg-white space-y-3 hover:shadow-sm transition-all">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="badge text-[10px] bg-teal-50 text-teal-800 border-teal-200 font-semibold">
-                      {dec.impactArea}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-mono">{dec.timestamp}</span>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-teal-900/5 border border-teal-800/15 flex-wrap">
+            <div>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Vòng Lặp Ra Quyết Định Chuẩn Dream Terus (8-Step Decision Loop)
+              </h3>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Tín Hiệu (Signal) → Bằng Chứng (Evidence) → Quyết Định (Decision) → Người Chịu Trách Nhiệm (Owner) → Hạn Chót (Deadline) → Hành Động (Action) → Kết Quả (Outcome) → Bài Học (Learning)
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const title = prompt('Tiêu đề quyết định mới:');
+                if (!title) return;
+                const newDec: DecisionRecord = {
+                  id: 'dec_' + Date.now(),
+                  title,
+                  signalTrigger: 'Tín hiệu phát hiện từ Dashboard hoặc vận hành',
+                  evidence: 'Số liệu đối soát 14 ngày qua',
+                  rationale: 'Giải pháp kiểm soát rủi ro và bảo vệ dòng tiền',
+                  owner: 'Chủ Doanh Nghiệp',
+                  deadline: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+                  actionTaken: 'Đang triển khai phương án xử lý',
+                  outcome: 'Chờ đánh giá sau kỳ đối soát kế tiếp',
+                  learning: 'Ghi nhận bài học kinh nghiệm vận hành',
+                  impactArea: 'Vận Hành & Dòng Tiền',
+                  actor: 'Phan Phúc Thịnh (Owner)',
+                  timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+                  financialImpact: 'Dự kiến cải thiện hiệu quả biên lợi nhuận',
+                  status: 'approved'
+                };
+                setDecisions(prev => [newDec, ...prev]);
+                toast('Đã ghi nhận quyết định mới vào Decision Log!', 'success');
+              }}
+              className="btn btn-primary text-xs py-1.5 px-3 shrink-0 font-bold"
+            >
+              + Ghi Quyết Định Mới
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {decisions.map(dec => (
+              <div key={dec.id} className="card p-5 border-slate-200 bg-white space-y-3 hover:shadow-sm transition-all">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="badge text-[10px] bg-teal-50 text-teal-800 border-teal-200 font-semibold">
+                        {dec.impactArea}
+                      </span>
+                      <span className="badge text-[10px] bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold">
+                        {dec.status === 'reviewed' ? '✓ Đã Đánh Giá Kết Quả' : dec.status === 'implemented' ? '⚙️ Đã Thực Hiện' : 'Đã Phê Duyệt'}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono">{dec.timestamp}</span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                      {dec.title}
+                    </h3>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                    {dec.title}
-                  </h3>
+
+                  <div className="text-right">
+                    <span className="text-xs font-semibold text-slate-700 block">Chịu trách nhiệm: {dec.owner || dec.actor}</span>
+                    <span className="text-[11px] text-slate-500 font-mono">Hạn chót: {dec.deadline || 'Trong kỳ'}</span>
+                  </div>
                 </div>
 
-                <div className="badge bg-slate-100 text-slate-700 text-xs font-mono">
-                  Người duyệt: {dec.actor}
+                {/* 8-Stage Execution Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                  <div>
+                    <span className="text-slate-500 font-semibold block text-[11px]">1. Tín Hiệu Cảnh Báo (Signal):</span>
+                    <p className="text-slate-800 font-medium">{dec.signalTrigger || 'Cảnh báo vận hành'}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block text-[11px]">2. Bằng Chứng Dữ Liệu (Evidence):</span>
+                    <p className="text-slate-800 font-medium">{dec.evidence || dec.rationale}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block text-[11px]">3. Hành Động Thực Tế (Action Taken):</span>
+                    <p className="text-slate-800 font-medium">{dec.actionTaken || 'Đã kích hoạt quy tắc'}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block text-[11px]">4. Kết Quả Đo Lường (Outcome):</span>
+                    <p className="text-emerald-800 font-bold">{dec.outcome || dec.financialImpact || 'Đạt mục tiêu'}</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-amber-50/70 rounded-lg border border-amber-200/60 text-xs text-amber-900">
+                  <span className="font-bold">💡 Bài Học Rút Ra (Learning):</span> {dec.learning || 'Kiểm soát chặt chẽ quy trình'}
                 </div>
               </div>
-
-              <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <strong>Lý do & Tác động:</strong> {dec.rationale}
-              </p>
-
-              {dec.financialImpact && (
-                <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
-                  <ShieldCheck size={14} />
-                  <span>Hiệu quả kinh tế: {dec.financialImpact}</span>
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 

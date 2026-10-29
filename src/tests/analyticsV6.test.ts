@@ -137,4 +137,16 @@ describe('V6 Unit Economics & Analytics Engine', () => {
     expect(totalStockValue).toBe(304575000);
     expect(totalStockValue).toBeGreaterThan(0);
   });
+  it('truthfully assigns confidenceStatus and cogsSource without masquerading fallback estimates as actuals', () => {
+    const orderEcon = analyticsService.getOrderEconomics();
+    expect(orderEcon.length).toBeGreaterThan(0);
+    orderEcon.forEach(o => {
+      expect(['VERIFIED', 'PARTIALLY_RECONCILED', 'ESTIMATED']).toContain(o.confidenceStatus);
+      expect(['MAC_SNAPSHOT', 'PRODUCT_MASTER', 'ESTIMATED_BENCHMARK']).toContain(o.cogsSource);
+      if (o.cogsSource === 'ESTIMATED_BENCHMARK') {
+        expect(o.confidenceStatus).toBe('ESTIMATED');
+        expect(o.attributionType).toBe('ESTIMATED');
+      }
+    });
+  });
 });

@@ -67,14 +67,26 @@ export function OrderEconomicsPage({ onNavigate }: OrderEconomicsPageProps) {
           sortValue: o => o.orderNumber,
           accessor: o => {
             const ch = CHANNEL_BADGES[o.channel] || CHANNEL_BADGES.shopee;
+            const isEst = o.confidenceStatus === 'ESTIMATED';
             return (
               <div className="space-y-1">
                 <span className="font-mono font-bold text-ink-900 block">
                   #{o.orderNumber}
                 </span>
-                <span className={cn('badge text-[9px] px-1.5 py-0 font-bold border', ch.bg, ch.color)}>
-                  {ch.label}
-                </span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className={cn('badge text-[9px] px-1.5 py-0 font-bold border', ch.bg, ch.color)}>
+                    {ch.label}
+                  </span>
+                  {isEst ? (
+                    <span className="badge text-[9px] px-1 py-0 font-semibold bg-amber-50 text-amber-800 border-amber-200">
+                      Ước tính
+                    </span>
+                  ) : (
+                    <span className="badge text-[9px] px-1 py-0 font-semibold bg-emerald-50 text-emerald-800 border-emerald-200">
+                      Đã xác thực
+                    </span>
+                  )}
+                </div>
               </div>
             );
           }

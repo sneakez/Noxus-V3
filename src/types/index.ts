@@ -1,7 +1,8 @@
 // ============ Tenant / SaaS Types ============
 
 export type TenantStatus = 'active' | 'suspended' | 'closed';
-export type TenantRole = 'owner' | 'admin' | 'manager' | 'warehouse' | 'finance' | 'viewer';
+export type BusinessRole = 'owner' | 'admin' | 'manager' | 'warehouse' | 'finance' | 'growth' | 'viewer';
+export type TenantRole = BusinessRole;
 export type MembershipStatus = 'active' | 'invited' | 'suspended';
 
 export interface Tenant {
@@ -116,7 +117,7 @@ export type EvidenceStation = 'packing' | 'unboxing_return';
 
 // ============ RBAC Types ============
 
-export type UserRole = 'admin' | 'manager' | 'warehouse';
+export type UserRole = BusinessRole;
 
 export interface Profile {
   id: string;

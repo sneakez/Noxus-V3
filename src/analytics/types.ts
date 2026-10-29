@@ -5,6 +5,7 @@ import type { SkuInventory5State } from '@/mock/types';
 export type TimeDimension = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month' | 'last_month' | 'custom';
 export type ComparisonDimension = 'previous_period' | 'same_period_last_year' | 'target' | 'none';
 export type DataAttributionType = 'DEMO-OBSERVED' | 'ESTIMATED' | 'ASSUMPTION' | 'SIMULATED' | 'INSUFFICIENT DATA' | 'ACTUAL';
+export type DataConfidenceStatus = 'VERIFIED' | 'PARTIALLY_RECONCILED' | 'ESTIMATED' | 'INCOMPLETE' | 'STALE' | 'CONFLICTED';
 
 // ============ Unit Economics Core ============
 export interface OrderUnitEconomics {

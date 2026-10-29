@@ -104,7 +104,7 @@ const isMockMode = typeof import.meta !== 'undefined' && (import.meta.env?.VITE_
 export const navGroups: NavGroup[] = [
   // 1. Command Center
   {
-    label: '1. Command Center',
+    label: '01 — Command Center',
     items: [
       { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
       { id: 'operationsAnalytics', label: 'Operations Cockpit & SLA', icon: Activity },
@@ -112,7 +112,7 @@ export const navGroups: NavGroup[] = [
   },
   // 2. Commerce Operations
   {
-    label: '2. Commerce Operations',
+    label: '02 — Commerce Operations',
     items: [
       { id: 'orders', label: 'Đơn hàng đa kênh', icon: ShoppingCart },
       { id: 'fulfillment', label: 'Wave Picking & SLA', icon: Truck },
@@ -122,7 +122,7 @@ export const navGroups: NavGroup[] = [
   },
   // 3. Product & Inventory
   {
-    label: '3. Product & Inventory',
+    label: '03 — Product Intelligence',
     items: [
       { id: 'products', label: 'Sản phẩm & SKU', icon: Package },
       { id: 'inventory', label: 'Tồn kho 5 trạng thái', icon: Boxes },
@@ -133,7 +133,7 @@ export const navGroups: NavGroup[] = [
   },
   // 4. Finance & Economics
   {
-    label: '4. Finance & Economics',
+    label: '04 — Finance Control Tower',
     items: [
       { id: 'orderEconomics', label: 'Order Economics (P&L)', icon: Receipt },
       { id: 'skuEconomics', label: 'SKU Portfolio Matrix', icon: BadgePercent },
@@ -144,7 +144,7 @@ export const navGroups: NavGroup[] = [
   },
   // 5. Growth & Marketing
   {
-    label: '5. Growth & Marketing',
+    label: '05 — Growth Engine',
     items: [
       { id: 'marketingAnalytics', label: 'Marketing & Blended ROAS', icon: Target },
       { id: 'customerAnalytics', label: 'Khách hàng & Cohorts', icon: HeartHandshake },
@@ -153,17 +153,18 @@ export const navGroups: NavGroup[] = [
   },
   // 6. Founder Execution
   {
-    label: '6. Founder Execution',
+    label: '06 — Execution OS',
     items: [
       { id: 'founderExecution', label: 'Founder Cockpit & OKRs', icon: CheckSquare, badge: 'Mới' },
     ],
   },
   // System Settings & Utilities
   {
-    label: 'Cài Đặt & Tiện Ích',
+    label: '07 — System & Trust',
     items: [
       { id: 'channelConnections', label: 'Kênh bán & Kết nối API', icon: Link2 },
       { id: 'settings', label: 'Cài đặt & RBAC', icon: Settings },
+      { id: 'auditTrail', label: 'Nhật ký Audit', icon: ShieldCheck },
       ...(isMockMode
         ? [
             { id: 'ownerValidation' as PageId, label: '🧪 Demo Lab & Nghiệm Thu', icon: CheckCircle2, badge: 'Demo Lab' },
@@ -236,9 +237,9 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
               <Boxes size={20} className="text-white" />
             </div>
             <div>
-              <span className="text-base font-black text-white tracking-tight">NexusOMS</span>
+              <span className="text-base font-black text-white tracking-tight">Dream Terus</span>
               <p className="text-[11px] text-[#27B4A0] font-semibold flex items-center gap-1">
-                Digital Commerce OS
+                Terus Tech • Commerce OS
               </p>
             </div>
           </div>

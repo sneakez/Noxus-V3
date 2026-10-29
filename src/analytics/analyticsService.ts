@@ -69,15 +69,31 @@ class AnalyticsService {
       
       // Calculate COGS strictly from order items (MAC snapshot) or product master
       let totalCogs = 0;
-      orderItems.forEach(item => {
-        const prod = products.find(p => p.id === item.product_id);
-        const unitCost = (item as any).unit_cost_mac_snapshot ?? prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price ?? 0;
-        totalCogs += unitCost * (item.quantity || 1);
-      });
+      let cogsSource: 'MAC_SNAPSHOT' | 'PRODUCT_MASTER' | 'ESTIMATED_BENCHMARK' = 'MAC_SNAPSHOT';
+      let hasEstimatedFallback = false;
+
+      if (orderItems.length > 0) {
+        orderItems.forEach(item => {
+          const prod = products.find(p => p.id === item.product_id);
+          const mac = (item as any).unit_cost_mac_snapshot;
+          if (mac !== undefined && mac !== null && mac > 0) {
+            totalCogs += mac * (item.quantity || 1);
+          } else if (prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price) {
+            cogsSource = 'PRODUCT_MASTER';
+            totalCogs += (prod.moving_avg_cost ?? prod.cost ?? (prod as any).cost_price ?? 0) * (item.quantity || 1);
+          } else {
+            hasEstimatedFallback = true;
+          }
+        });
+      } else {
+        hasEstimatedFallback = true;
+      }
 
       // If order items were empty, fallback to estimated 48% COGS
       if (totalCogs === 0 && order.total > 0) {
         totalCogs = Math.round(order.total * 0.48);
+        cogsSource = 'ESTIMATED_BENCHMARK';
+        hasEstimatedFallback = true;
       }
 
       const grossSales = order.subtotal || order.total || 0;
@@ -140,7 +156,13 @@ class AnalyticsService {
         cm3Margin: contrib.cm3Margin,
         fixedOverheadEstimate,
         netProfitEstimate: contrib.cm3 - fixedOverheadEstimate,
-        attributionType: 'ACTUAL'
+        attributionType: hasEstimatedFallback ? 'ESTIMATED' : 'ACTUAL',
+        confidenceStatus: hasEstimatedFallback
+          ? 'ESTIMATED'
+          : (order.order_status === 'delivered' || order.status === 'delivered')
+          ? 'VERIFIED'
+          : 'PARTIALLY_RECONCILED',
+        cogsSource
       };
     });
   }
