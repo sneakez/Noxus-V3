@@ -13,7 +13,8 @@ import {
   ExternalLink,
   ShieldCheck,
   CheckCircle2,
-  DollarSign
+  DollarSign,
+  Download
 } from 'lucide-react';
 import { analyticsService } from '@/analytics/analyticsService';
 import { mockStore } from '@/mock/store';
@@ -411,6 +412,41 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
         groups={columnGroups}
         rowKey={s => s.sku}
         storageKey="sku_economics"
+        selectable
+        bulkActions={(selectedIds, clearSelection) => {
+          const selectedItems = filteredSkus.filter(s => selectedIds.includes(s.sku));
+          const totalVal = selectedItems.reduce((acc, s) => acc + s.stockValue, 0);
+          return (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-300 font-mono hidden md:inline">
+                Giá trị tồn chọn: {formatCurrency(totalVal)}
+              </span>
+              <button
+                onClick={() => {
+                  const csvRows = [
+                    ['SKU', 'Ten', 'Phan hang', 'Gia ASP', 'Gia von MAC', 'Liet ke ban', 'Doanh thu', 'Lai gop CM', 'Gia hoa von', 'Gia tri ton'],
+                    ...selectedItems.map(s => [
+                      s.sku, s.name, s.contributionRank, s.asp, s.cogs, s.unitsSold, s.totalRevenue, s.cm2, s.breakEvenPrice, s.stockValue
+                    ])
+                  ];
+                  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map(e => e.join(',')).join('\n');
+                  const encodedUri = encodeURI(csvContent);
+                  const link = document.createElement('a');
+                  link.setAttribute('href', encodedUri);
+                  link.setAttribute('download', `SKU_Economics_Selected_${Date.now()}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  clearSelection();
+                }}
+                className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold flex items-center gap-1 cursor-pointer transition-colors text-xs"
+              >
+                <Download size={13} />
+                <span>Xuất Phân Tích SKU</span>
+              </button>
+            </div>
+          );
+        }}
         searchPlaceholder="Tìm kiếm mã SKU hoặc tên sản phẩm..."
         searchFilter={(s, q) =>
           s.sku.toLowerCase().includes(q) ||

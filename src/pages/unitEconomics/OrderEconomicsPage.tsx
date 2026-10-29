@@ -305,6 +305,42 @@ export function OrderEconomicsPage({ onNavigate }: OrderEconomicsPageProps) {
         groups={columnGroups}
         rowKey={o => o.orderId}
         storageKey="order_economics"
+        selectable
+        bulkActions={(selectedIds, clearSelection) => {
+          const selectedRecords = filteredOrders.filter(o => selectedIds.includes(o.orderId));
+          const totalSelectedNet = selectedRecords.reduce((s, r) => s + r.netRevenue, 0);
+          const totalSelectedCm3 = selectedRecords.reduce((s, r) => s + r.cm3, 0);
+          return (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-300 font-mono hidden md:inline">
+                Net: {formatCurrency(totalSelectedNet)} | CM3: {formatCurrency(totalSelectedCm3)}
+              </span>
+              <button
+                onClick={() => {
+                  const csvRows = [
+                    ['Ma don', 'Kenh', 'Doanh thu gop', 'Giam gia', 'Doanh thu thuan', 'COGS', 'CM1', 'Phi san', 'Dong goi', 'CM2', 'Ads', 'CM3'],
+                    ...selectedRecords.map(r => [
+                      r.orderNumber, r.channel, r.grossSales, r.discounts, r.netRevenue, r.cogs, r.cm1, r.marketplaceFees, r.fulfillmentCosts, r.cm2, r.attributedMarketingCosts, r.cm3
+                    ])
+                  ];
+                  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map(e => e.join(',')).join('\n');
+                  const encodedUri = encodeURI(csvContent);
+                  const link = document.createElement('a');
+                  link.setAttribute('href', encodedUri);
+                  link.setAttribute('download', `Order_Economics_Selected_${Date.now()}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  clearSelection();
+                }}
+                className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold flex items-center gap-1 cursor-pointer transition-colors text-xs"
+              >
+                <Download size={13} />
+                <span>Xuất P&L Chọn</span>
+              </button>
+            </div>
+          );
+        }}
         searchPlaceholder="Tìm kiếm mã đơn..."
         searchFilter={(o, q) =>
           o.orderNumber.toLowerCase().includes(q) ||

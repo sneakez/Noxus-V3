@@ -84,6 +84,7 @@ export function OrderDetailDrawer({
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [activeTab, setActiveTab] = useState<'operations' | 'economics' | 'audit'>('operations');
 
   // POD Modal state
   const [showPodModal, setShowPodModal] = useState(false);
@@ -368,7 +369,53 @@ export function OrderDetailDrawer({
               </div>
             </div>
 
-            {/* Status workflow & Actions based on State Machine */}
+            {/* TAB SELECTOR BAR */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab('operations')}
+                className={cn(
+                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                  activeTab === 'operations'
+                    ? 'bg-white text-teal-800 shadow-xs border border-slate-200/80 font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                )}
+              >
+                <Truck size={14} />
+                <span>1. Vận Hành & Giao Nhận</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('economics')}
+                className={cn(
+                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                  activeTab === 'economics'
+                    ? 'bg-white text-teal-800 shadow-xs border border-slate-200/80 font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                )}
+              >
+                <DollarSign size={14} />
+                <span>2. Tài Chính & P&L</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('audit')}
+                className={cn(
+                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                  activeTab === 'audit'
+                    ? 'bg-white text-teal-800 shadow-xs border border-slate-200/80 font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                )}
+              >
+                <Clock size={14} />
+                <span>3. Lịch Sử & Audit ({logs.length})</span>
+              </button>
+            </div>
+
+            {/* TAB 1: OPERATIONS */}
+            {activeTab === 'operations' && (
+              <div className="space-y-4 animate-fade-in-up">
+                {/* Status workflow & Actions based on State Machine */}
             <div className="card p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-ink-900">
@@ -519,39 +566,7 @@ export function OrderDetailDrawer({
                   </div>
                 )}
               </div>
-
-              {/* Payment Section */}
-              <div className="pt-3 border-t border-ink-100">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">
-                    Thanh toán & Đối soát
-                  </p>
-                  <span className={cn('badge text-[11px]', PAYMENT_STATUS_COLORS[order.payment_status])}>
-                    {PAYMENT_STATUS_LABELS[order.payment_status]}
-                  </span>
-                </div>
-                {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'finance') && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {(['unpaid', 'paid', 'partially_paid', 'refunded'] as PaymentStatus[]).map((p) => (
-                      <button
-                        key={p}
-                        disabled={updating || p === order.payment_status}
-                        onClick={() => updatePayment(p)}
-                        className={cn(
-                          'px-2.5 py-1 rounded-md text-xs font-medium border transition-all',
-                          p === order.payment_status
-                            ? 'bg-ink-900 text-white border-ink-900 shadow-sm opacity-90 cursor-default'
-                            : 'border-ink-200 text-ink-600 hover:border-ink-300 hover:bg-ink-50'
-                        )}
-                      >
-                        {PAYMENT_STATUS_LABELS[p]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
-
             {/* POD Evidence Section */}
             {(order.pod_evidence || order.status === 'delivered') && (
               <div className="card p-5 bg-emerald-50/60 border border-emerald-200/90 space-y-3">
@@ -617,99 +632,7 @@ export function OrderDetailDrawer({
                 )}
               </div>
             )}
-
-            {/* Accounting Simulation & Assumptions Section */}
-            <div className="card p-5 border-brand-200/80 bg-brand-50/20 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign size={16} className="text-brand-600" />
-                  <span className="text-xs font-bold text-ink-900 uppercase tracking-wide">
-                    Mô phỏng Kế toán & Sự kiện Doanh thu
-                  </span>
-                </div>
-                <span className="badge bg-amber-50 text-amber-700 border-amber-300 text-[10px] font-semibold">
-                  [ASSUMPTION: FOB Destination]
-                </span>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                {/* Event 1 */}
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                    1
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink-900">Tạo đơn: Cam kết giá trị (Order Value)</span>
-                      <span className="font-bold text-ink-700">{formatCurrency(order.total)}</span>
-                    </div>
-                    <p className="text-[11px] text-ink-500 mt-0.5">
-                      Cam kết mua bán giữa hai bên. <strong>Chưa đủ điều kiện ghi nhận Doanh thu Có 511</strong>.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Event 2 */}
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
-                  <div className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                    2
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink-900">Khách thanh toán trước (Pre-payment)</span>
-                      <span className="badge bg-amber-50 text-amber-700 border-amber-200 text-[9px]">ASSUMPTION</span>
-                    </div>
-                    <p className="text-[11px] text-ink-600 mt-0.5">
-                      Hạch toán: <code className="font-mono text-ink-800">Nợ 112 (Tiền gửi) / Có 131 (Khách trả trước)</code>. Tiền về tài khoản nhưng chưa ghi Có 511.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Event 3 */}
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
-                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                    3
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink-900">Xuất kho: Giá vốn hàng bán (COGS)</span>
-                      <span className="badge bg-amber-50 text-amber-700 border-amber-200 text-[9px]">ASSUMPTION</span>
-                    </div>
-                    <p className="text-[11px] text-ink-600 mt-0.5">
-                      Hạch toán: <code className="font-mono text-ink-800">Nợ 632 / Có 156</code> theo giá vốn bình quân di động (MAC) ngay khi bàn giao đơn vị vận chuyển.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Event 4 */}
-                <div className={cn(
-                  'flex items-start gap-2.5 p-2 rounded-lg border transition-colors',
-                  order.status === 'delivered' ? 'bg-emerald-50/70 border-emerald-300' : 'bg-white border-ink-100'
-                )}>
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                    4
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink-900">
-                        Đối soát POD: Ghi nhận Doanh thu Chính thức
-                      </span>
-                      <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 text-[9px]">
-                        {order.status === 'delivered' ? 'Đã kích hoạt' : 'Chờ giao POD'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-ink-600 mt-0.5">
-                      Hạch toán: <code className="font-mono text-ink-800">Nợ 131 / Có 511</code> ({formatCurrency(order.total)}).
-                      <span className="text-amber-700 block mt-0.5 font-medium">
-                        ⚠️ [ASSUMPTION]: Doanh thu chỉ được ghi nhận khi có Bằng chứng giao hàng POD xác nhận theo nguyên tắc FOB Điểm đến.
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Warehouse + Wave picking */}
+                {/* Warehouse + Wave picking */}
             <div className="card p-5 space-y-3">
               <p className="text-sm font-semibold text-ink-700 mb-2 flex items-center gap-2">
                 <WarehouseIcon size={16} className="text-ink-400" />
@@ -808,8 +731,7 @@ export function OrderDetailDrawer({
                 </div>
               )}
             </div>
-
-            {/* Customer info */}
+                {/* Customer info */}
             <div className="card p-5">
               <p className="text-sm font-semibold text-ink-700 mb-3">
                 Khach hang
@@ -847,8 +769,64 @@ export function OrderDetailDrawer({
                 <p className="text-sm text-ink-400">Khach le</p>
               )}
             </div>
+                {/* Shipping address & Notes */}
+                <div className="card p-5 space-y-3">
+                  <p className="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">
+                    Địa chỉ & Ghi chú đơn hàng
+                  </p>
+                  {order.shipping_address && (
+                    <DetailRow icon={MapPin} label="Địa chỉ giao hàng">
+                      {order.shipping_address}
+                    </DetailRow>
+                  )}
+                  {order.notes && (
+                    <DetailRow icon={StickyNote} label="Ghi chú">
+                      {order.notes}
+                    </DetailRow>
+                  )}
+                  <DetailRow icon={Calendar} label="Thời điểm đặt hàng">
+                    {formatDateTime(order.placed_at)}
+                  </DetailRow>
+                </div>
+              </div>
+            )}
 
-            {/* Items */}
+            {/* TAB 2: FINANCIALS & UNIT ECONOMICS */}
+            {activeTab === 'economics' && (
+              <div className="space-y-4 animate-fade-in-up">
+                <div className="card p-5 space-y-3">
+              {/* Payment Section */}
+              <div className="pt-3 border-t border-ink-100">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">
+                    Thanh toán & Đối soát
+                  </p>
+                  <span className={cn('badge text-[11px]', PAYMENT_STATUS_COLORS[order.payment_status])}>
+                    {PAYMENT_STATUS_LABELS[order.payment_status]}
+                  </span>
+                </div>
+                {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'finance') && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {(['unpaid', 'paid', 'partially_paid', 'refunded'] as PaymentStatus[]).map((p) => (
+                      <button
+                        key={p}
+                        disabled={updating || p === order.payment_status}
+                        onClick={() => updatePayment(p)}
+                        className={cn(
+                          'px-2.5 py-1 rounded-md text-xs font-medium border transition-all',
+                          p === order.payment_status
+                            ? 'bg-ink-900 text-white border-ink-900 shadow-sm opacity-90 cursor-default'
+                            : 'border-ink-200 text-ink-600 hover:border-ink-300 hover:bg-ink-50'
+                        )}
+                      >
+                        {PAYMENT_STATUS_LABELS[p]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+                {/* Items */}
             <div className="card p-5">
               <p className="text-sm font-semibold text-ink-700 mb-3">
                 San pham ({items.length})
@@ -913,35 +891,131 @@ export function OrderDetailDrawer({
                 </div>
               </div>
             </div>
+                {/* Accounting Simulation & Assumptions Section */}
+            <div className="card p-5 border-brand-200/80 bg-brand-50/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign size={16} className="text-brand-600" />
+                  <span className="text-xs font-bold text-ink-900 uppercase tracking-wide">
+                    Mô phỏng Kế toán & Sự kiện Doanh thu
+                  </span>
+                </div>
+                <span className="badge bg-amber-50 text-amber-700 border-amber-300 text-[10px] font-semibold">
+                  [ASSUMPTION: FOB Destination]
+                </span>
+              </div>
 
-            {/* Metadata */}
-            <div className="card p-5 space-y-3">
-              <DetailRow icon={Calendar} label="Dat hang">
-                {formatDateTime(order.placed_at)}
-              </DetailRow>
-              {order.shipped_at && (
-                <DetailRow icon={ArrowRight} label="Da giao">
-                  {formatDateTime(order.shipped_at)}
-                </DetailRow>
-              )}
-              {order.delivered_at && (
-                <DetailRow icon={DollarSign} label="Da nhan">
-                  {formatDateTime(order.delivered_at)}
-                </DetailRow>
-              )}
-              {order.shipping_address && (
-                <DetailRow icon={MapPin} label="Dia chi giao hang">
-                  {order.shipping_address}
-                </DetailRow>
-              )}
-              {order.notes && (
-                <DetailRow icon={StickyNote} label="Ghi chu">
-                  {order.notes}
-                </DetailRow>
-              )}
+              <div className="space-y-2 text-xs">
+                {/* Event 1 */}
+                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">Tạo đơn: Cam kết giá trị (Order Value)</span>
+                      <span className="font-bold text-ink-700">{formatCurrency(order.total)}</span>
+                    </div>
+                    <p className="text-[11px] text-ink-500 mt-0.5">
+                      Cam kết mua bán giữa hai bên. <strong>Chưa đủ điều kiện ghi nhận Doanh thu Có 511</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Event 2 */}
+                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
+                  <div className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">Khách thanh toán trước (Pre-payment)</span>
+                      <span className="badge bg-amber-50 text-amber-700 border-amber-200 text-[9px]">ASSUMPTION</span>
+                    </div>
+                    <p className="text-[11px] text-ink-600 mt-0.5">
+                      Hạch toán: <code className="font-mono text-ink-800">Nợ 112 (Tiền gửi) / Có 131 (Khách trả trước)</code>. Tiền về tài khoản nhưng chưa ghi Có 511.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Event 3 */}
+                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-ink-100">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    3
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">Xuất kho: Giá vốn hàng bán (COGS)</span>
+                      <span className="badge bg-amber-50 text-amber-700 border-amber-200 text-[9px]">ASSUMPTION</span>
+                    </div>
+                    <p className="text-[11px] text-ink-600 mt-0.5">
+                      Hạch toán: <code className="font-mono text-ink-800">Nợ 632 / Có 156</code> theo giá vốn bình quân di động (MAC) ngay khi bàn giao đơn vị vận chuyển.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Event 4 */}
+                <div className={cn(
+                  'flex items-start gap-2.5 p-2 rounded-lg border transition-colors',
+                  order.status === 'delivered' ? 'bg-emerald-50/70 border-emerald-300' : 'bg-white border-ink-100'
+                )}>
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    4
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-ink-900">
+                        Đối soát POD: Ghi nhận Doanh thu Chính thức
+                      </span>
+                      <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 text-[9px]">
+                        {order.status === 'delivered' ? 'Đã kích hoạt' : 'Chờ giao POD'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-ink-600 mt-0.5">
+                      Hạch toán: <code className="font-mono text-ink-800">Nợ 131 / Có 511</code> ({formatCurrency(order.total)}).
+                      <span className="text-amber-700 block mt-0.5 font-medium">
+                        ⚠️ [ASSUMPTION]: Doanh thu chỉ được ghi nhận khi có Bằng chứng giao hàng POD xác nhận theo nguyên tắc FOB Điểm đến.
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
+              </div>
+            )}
 
-            {/* Status history */}
+            {/* TAB 3: AUDIT TRAIL & SYSTEM METADATA */}
+            {activeTab === 'audit' && (
+              <div className="space-y-4 animate-fade-in-up">
+                {/* Technical System Metadata */}
+                <div className="card p-5 space-y-3 bg-slate-50 border border-slate-200">
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck size={14} className="text-teal-600" />
+                    Định danh Hệ Thống & Kiểm Toán
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Order ID</span>
+                      <span className="text-slate-900 font-bold truncate block">{order.id}</span>
+                    </div>
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Mã Đơn Quản Trị</span>
+                      <span className="text-slate-900 font-bold block">#{order.order_number}</span>
+                    </div>
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Tenant ID</span>
+                      <span className="text-slate-700 block truncate">{order.tenant_id}</span>
+                    </div>
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Ghi Nhận Doanh Thu</span>
+                      <span className={cn('badge text-[10px]', order.revenue_recognized ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700')}>
+                        {order.revenue_recognized ? 'Có 511 Đã Đối Soát' : 'Treo Chờ Đối Soát POD'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status history */}
             {logs.length > 0 && (
               <div className="card p-5">
                 <p className="text-sm font-semibold text-ink-700 mb-3 flex items-center gap-2">
@@ -971,7 +1045,9 @@ export function OrderDetailDrawer({
                 </div>
               </div>
             )}
-          </div>
+              </div>
+            )}
+</div>
         )}
       </Drawer>
 

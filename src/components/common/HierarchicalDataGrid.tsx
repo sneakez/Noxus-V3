@@ -71,6 +71,8 @@ export interface HierarchicalDataGridProps<T> {
   selectedRowIds?: Set<string>;
   onSelectionChange?: (selectedIds: Set<string>) => void;
   bulkActions?: (selectedIds: string[], clearSelection: () => void) => React.ReactNode;
+  externalSearchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
   storageKey?: string;
   customPresets?: GridPreset[];
   className?: string;
@@ -98,12 +100,21 @@ export function HierarchicalDataGrid<T>({
   selectedRowIds: controlledSelectedIds,
   onSelectionChange,
   bulkActions,
+  externalSearchQuery,
+  onSearchQueryChange,
   storageKey,
   customPresets,
   className
 }: HierarchicalDataGridProps<T>) {
   // Search query
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(externalSearchQuery ?? '');
+
+  // Synchronize with external search query if provided
+  useEffect(() => {
+    if (externalSearchQuery !== undefined) {
+      setSearchQuery(externalSearchQuery);
+    }
+  }, [externalSearchQuery]);
 
   // Expanded rows
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
@@ -420,7 +431,10 @@ export function HierarchicalDataGrid<T>({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => {
+                  setSearchQuery(e.target.value);
+                  onSearchQueryChange?.(e.target.value);
+                }}
                 className="w-full text-xs py-1.5 pl-8 pr-3 rounded-lg border border-slate-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-sans"
               />
             </div>

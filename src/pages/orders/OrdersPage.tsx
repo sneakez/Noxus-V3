@@ -119,17 +119,9 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
     return orders.filter(o => {
       if (statusFilter !== 'all' && o.status !== statusFilter) return false;
       if (channelFilter !== 'all' && (o.channel || 'shopee') !== channelFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return (
-          o.order_number.toLowerCase().includes(q) ||
-          o.customer?.name?.toLowerCase().includes(q) ||
-          o.customer?.company?.toLowerCase().includes(q)
-        );
-      }
       return true;
     });
-  }, [orders, statusFilter, channelFilter, search]);
+  }, [orders, statusFilter, channelFilter]);
 
   // Level 1 KPI Counters
   const kpis = useMemo(() => {
@@ -563,6 +555,8 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
         rowKey={o => o.id}
         storageKey="orders"
         selectable
+        onRowClick={openOrder}
+        externalSearchQuery={search}
         bulkActions={(selectedIds, clearSelection) => (
           <div className="flex items-center gap-2">
             <button
