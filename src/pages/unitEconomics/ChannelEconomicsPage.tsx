@@ -6,6 +6,7 @@ import { KPICard } from '@/components/charts/KPICard';
 import { GroupedBarChart } from '@/components/charts/GroupedBarChart';
 import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBanner';
 import { cn } from '@/lib/cn';
+import { formatCurrency } from '@/lib/utils';
 
 interface ChannelEconomicsPageProps {
   onNavigate?: (pageId: string) => void;
@@ -241,7 +242,7 @@ export function ChannelEconomicsPage({ onNavigate }: ChannelEconomicsPageProps) 
                   <td className="py-2.5 px-3 font-semibold text-ink-900">{c.channelName}</td>
                   <td className="py-2.5 px-3 text-right font-mono">{c.orderCount}</td>
                   <td className="py-2.5 px-3 text-right font-mono font-bold text-ink-900">
-                    {c.netRevenue.toLocaleString()} ₫
+                    {formatCurrency(c.netRevenue)}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono text-ink-600">
                     {c.cogs.toLocaleString()} ₫

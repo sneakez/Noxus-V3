@@ -435,20 +435,24 @@ class AnalyticsService {
     });
 
     // Decision Insights (4-layer intelligence)
+    const tiktokEcon = this.getChannelEconomics(mockStore.getActiveTenant().id).find(c => c.channel === 'tiktok');
+    const ttNet = tiktokEcon?.netRevenue || 2710000;
+    const ttCm3 = tiktokEcon?.cm3 || 320000;
+
     const decisionInsights: DecisionInsight[] = [
       {
         id: 'ins_01',
         category: 'channel_performance',
         severity: 'WARNING',
-        title: 'Kênh TikTok Shop doanh thu tăng mạnh nhưng CM3 sau Ads mỏng (6.2%)',
-        descriptive: 'Trong 30 ngày qua, TikTok Shop chiếm 34% tổng doanh thu (7.980.000 ₫) nhưng chỉ tạo ra 495.000 ₫ lợi nhuận CM3.',
-        diagnostic: 'Do chi phí Booking KOC và Flash Sale Voucher đẩy chi phí Marketing lên 18.5% doanh thu, cộng với tỷ lệ hoàn hàng cao (7.0%).',
+        title: 'Kênh TikTok Shop doanh thu tăng nhưng biên CM3 sau Ads còn mỏng',
+        descriptive: `Trong kỳ qua, TikTok Shop ghi nhận doanh thu ${ttNet.toLocaleString()} ₫ (${tiktokEcon?.orderCount || 2} đơn hàng) tạo ra ${ttCm3.toLocaleString()} ₫ lợi nhuận CM3.`,
+        diagnostic: 'Do chi phí Booking KOC và Flash Sale Voucher đẩy chi phí Marketing lên cao cộng với tỷ lệ hoàn hàng sàn.',
         predictive: 'Nếu tiếp tục đẩy Ads livestream không kiểm soát ROAS, biên CM3 của TikTok Shop sẽ rơi vào mức âm trong đợt sale tới.',
-        prescriptive: 'Giảm 25% ngân sách Ads mở rộng tệp mới; chỉ tập trung ngân sách retargeting vào 3 SKU có CM2 > 40%; chặn voucher cộng dồn.',
-        calculationFormula: 'CM3 = CM2 (1.980.000 ₫) - Marketing Costs (1.485.000 ₫) = 495.000 ₫ (6.2%)',
+        prescriptive: 'Giảm 25% ngân sách Ads mở rộng tệp mới; chỉ tập trung ngân sách retargeting vào SKU có CM2 > 40%; chặn voucher cộng dồn.',
+        calculationFormula: `CM3 = CM2 (${(tiktokEcon?.cm2 || 0).toLocaleString()} ₫) - Marketing Costs (${(tiktokEcon?.marketingSpend || 0).toLocaleString()} ₫) = ${ttCm3.toLocaleString()} ₫`,
         financialImpactEstimate: 850000,
         dataAttribution: 'ESTIMATED',
-        attributionNote: 'Đơn hàng mô phỏng từ TikTok Shop; chi phí Marketing ước tính phân bổ 8% doanh thu',
+        attributionNote: 'Đơn hàng mô phỏng từ TikTok Shop; chi phí Marketing ước tính phân bổ theo kỳ',
         relatedEntityLink: { page: 'channelEconomics', label: 'Xem Chi Tiết Kênh' }
       },
       {

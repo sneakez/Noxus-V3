@@ -479,10 +479,33 @@ class MockQueryBuilder {
   }
 
   public update(payload: Record<string, unknown>) {
+    const table = this.table;
+    const mutateStore = (col: string, val: unknown) => {
+      if (table === 'orders') {
+        mockStore.updateOrder(String(val), payload as any);
+      } else if (table === 'return_requests' || table === 'returns') {
+        mockStore.updateReturn(String(val), payload as any);
+      } else if (table === 'inventory_items') {
+        mockStore.mutateTable('inventory5State', item => (item as any)[col] === val || (item as any).id === val || (item as any).sku === val, payload);
+      } else {
+        const tableMap: Record<string, any> = {
+          products: 'products',
+          customers: 'customers',
+          warehouses: 'warehouses',
+          picking_waves: 'pickingWaves',
+          fulfillment_waves: 'pickingWaves',
+        };
+        const mappedKey = tableMap[table];
+        if (mappedKey) {
+          mockStore.mutateTable(mappedKey, item => (item as any)[col] === val || (item as any).id === val, payload);
+        }
+      }
+    };
     return {
-      eq: async (_col: string, _val: unknown) => {
+      eq: async (col: string, val: unknown) => {
         await mockStore.delay(20);
-        return { data: payload, error: null };
+        mutateStore(col, val);
+        return { data: payload, error: null, select: () => Promise.resolve({ data: payload, error: null }) };
       },
       then: (resolve: (val: { data: unknown; error: null }) => void) => {
         resolve({ data: payload, error: null });

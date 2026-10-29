@@ -575,6 +575,20 @@ class MockDataStore {
     return { success: true };
   }
 
+  public updateOrder(orderId: string, updates: Partial<Order>): { success: boolean; error?: string } {
+    const order = this.state.orders.find(o => o.id === orderId || o.order_number === orderId);
+    if (!order) return { success: false, error: 'Không tìm thấy đơn hàng' };
+    const now = new Date().toISOString();
+    this.mutate(draft => {
+      const targetOrder = draft.orders.find(o => o.id === order.id);
+      if (targetOrder) {
+        Object.assign(targetOrder, updates);
+        targetOrder.updated_at = now;
+      }
+    }, 'ORDER_STATUS_CHANGED', { orderId: order.id, updates });
+    return { success: true };
+  }
+
   // ============ Advanced Inventory Simulation Workflows ============
 
   public receivePOPendingQC(sku: string, qty: number, poNumber?: string): { success: boolean; error?: string } {
@@ -1190,6 +1204,40 @@ class MockDataStore {
     }, 'RETURN_INSPECTED', { returnId, isGoodCondition });
 
     return { success: true };
+  }
+
+  public updateReturn(returnId: string, updates: Partial<ReturnRecord>): { success: boolean; error?: string } {
+    const ret = this.state.returns.find(r => r.id === returnId || r.return_number === returnId);
+    if (!ret) return { success: false, error: 'Không tìm thấy phiếu đổi trả' };
+    this.mutate(draft => {
+      const targetRet = draft.returns.find(r => r.id === ret.id);
+      if (targetRet) {
+        Object.assign(targetRet, updates);
+        targetRet.updated_at = new Date().toISOString();
+      }
+    }, 'ORDER_STATUS_CHANGED', { returnId: ret.id, updates });
+    return { success: true };
+  }
+
+  public mutateTable<T extends keyof MockDatabaseSnapshot>(
+    tableKey: T,
+    matchFn: (item: any) => boolean,
+    patch: Record<string, unknown>,
+    eventTopic: MockEventTopic = 'ORDER_STATUS_CHANGED'
+  ): boolean {
+    let updated = false;
+    this.mutate(draft => {
+      const list = draft[tableKey];
+      if (Array.isArray(list)) {
+        for (let i = 0; i < list.length; i++) {
+          if (matchFn(list[i])) {
+            Object.assign(list[i], patch);
+            updated = true;
+          }
+        }
+      }
+    }, eventTopic, { tableKey, patch });
+    return updated;
   }
 
   // ============ Double-Entry Balanced Bookkeeping ============

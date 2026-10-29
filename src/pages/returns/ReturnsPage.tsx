@@ -80,6 +80,7 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
   const [showModal, setShowModal] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedRmaId, setSelectedRmaId] = useState<string | null>(null);
+  const [processingRmaId, setProcessingRmaId] = useState<string | null>(null);
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const rmaConfig = mockStore.getRmaConfig();
   const threshold = rmaConfig.approvalThreshold;
@@ -178,13 +179,43 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
 
   // 5. Maker / Checker Approvals
   async function handleApprove(id: string, level: 'maker' | 'checker') {
+    if (processingRmaId) return;
+    const targetRet = returns.find(r => r.id === id);
+    if (!targetRet) return;
+
+    // RBAC check
+    if (activeRole === 'viewer') {
+      toast('Quyền Viewer: Không được phép phê duyệt đổi trả', 'error');
+      return;
+    }
+
+    if (level === 'checker') {
+      // Checker must be finance, admin, or owner
+      if (activeRole !== 'finance' && activeRole !== 'owner' && activeRole !== 'admin') {
+        toast('Vai trò không có quyền Checker. Chỉ Kế toán (Finance) hoặc Ban giám đốc mới có thể phê duyệt chi tiền.', 'error');
+        return;
+      }
+      // Separation of duties: Maker != Checker
+      if (targetRet.maker_by && targetRet.maker_by === activeRole && activeRole !== 'owner') {
+        toast('Chặn tự phê duyệt: Maker không được tự làm Checker. Vui lòng chuyển vai trò sang Kế toán (Finance) để kiểm tra độc lập.', 'error');
+        return;
+      }
+    }
+
+    setProcessingRmaId(id);
     const status = level === 'maker' ? 'maker_approved' : 'checker_approved';
-    const { error } = await supabase.from('return_requests').update({ approval_status: status }).eq('id', id);
+    const patch: Partial<ReturnRequest> = {
+      approval_status: status,
+      ...(level === 'maker' ? { maker_by: activeRole || 'manager' } : { checker_by: activeRole || 'finance' })
+    };
+
+    const { error } = await supabase.from('return_requests').update(patch).eq('id', id);
+    setProcessingRmaId(null);
     if (error) { toast('Phê duyệt thất bại', 'error'); return; }
     toast(
       level === 'maker'
-        ? '✓ Maker (CS/Kho) đã duyệt đề xuất hoàn tiền'
-        : '✓ Checker (Kế toán trưởng) đã phê duyệt hoàn tiền chính thức',
+        ? `✓ Maker (${activeRole}) đã duyệt đề xuất hoàn tiền`
+        : `✓ Checker (${activeRole}) đã phê duyệt hoàn tiền chính thức`,
       'success'
     );
     load();

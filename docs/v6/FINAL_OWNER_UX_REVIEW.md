@@ -1,111 +1,106 @@
-# NEXUSOMS V6.3 — FINAL OWNER UX REVIEW & ACCEPTANCE
+# NEXUSOMS V6.3 — FINAL EVIDENCE & BUSINESS COMPLETION GATE
+*(FINAL OWNER REVIEW & CONDITIONAL ACCEPTANCE REPORT)*
 
 **Phiên bản:** NexusOMS V6.3  
 **Nhánh Git:** `feature/nexusoms-v6-digital-commerce-only`  
-**Điểm bắt đầu:** Commit `d432a98` (HEAD V6.2)  
+**Điểm bắt đầu:** Baseline ứng viên `d91ab12`  
 **Môi trường:** Local Prototype Mock Mode (`VITE_DATA_MODE=mock`)  
 **Ngày hoàn tất:** 29/10/2026  
-**Trạng thái tổng thể:** **CHẤP THUẬN NGHIỆM THU TOÀN DIỆN (FULL ACCEPTANCE)**
+**Trạng thái đề xuất:** **SẴN SÀNG CHO CHỦ ĐẦU TƯ UAT / CHẤP THUẬN CÓ ĐIỀU KIỆN (OWNER UAT READY / CONDITIONAL ACCEPTANCE)**  
 
 ---
 
-## 1. MỤC TIÊU & TÔN CHỈ THIẾT KẾ V6.3
+## 1. MỤC TIÊU & NGUYÊN TẮC MINH BẠCH
 
-NexusOMS V6.3 được triển khai với tinh thần **"Khắc phục triệt để bằng chứng sau nghiệm thu và chuyển dịch toàn diện sang trải nghiệm Task-First"**:
-- **KHÔNG** mở rộng thêm module mới.
-- **KHÔNG** xây dựng backend production, **KHÔNG** sửa đổi Supabase hay database migration.
-- **KHÔNG** làm biến dạng các công thức Unit Economics (CM1, CM2, CM3) và bất biến tồn kho (Inventory Invariant).
-- **KHÔNG** tái đưa POS hay bán trực tiếp tại quầy vào phạm vi Digital Commerce.
-- **TRIỂN KHAI TRIỆT ĐỂ** nguyên tắc kiến trúc:
-  $$\text{TASK FIRST} \longrightarrow \text{CONTEXT SECOND} \longrightarrow \text{DETAILS ON DEMAND}$$
-
----
-
-## 2. KẾT QUẢ KHẮC PHỤC 5 ĐIỂM BẰNG CHỨNG (PHASE 0)
-
-| Mã | Hạng Mục Khắc Phục | Hiện Trạng Trước Khắc Phục | Giải Pháp & Kết Quả Sau Khắc Phục | Minh Chứng / Trạng Thái |
-|:---|:---|:---|:---|:---:|
-| **P0.1** | **Khớp số lượng SKU** | Báo cáo ghi nhận "8 SKU" trong khi mock store thực tế chỉ có 6 SKU; bộ lọc STAR hiển thị 0 dòng gây hiểu lầm là lỗi data. | Cập nhật chính xác số đếm `(6)` trên dropdown bộ lọc; hiển thị thông báo nghiệp vụ rõ ràng khi bộ lọc STAR rỗng (dữ liệu mock chưa có SKU thuộc nhóm Ngôi Sao). | **ĐÃ GIẢI QUYẾT**<br>`01_sku_economics_all_6_skus_1440px.png`<br>`01b_sku_economics_star_filter_empty_explanation_1440px.png` |
-| **P0.2** | **Cắt tiêu đề H1 trên Mobile** | Header dán cố định với thanh tìm kiếm mobile đặt `absolute top-full`, che khuất 51px phần đầu của H1 ở viewport 390px và 360px khi mới tải trang (`scrollY = 0`). | Loại bỏ `absolute top-full`, tích hợp ô tìm kiếm vào luồng bố cục tự nhiên (`normal layout flow`). Chiều cao Header tự động co giãn đạt 118px; H1 bắt đầu tại tọa độ 134px với khoảng đệm an toàn $\ge 16\text{px}$, không có tràn ngang (`hasHorizontalOverflow: false`). | **ĐÃ GIẢI QUYẾT**<br>`02_mobile_390px_fresh_nav_h1_clear_orders.png`<br>`03_mobile_390px_fresh_nav_h1_clear_sku.png`<br>`04_mobile_360px_fresh_nav_orders.png` |
-| **P0.3** | **Độ đọc Typography & Tiền tệ** | Chữ số tiền tệ bị ngắt dòng bất thường (ví dụ: `304.575` xuống dòng `000đ`), tên kho bị chia thành 5-7 dòng. | Áp dụng chuẩn `tabular-nums font-mono whitespace-nowrap` cho toàn bộ hiển thị số tiền và mã định danh. Tên kho áp dụng giới hạn chiều rộng và `truncate` với tooltip đầy đủ khi rê chuột. | **ĐÃ GIẢI QUYẾT**<br>`INFORMATION_DENSITY_AUDIT.md` |
-| **P0.4** | **Chuẩn hóa thuật ngữ danh mục SKU** | Tồn tại sự nhầm lẫn giữa tên thương mại quốc tế (BCG Matrix) và thuật ngữ sản phẩm. | Đồng bộ 100% mã nguồn, giao diện và tài liệu kỹ thuật sang thuật ngữ chính thức: **SKU Portfolio Matrix** (Ma trận Danh mục SKU) với các phân nhóm: Bò Sữa, Ngôi Sao, Dấu Hỏi, Chậm Luân Chuyển. | **ĐÃ GIẢI QUYẾT**<br>`BUSINESS_TERMINOLOGY_DICTIONARY.md` |
-| **P0.5** | **Minh bạch ma trận bao phủ kiểm thử** | Báo cáo cũ tuyên bố "100% System Accepted" dễ gây ngộ nhận là toàn bộ 41 route đều được thao tác trình duyệt sâu. | Lập bảng ma trận bao phủ 41 route minh bạch: phân định rõ 8 module cốt lõi được tương tác trình duyệt sâu, 37 route được kiểm thử tích hợp/logic qua Vitest, và 4 route tiện ích phụ trợ tĩnh. Tuyệt đối không phóng đại phạm vi. | **ĐÃ GIẢI QUYẾT**<br>`ROUTE_TEST_COVERAGE_MATRIX.md` |
+NexusOMS V6.3 được triển khai nhằm thiết lập ranh giới nghiệm thu trung thực, phân định rõ phạm vi kiểm thử tự động với đánh giá trải nghiệm thực tế của người dùng:
+- **KHÔNG** thêm tính năng mới, **KHÔNG** mở rộng module ngoài phạm vi Digital Commerce.
+- **KHÔNG** can thiệp vào backend production, **KHÔNG** chỉnh sửa schema Supabase hay database migrations.
+- **KHÔNG** làm biến dạng các công thức Unit Economics (CM1, CM2, CM3) và bất biến tồn kho ($Physical = Sellable + Reserved + Unavailable$).
+- **KHÔNG** tuyên bố phóng đại "100% Full Acceptance" hay "loại bỏ hoàn toàn mọi lỗi".
+- **THIẾT LẬP RÕ RÀNG:** Báo cáo phản ánh kết quả **Xác minh Luồng Tác vụ Tự Động (Automated Task Flow Verification)** trên trình duyệt Chromium thật, chứng minh năng lực thực thi nghiệp vụ (Business Completion) song song với điều hướng giao diện (Navigation).
 
 ---
 
-## 3. CHUYỂN DỊCH KIẾN TRÚC 4 CẤP ĐỘ (TASK-FIRST ARCHITECTURE)
+## 2. KẾT QUẢ ĐỘC LẬP: NAVIGATION VS BUSINESS COMPLETION (5 OWNER TASKS)
 
-Hệ thống đã loại bỏ hoàn toàn tình trạng "ngợp dữ liệu" (Data Overload) bằng cách chuẩn hóa mọi trang nghiệp vụ theo 4 cấp độ:
+Tập lệnh tự động hóa `verify_v6_3_business_completion.cjs` đã thực thi kiểm thử trực tiếp trên trình duyệt Chromium với kết quả độc lập cho 5 tác vụ điều hành:
 
 ```mermaid
-flowchart TD
-    L1["CẤP ĐỘ 1: Tóm Tắt Tối Giản (Simple Summary)<br>2 - 4 chỉ số KPI then chốt + 1 CTA chính"] --> L2["CẤP ĐỘ 2: Trung Tâm Hành Động (Action Center)<br>Việc Cần Xử Lý Ngay (Pending, Cảnh báo, QC)"]
-    L2 --> L3["CẤP ĐỘ 3: Không Gian Dữ Liệu Tinh Gọn (Clean Data Workspace)<br>Bảng dữ liệu phân nhóm cột + Bộ lọc Preset (Đơn giản / Vận hành / Tài chính)"]
-    L3 --> L4["CẤP ĐỘ 4: Chi Tiết Theo Nhu Cầu (Detail on Demand)<br>Drawer trượt, Accordion P&L Waterfall, Modal nghiệp vụ chuyên sâu"]
+flowchart LR
+    subgraph T1 [Task 1: Orders]
+        N1[Navigation PASS] --> B1[Business Completion PASS<br>pending -> processing, revision 0->1]
+    end
+    subgraph T2 [Task 2: Inventory QC]
+        N2[Navigation PASS] --> B2[Business Completion PASS<br>PendingQC 3->0, Sellable +2, Damaged +1<br>Physical 95 bất biến]
+    end
+    subgraph T3 [Task 3: Order Econ]
+        N3[Navigation PASS] --> B3[Business Completion PASS<br>P&L Waterfall line items reconciled]
+    end
+    subgraph T4 [Task 4: RMA Maker/Checker]
+        N4[Navigation PASS] --> B4[Business Completion PASS<br>Manager approved Maker, Self-approval blocked<br>Finance approved Checker]
+    end
+    subgraph T5 [Task 5: Dashboard Drill-down]
+        N5[Navigation PASS] --> B5[Business Completion PASS<br>Landed on Channel Econ, TikTok 2.710.000 ₫ match]
+    end
 ```
 
-### Các trang tiêu biểu đã chuyển dịch thành công:
-1. **Quản Lý Đơn Hàng (`/orders`):**
-   - *Level 1:* 4 thẻ KPI tinh gọn (Chờ duyệt, Đang đóng gói, Đang giao, Đã hoàn tất).
-   - *Level 2:* Action Center hiển thị nổi bật 3 việc khẩn cấp: Đơn chờ khóa tồn & duyệt (Shopee), Đơn cần gom đợt nhặt hàng (Wave picking), Đơn cần đối soát POD.
-   - *Level 3:* Bảng lưới phân nhóm với 4 bộ lọc preset lưu trong `localStorage`.
-   - *Level 4:* Drawer trượt xem toàn diện đơn hàng, chi tiết phí sàn, timeline và P&L.
-2. **Quản Lý Kho Hàng (`/inventory`):**
-   - *Level 1:* Bộ chỉ số bất biến chuẩn: $Physical = Sellable + Reserved + Unavailable$.
-   - *Level 2:* Action Center cảnh báo trực tiếp: Lô hàng chờ nghiệm thu QC tại dock, SKU chạm ngưỡng an toàn cần lên PO, Hàng hư hỏng cần thanh lý.
-   - *Level 3:* Lưới SKU với cảnh báo runway và lead time.
-   - *Level 4:* Modal nghiệm thu QC, Modal xuất trả nhà cung cấp, Modal phân bổ vị trí kệ.
-3. **Quản Lý Đổi Trả RMA (`/returns`):**
-   - *Level 1:* Tỷ lệ hoàn hàng, Giá trị yêu cầu hoàn tiền đang chờ.
-   - *Level 2:* Action Center xử lý phân luồng: Duyệt Maker/Checker cho đơn giá trị cao, Phiếu kiểm định QC tại kho, Danh sách hoàn tiền trực tiếp không cần trả hàng (Returnless Refund).
-   - *Level 3:* Bảng RMA thích ứng theo từng loại yêu cầu (Hoàn tiền, Đổi hàng, Bảo hành).
-   - *Level 4:* Stepper luồng xử lý tự động điều chỉnh theo nhánh nghiệp vụ.
-4. **Phân Tích Đơn Vị SKU (`/sku-economics`):**
-   - *Level 1:* Doanh thu thuần, Lãi gộp CM1, Lãi sau sàn CM2, Lãi ròng đóng góp CM3.
-   - *Level 2:* Khuyến nghị danh mục hành động: Bảo vệ tồn kho nhóm Bò Sữa, Tăng khuyến mãi nhóm Dấu Hỏi, Xả kho nhóm Chậm Luân Chuyển.
-   - *Level 3:* Ma trận danh mục SKU Portfolio Matrix trực quan.
-   - *Level 4:* Bảng phân tích chi tiết từng mã SKU với phân rã chi phí marketing và phí sàn.
+| Tác Vụ Nghiệp Vụ | Navigation Result | Business Completion Result | Bằng Chứng Biến Động Dữ Liệu |
+|:---|:---:|:---:|:---|
+| **TASK 1: Xử lý đơn hàng Shopee** | **PASS** | **PASS** | Đơn `ORD-44812` chuyển `pending` $\rightarrow$ `processing`; `stateRevision` tăng 0 $\rightarrow$ 1; dữ liệu duy trì sau khi reload trang; vai trò `viewer` bị chặn thao tác. |
+| **TASK 2: Kiểm định QC hàng hoàn/nhập** | **PASS** | **PASS** | Nghiệm thu 3 đơn vị `NX-TITAN-1L`: `Pending QC` 3 $\rightarrow$ 0; `Sellable` 65 $\rightarrow$ 67 ($+2$); `Damaged` 2 $\rightarrow$ 3 ($+1$); `Physical` giữ nguyên 95; ghi nhận 2 bút toán thẻ kho. |
+| **TASK 3: Phân rã P&L Waterfall đơn hàng** | **PASS** | **PASS** | Đơn `ORD-90214`: Net Revenue (1.250.000 ₫) - COGS (680.000 ₫) = CM1 (570.000 ₫). Số liệu trên UI khớp chính xác từng số hạng trong `mockStore`. |
+| **TASK 4: Phê duyệt RMA Kiểm soát Kép** | **PASS** | **PASS** | Đơn `RMA-2026-009`: Quản lý duyệt Maker (`maker_by = 'manager'`); cơ chế chặn tự duyệt Checker hoạt động chính xác; Kế toán duyệt Checker (`checker_by = 'finance'`). |
+| **TASK 5: Quyết định từ Dashboard** | **PASS** | **PASS** | Nhấp khuyến nghị từ Action Center chuyển thẳng sang Channel Economics; số liệu doanh thu thuần TikTok Shop hiển thị `2.710.000 ₫` khớp tuyệt đối giữa hai màn hình. |
 
 ---
 
-## 4. KẾT QUẢ THỰC NGHIỆM VÀ ĐO LƯỜNG TỰ ĐỘNG
+## 3. PHÂN TẦNG MINH BẠCH 41 ROUTE HỆ THỐNG
 
-### 4.1. TypeScript Compiler & Unit/Integration Suite
-- `npx tsc --noEmit`: **0 lỗi biên dịch**.
-- `npx vitest run`: **14 test suites, 83/83 unit/integration tests passed 100%**.
-- Độ bao phủ bao gồm: Invariant Rules, RBAC, Data Consistency, Multitenancy, V6 Independent Reconciliation, Mock Workflow Scenarios.
+Thay vì tuyên bố chung chung, toàn bộ 41 route đã được phân loại minh bạch vào đúng 5 tầng kiểm thử tại [ROUTE_TEST_COVERAGE_MATRIX.md](file:///d:/Noxus-V3/docs/v6/ROUTE_TEST_COVERAGE_MATRIX.md):
 
-### 4.2. Puppeteer Real Chromium Usability Testing
-Tập lệnh `verify_v6_3_master_acceptance.cjs` chạy trực tiếp trên Chrome:
-- **P0.1 SKU Count Verification:** Xác nhận chính xác 6 dòng dữ liệu cho 6 SKU vật lý của tenant. Khớp 100% giữa code, mock store và UI.
-- **P0.2 Mobile 390px & 360px Fresh Navigation:** Xác nhận khoảng cách an toàn giữa Header và H1 $\ge 16\text{px}$. Không có tràn ngang (`hasHorizontalOverflow: false`). Tiêu đề H1 hoàn toàn hiển thị không bị che lấp.
-- **Phase 8 Usability Tasks (5/5 PASS):**
-  - Task 1 (Mở Drawer đơn pending): **PASS (1 click)**.
-  - Task 2 (Mở Modal QC kho): **PASS (1 click)**.
-  - Task 3 (Mở Waterfall P&L đơn hàng): **PASS (1 click)**.
-  - Task 4 (Duyệt RMA Maker/Checker): **PASS (1 click)**.
-  - Task 5 (Điều hướng từ khuyến nghị Dashboard): **PASS (1 click)**.
+1. **Tier 1: Full Business Flow Tested (4 routes):** `orders`, `inventory`, `returns`, `orderEconomics` $\rightarrow$ Xác minh cả giao diện và đột biến dữ liệu nghiệp vụ thực tế trong mock store.
+2. **Tier 2: Browser Interaction Tested (4 routes):** `dashboard`, `salesAnalytics`, `skuEconomics`, `channelEconomics` $\rightarrow$ Xác minh tương tác người dùng, preset lọc, drill-down và khớp số liệu.
+3. **Tier 3: Browser Render Tested (3 routes):** `inventoryAnalytics`, `pricingCalculator`, `ownerValidation` $\rightarrow$ Xác minh hiển thị bố cục CSS, typography tiền tệ và không tràn ngang trên Chromium.
+4. **Tier 4: Unit/Domain Logic Tested (26 routes):** Các route vận hành và phân tích chuyên sâu được kiểm thử logic toán học và nghiệp vụ qua bộ 83 test cases trong Vitest (chưa chạy browser interaction test riêng).
+5. **Tier 5: Not Tested (4 routes):** Các màn hình tiện ích nguyên mẫu phụ trợ (`complaints`, `automationRules`, `webhooks`, `flowGuide`) chưa chạy kiểm thử trình duyệt.
 
 ---
 
-## 5. HỒ SƠ TÀI LIỆU NGHIỆM THU ĐÃ CẬP NHẬT
+## 4. KẾT QUẢ KIỂM THỬ KỸ THUẬT NỀN TẢNG
 
-Tất cả tài liệu kỹ thuật và thiết kế của phiên bản V6.3 được lưu trữ đầy đủ trong thư mục `docs/v6/`:
-1. [POST_ACCEPTANCE_CORRECTION_REPORT.md](file:///d:/Noxus-V3/docs/v6/POST_ACCEPTANCE_CORRECTION_REPORT.md): Báo cáo chi tiết việc khắc phục 5 điểm bằng chứng sau nghiệm thu.
-2. [ROUTE_TEST_COVERAGE_MATRIX.md](file:///d:/Noxus-V3/docs/v6/ROUTE_TEST_COVERAGE_MATRIX.md): Ma trận bao phủ kiểm thử minh bạch cho toàn bộ 41 route hệ thống.
-3. [INFORMATION_DENSITY_AUDIT.md](file:///d:/Noxus-V3/docs/v6/INFORMATION_DENSITY_AUDIT.md): Kiểm toán mật độ thông tin, quy chuẩn typography, định dạng tiền tệ và độ tương phản.
-4. [TASK_FIRST_UX_BLUEPRINT.md](file:///d:/Noxus-V3/docs/v6/TASK_FIRST_UX_BLUEPRINT.md): Bản thiết kế kiến trúc trải nghiệm người dùng theo định hướng tác vụ nghiệp vụ.
-5. [PAGE_BY_PAGE_BEFORE_AFTER.md](file:///d:/Noxus-V3/docs/v6/PAGE_BY_PAGE_BEFORE_AFTER.md): Bảng so sánh trực quan từng trang trước và sau khi cải tạo.
-6. [BUSINESS_TERMINOLOGY_DICTIONARY.md](file:///d:/Noxus-V3/docs/v6/BUSINESS_TERMINOLOGY_DICTIONARY.md): Từ điển thuật ngữ kinh doanh số chuẩn hóa.
-7. [OWNER_USABILITY_TEST_RESULTS.md](file:///d:/Noxus-V3/docs/v6/OWNER_USABILITY_TEST_RESULTS.md): Kết quả kiểm thử khả năng sử dụng của chủ doanh nghiệp qua 5 tác vụ thực tế.
-8. [FINAL_OWNER_UX_REVIEW.md](file:///d:/Noxus-V3/docs/v6/FINAL_OWNER_UX_REVIEW.md): Báo cáo tổng kết và phê duyệt nghiệm thu chính thức.
+- **TypeScript Type Checker:** `npx tsc --noEmit` $\rightarrow$ **0 lỗi biên dịch**.
+- **Vitest Unit/Integration Test Suite:** `npx vitest run` $\rightarrow$ **14 test suites, 83/83 tests passing 100%**.
+- **Browser Automation Console Errors:** Không phát hiện bất kỳ lỗi nghiêm trọng (`0 fatal console errors`) trong suốt quá trình chạy 5 tác vụ điều hành trên Chromium.
+- **Hồ sơ hình ảnh bằng chứng:** 18 ảnh chụp độ phân giải chuẩn được lưu trữ tại `docs/v6/evidence-v6-3/` và thư mục artifact hệ thống.
 
 ---
 
-## 6. TUYÊN BỐ ĐÓNG BĂNG BASELINE (FREEZE STATEMENT)
+## 5. ĐIỀU KIỆN CHẤP THUẬN NGHIỆM THU (CONDITIONAL ACCEPTANCE TERMS)
 
-Phiên bản **NexusOMS V6.3** trên nhánh `feature/nexusoms-v6-digital-commerce-only` đã hoàn thành toàn bộ yêu cầu của Chủ đầu tư:
-- Không còn bất kỳ khiếm khuyết hiển thị hay sự sai lệch dữ liệu nào giữa báo cáo và giao diện thực tế.
-- Mọi bằng chứng kiểm thử được ghi nhận trực tiếp từ trình duyệt Chromium với ảnh chụp độ phân giải thực.
-- Giao diện đạt độ tinh giản, loại bỏ hoàn toàn sự rối rắm và chuyển thành hệ điều hành thương mại số vận hành theo tác vụ thực tiễn.
-- **CHÍNH THỨC ĐÓNG BĂNG BASELINE V6.3 VÀ SẴN SÀNG BÀN GIAO.**
+Dựa trên kết quả xác minh kỹ thuật thực tế, nhóm phát triển trân trọng đề xuất trạng thái **OWNER UAT READY / CONDITIONAL ACCEPTANCE** với các điều kiện ràng buộc minh bạch sau:
+
+> [!IMPORTANT]
+> **ĐIỀU KIỆN 1: MÔI TRƯỜNG NGUYÊN MẪU (PROTOTYPE SCOPE)**  
+> Toàn bộ hệ thống hiện đang vận hành trên Mock Engine cục bộ (`VITE_DATA_MODE=mock`) với lưu trữ trạng thái qua bộ nhớ RAM và `localStorage`. Hệ thống **chưa** kết nối cơ sở dữ liệu production PostgreSQL/Supabase và chưa xử lý các vấn đề đồng thời (concurrency) đa người dùng thực tế.
+
+> [!IMPORTANT]
+> **ĐIỀU KIỆN 2: RANH GIỚI KIỂM THỬ TRÌNH DUYỆT (BROWSER TEST BOUNDARY)**  
+> Kiểm thử tương tác và hoàn tất nghiệp vụ trên trình duyệt đã bao phủ 100% các phân hệ vận hành và tài chính số cốt lõi (Tier 1 & Tier 2: 8 routes). 26 route phân tích phụ trợ đạt chuẩn ở tầng kiểm thử logic (Tier 4), và 4 route tiện ích phụ trợ (Tier 5) là mockup tĩnh.
+
+> [!IMPORTANT]
+> **ĐIỀU KIỆN 3: ĐÁNH GIÁ TRẢI NGHIỆM THỰC TẾ (HUMAN UAT)**  
+> Các kết quả đo lường thao tác (1 click mở Drawer, 1 click mở modal QC, v.v.) là kết quả từ kịch bản tự động hóa (Automated Verification). Chủ đầu tư và đội ngũ vận hành thực tế sẽ thực hiện vòng đánh giá trải nghiệm trực tiếp (Human UAT) trên phiên bản này để đưa ra quyết định nghiệm thu thương mại cuối cùng.
+
+---
+
+## 6. DANH MỤC HỒ SƠ TÀI LIỆU HOÀN CHỈNH
+
+Hồ sơ bàn giao nghiệm thu V6.3 được cấu trúc đầy đủ trong thư mục `docs/v6/`:
+1. [ROUTE_TEST_COVERAGE_MATRIX.md](file:///d:/Noxus-V3/docs/v6/ROUTE_TEST_COVERAGE_MATRIX.md): Ma trận 5 tầng phân loại độ phủ kiểm thử của 41 route.
+2. [OWNER_USABILITY_TEST_RESULTS.md](file:///d:/Noxus-V3/docs/v6/OWNER_USABILITY_TEST_RESULTS.md): Kết quả xác minh luồng tác vụ tự động, phân định Navigation và Business Completion cho 5 tác vụ điều hành.
+3. [POST_ACCEPTANCE_CORRECTION_REPORT.md](file:///d:/Noxus-V3/docs/v6/POST_ACCEPTANCE_CORRECTION_REPORT.md): Báo cáo khắc phục 5 điểm bằng chứng sau nghiệm thu.
+4. [INFORMATION_DENSITY_AUDIT.md](file:///d:/Noxus-V3/docs/v6/INFORMATION_DENSITY_AUDIT.md): Kiểm toán mật độ thông tin, typography tiền tệ và độ tương phản.
+5. [TASK_FIRST_UX_BLUEPRINT.md](file:///d:/Noxus-V3/docs/v6/TASK_FIRST_UX_BLUEPRINT.md): Bản thiết kế kiến trúc trải nghiệm theo định hướng tác vụ.
+6. [PAGE_BY_PAGE_BEFORE_AFTER.md](file:///d:/Noxus-V3/docs/v6/PAGE_BY_PAGE_BEFORE_AFTER.md): Bảng đối chiếu giao diện trước và sau cải tạo.
+7. [BUSINESS_TERMINOLOGY_DICTIONARY.md](file:///d:/Noxus-V3/docs/v6/BUSINESS_TERMINOLOGY_DICTIONARY.md): Từ điển thuật ngữ kinh doanh số chuẩn hóa.
+8. [FINAL_OWNER_UX_REVIEW.md](file:///d:/Noxus-V3/docs/v6/FINAL_OWNER_UX_REVIEW.md): Báo cáo tổng kết nghiệm thu và đề xuất chấp thuận có điều kiện.

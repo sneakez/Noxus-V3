@@ -42,7 +42,8 @@ interface InventoryRow extends InventoryItem {
 
 export function InventoryPage({ search }: InventoryPageProps) {
   const toast = useToast();
-  const { activeTenant } = useAuth();
+  const { activeTenant, activeRole } = useAuth();
+  const [isMutating, setIsMutating] = useState(false);
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,10 +52,10 @@ export function InventoryPage({ search }: InventoryPageProps) {
 
   // Inventory Scenarios Simulation Modal State
   const [activeModal, setActiveModal] = useState<'none' | 'receive_po' | 'qc_inspect' | 'quarantine' | 'transfer'>('none');
-  const [selectedSku, setSelectedSku] = useState('NX-AIR-PRO');
+  const [selectedSku, setSelectedSku] = useState('NX-TITAN-1L');
   const [simQty, setSimQty] = useState(10);
-  const [passQty, setPassQty] = useState(8);
-  const [failQty, setFailQty] = useState(2);
+  const [passQty, setPassQty] = useState(2);
+  const [failQty, setFailQty] = useState(1);
   const [simReason, setSimReason] = useState('Trầy xước vỏ hộp / Lỗi mic thu âm');
   const [transferStage, setTransferStage] = useState<'dispatch' | 'receive'>('dispatch');
 
@@ -64,6 +65,12 @@ export function InventoryPage({ search }: InventoryPageProps) {
   const [verifyData, setVerifyData] = useState<{ checked: boolean; discrepancies: Array<{ product_id: string; sku: string; issue: string }> } | null>(null);
 
   function handleSimReceivePO() {
+    if (isMutating) return;
+    if (activeRole === 'viewer') {
+      toast('Quyền Viewer: Không được phép thao tác biến động tồn kho', 'error');
+      return;
+    }
+    setIsMutating(true);
     const res = mockStore.receivePOPendingQC(selectedSku, simQty, `PO-IMPORT-${Date.now().toString().slice(-4)}`);
     if (!res.success) {
       toast(res.error || 'Nhập hàng thất bại', 'error');
@@ -71,10 +78,17 @@ export function InventoryPage({ search }: InventoryPageProps) {
     }
     toast(`✓ Đã nhập ${simQty}x ${selectedSku} vào kho dock (Pending QC: Chờ kiểm định)`, 'success');
     setActiveModal('none');
+    setIsMutating(false);
     load();
   }
 
   function handleSimQCInspect() {
+    if (isMutating) return;
+    if (activeRole === 'viewer') {
+      toast('Quyền Viewer: Không được phép thao tác biến động tồn kho', 'error');
+      return;
+    }
+    setIsMutating(true);
     const res = mockStore.inspectInboundQC(selectedSku, passQty, failQty);
     if (!res.success) {
       toast(res.error || 'Nghiệm thu QC thất bại', 'error');
@@ -351,7 +365,16 @@ export function InventoryPage({ search }: InventoryPageProps) {
               </p>
             </div>
             <button
-              onClick={() => setActiveModal('qc_inspect')}
+              onClick={() => {
+                const pendingItem = items.find(i => (i.pending_qc_qty || 0) > 0);
+                if (pendingItem) {
+                  setSelectedSku(pendingItem.products?.sku || pendingItem.sku || 'NX-TITAN-1L');
+                  const pq = pendingItem.pending_qc_qty || 3;
+                  setPassQty(Math.max(1, pq - 1));
+                  setFailQty(1);
+                }
+                setActiveModal('qc_inspect');
+              }}
               className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-amber-900 border-amber-300 hover:bg-amber-100 cursor-pointer"
             >
               <span>Nghiệm thu QC mở bán</span>

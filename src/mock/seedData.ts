@@ -1239,8 +1239,11 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       order_id: 'ord_88201',
       customer_id: 'cust_04',
       reason: 'Khách muốn đổi sang bản màu Trắng Bạc',
-      status: 'quality_check',
+      status: 'qc_passed',
       return_type: 'customer_rma',
+      refund_amount: 1250000,
+      approval_status: 'pending',
+      maker_checker_rule: 'Bắt buộc Checker duyệt (Đơn >= 1M)',
       created_at: '2026-10-28T11:00:00Z',
       updated_at: '2026-10-28T11:20:00Z'
     }

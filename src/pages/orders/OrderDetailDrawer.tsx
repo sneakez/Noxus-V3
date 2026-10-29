@@ -53,19 +53,28 @@ import type {
 
 interface OrderDetailDrawerProps {
   order: Order | null;
-  open: boolean;
+  open?: boolean;
+  isOpen?: boolean;
   onClose: () => void;
-  onUpdated: () => void;
-  onDeleted: () => void;
+  onUpdated?: () => void;
+  onOrderUpdated?: () => void;
+  onDeleted?: () => void;
+  onOrderDeleted?: () => void;
 }
 
 export function OrderDetailDrawer({
   order,
   open,
+  isOpen,
   onClose,
   onUpdated,
+  onOrderUpdated,
   onDeleted,
+  onOrderDeleted,
 }: OrderDetailDrawerProps) {
+  const isDrawerOpen = Boolean(open ?? isOpen);
+  const handleUpdated = onUpdated ?? onOrderUpdated ?? (() => {});
+  const handleDeleted = onDeleted ?? onOrderDeleted ?? (() => {});
   const toast = useToast();
   const { activeTenant, activeRole } = useAuth();
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -125,6 +134,15 @@ export function OrderDetailDrawer({
 
   async function updateStatus(newStatus: OrderStatus) {
     if (!order) return;
+    if (updating) return;
+    if (activeRole === 'viewer') {
+      toast('Tài khoản quyền Chỉ Xem (Viewer) không có quyền thay đổi trạng thái đơn', 'error');
+      return;
+    }
+    if (newStatus === 'cancelled') {
+      const ok = window.confirm('Xác nhận hủy đơn hàng #' + order.order_number + '? Thao tác này sẽ giải phóng toàn bộ tồn kho đã khóa và hoàn tiền cho khách.');
+      if (!ok) return;
+    }
 
     // Delivery requires Verified Proof of Delivery (POD)
     if (newStatus === 'delivered') {
@@ -176,7 +194,7 @@ export function OrderDetailDrawer({
 
     toast(`Đã cập nhật trạng thái đơn: ${ORDER_STATUS_LABELS[newStatus]}`, 'success');
     setUpdating(false);
-    onUpdated();
+    handleUpdated();
   }
 
   async function handlePodSubmit() {
@@ -227,7 +245,7 @@ export function OrderDetailDrawer({
     toast('✓ Xác thực POD thành công: Đơn hàng hoàn tất & Ghi nhận Doanh thu Có 511 [ASSUMPTION]', 'success');
     setShowPodModal(false);
     setUpdating(false);
-    onUpdated();
+    handleUpdated();
   }
 
   async function updatePayment(newPayment: PaymentStatus) {
@@ -242,7 +260,7 @@ export function OrderDetailDrawer({
       toast('Cap nhat thanh toan that bai', 'error');
     } else {
       toast(`Trang thai thanh toan: ${PAYMENT_STATUS_LABELS[newPayment]}`, 'success');
-      onUpdated();
+      handleUpdated();
     }
     setUpdating(false);
   }
@@ -262,7 +280,7 @@ export function OrderDetailDrawer({
       return;
     }
     toast('Da xoa don hang', 'success');
-    onDeleted();
+    handleDeleted();
     onClose();
   }
 
@@ -271,7 +289,7 @@ export function OrderDetailDrawer({
   return (
     <>
       <Drawer
-        open={open}
+        open={isDrawerOpen}
         onClose={onClose}
         title={order.order_number}
         subtitle={`Dat hang ${formatDateTime(order.placed_at)}`}
