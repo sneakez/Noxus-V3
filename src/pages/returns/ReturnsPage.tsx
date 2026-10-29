@@ -252,6 +252,108 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
         </div>
       )}
 
+      {/* LEVEL 2: ACTION CENTER — HỒ SƠ ĐỔI TRẢ CẦN XỬ LÝ (TASK-FIRST ARCHITECTURE) */}
+      <div className="rounded-xl border border-ink-200 bg-white p-4 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse" />
+            <h3 className="text-sm font-bold text-ink-900 tracking-tight">
+              Trung Tâm Hồ Sơ RMA Cần Xử Lý (RMA Task Center)
+            </h3>
+            <span className="badge bg-cyan-100 text-cyan-900 border-cyan-300 text-[10px] font-bold">
+              {returns.filter(r => r.approval_status === 'pending' || r.status === 'pending_qc').length} việc cần giải quyết
+            </span>
+          </div>
+          <span className="text-xs text-ink-500 hidden sm:inline">
+            Theo dõi tiến trình theo 3 nhánh: Hoàn tiền có thu hồi • Returnless Refund (Bỏ qua QC) • Đổi hàng & Bảo hành
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Card 1: Chờ Maker/Checker duyệt */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+                  1. Chờ Phê Duyệt (Maker/Checker)
+                </span>
+                <span className="badge bg-amber-200 text-amber-900 border-amber-300 text-[10px] font-mono font-bold">
+                  {returns.filter(r => r.approval_status === 'pending').length} hồ sơ
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Phiếu RMA mới khởi tạo từ khách hàng, cần cấp Manager/Owner phê duyệt tính hợp lệ của lý do đổi trả.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const pendingRma = returns.find(r => r.approval_status === 'pending');
+                if (pendingRma) setSelectedRmaId(pendingRma.id);
+              }}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-amber-900 border-amber-300 hover:bg-amber-100 cursor-pointer"
+            >
+              <span>Phê duyệt hồ sơ chờ</span>
+              <ShieldCheck size={13} />
+            </button>
+          </div>
+
+          {/* Card 2: Chờ kiểm định QC kho */}
+          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
+                  2. Chờ Kiểm Định QC Kho
+                </span>
+                <span className="badge bg-blue-200 text-blue-900 border-blue-300 text-[10px] font-mono font-bold">
+                  {returns.filter(r => r.status === 'pending_qc' || r.status === 'received').length} hồ sơ
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Hàng hoàn đã về kho (ngoại trừ Returnless Refund), cần thủ kho kiểm tra ngoại quan và test chức năng.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const qcRma = returns.find(r => r.status === 'pending_qc' || r.status === 'received');
+                if (qcRma) setSelectedRmaId(qcRma.id);
+              }}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-blue-900 border-blue-300 hover:bg-blue-100 cursor-pointer"
+            >
+              <span>Kiểm định hàng thu hồi</span>
+              <FileCheck2 size={13} />
+            </button>
+          </div>
+
+          {/* Card 3: Returnless Refund hoặc hoàn tiền đã duyệt */}
+          <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-900">
+                  3. Hoàn Tiền Trực Tiếp (Returnless)
+                </span>
+                <span className="badge bg-cyan-200 text-cyan-900 border-cyan-300 text-[10px] font-mono font-bold">
+                  {returns.filter(r => r.rma_branch === 'returnless_refund').length} hồ sơ
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Chính sách hoàn tiền nhanh không thu hồi hàng đối với sản phẩm giá trị nhỏ hoặc lỗi do vận chuyển.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setBranchFilter('returnless_refund');
+                const ret = returns.find(r => r.rma_branch === 'returnless_refund');
+                if (ret) setSelectedRmaId(ret.id);
+              }}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-cyan-900 border-cyan-300 hover:bg-cyan-100 cursor-pointer"
+            >
+              <span>Xem luồng Returnless Refund</span>
+              <Sparkles size={13} />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Branch Quick Filter Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
         {[

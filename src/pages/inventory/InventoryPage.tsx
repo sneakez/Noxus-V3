@@ -222,7 +222,7 @@ export function InventoryPage({ search }: InventoryPageProps) {
       {/* Header Actions */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-bold text-ink-900 tracking-tight">Kiểm Soát Tồn Kho Chuẩn Nexus</h2>
+          <h1 className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight">Kiểm Soát Tồn Kho Chuẩn Nexus</h1>
           <p className="text-xs text-ink-500 mt-0.5">
             Mô hình toán học bất biến: Physical = Sellable + Reserved + Unavailable (QC + Damaged) · Pipeline (In-transit + Incoming) tách biệt
           </p>
@@ -317,14 +317,97 @@ export function InventoryPage({ search }: InventoryPageProps) {
         />
       </div>
 
-      {lowStockCount > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <AlertTriangle size={18} className="text-amber-600" />
-          <p className="text-sm text-amber-800">
-            <span className="font-semibold">{lowStockCount}</span> mặt hàng đang đạt hoặc dưới mức tồn an toàn — cần bổ sung từ PO.
-          </p>
+      {/* LEVEL 2: ACTION CENTER — VIỆC KHO CẦN XỬ LÝ (TASK-FIRST ARCHITECTURE) */}
+      <div className="rounded-xl border border-ink-200 bg-white p-4 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <h3 className="text-sm font-bold text-ink-900 tracking-tight">
+              Tác Vụ Kho Cần Ưu Tiên Xử Lý (Inventory Task Center)
+            </h3>
+            <span className="badge bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold">
+              {lowStockCount + (totalPendingQC > 0 ? 1 : 0) + (totalDamaged > 0 ? 1 : 0)} việc cần chú ý
+            </span>
+          </div>
+          <span className="text-xs text-ink-500 hidden sm:inline">
+            Tự động phát hiện dựa trên Invariant kho bãi & Ngưỡng an toàn Safety Stock
+          </span>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Card 1: Hàng tại Dock chờ QC */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+                  1. Hàng Chờ Nghiệm Thu QC
+                </span>
+                <span className="badge bg-amber-200 text-amber-900 border-amber-300 text-[10px] font-mono font-bold">
+                  {totalPendingQC} cái
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Hàng PO đã cập dock, đang ở trạng thái Chưa thể bán. Cần kiểm định chất lượng để chuyển vào Có thể bán (Sellable).
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveModal('qc_inspect')}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-amber-900 border-amber-300 hover:bg-amber-100 cursor-pointer"
+            >
+              <span>Nghiệm thu QC mở bán</span>
+              <FileCheck2 size={13} />
+            </button>
+          </div>
+
+          {/* Card 2: Cảnh báo hàng sắp hết */}
+          <div className="rounded-lg border border-rose-200 bg-rose-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-900">
+                  2. SKU Chạm Ngưỡng An Toàn
+                </span>
+                <span className="badge bg-rose-200 text-rose-900 border-rose-300 text-[10px] font-mono font-bold">
+                  {lowStockCount} SKU
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Tồn khả dụng Sellable đã chạm hoặc xuống dưới mức Safety Stock. Cần lập đề xuất mua hàng PO.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveModal('receive_po')}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-rose-900 border-rose-300 hover:bg-rose-100 cursor-pointer"
+            >
+              <span>Lập PO nhập thêm hàng</span>
+              <Plus size={13} />
+            </button>
+          </div>
+
+          {/* Card 3: Hàng lỗi / Cách ly */}
+          <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-purple-900">
+                  3. Hàng Hỏng / Cách Ly
+                </span>
+                <span className="badge bg-purple-200 text-purple-900 border-purple-300 text-[10px] font-mono font-bold">
+                  {totalDamaged} cái
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Hàng lỗi từ khách hoàn hoặc bể vỡ vận chuyển, nằm ở khu cách ly (Quarantine). Cần xử lý thanh lý hoặc bồi hoàn.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveModal('quarantine')}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-purple-900 border-purple-300 hover:bg-purple-100 cursor-pointer"
+            >
+              <span>Xử lý khu cách ly</span>
+              <AlertOctagon size={13} />
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <FilterPill active={warehouseFilter === 'all'} onClick={() => setWarehouseFilter('all')}>

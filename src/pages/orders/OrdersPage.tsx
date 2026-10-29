@@ -452,6 +452,110 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
         />
       </div>
 
+      {/* LEVEL 2: ACTION CENTER — VIỆC CẦN XỬ LÝ (TASK-FIRST ARCHITECTURE) */}
+      <div className="rounded-xl border border-ink-200 bg-white p-4 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <h3 className="text-sm font-bold text-ink-900 tracking-tight">
+              Trung Tâm Tác Vụ Cần Xử Lý (Action Center)
+            </h3>
+            <span className="badge bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold">
+              {kpis.pendingOrders + orders.filter(o => o.status === 'processing').length + kpis.inTransitOrders} việc cần theo dõi
+            </span>
+          </div>
+          <span className="text-xs text-ink-500 hidden sm:inline">
+            Ưu tiên theo thứ tự luồng: Khóa tồn giữ đơn → Xuất kho đóng gói → Ký nhận POD
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Card 1: Đơn chờ xác nhận & giữ tồn */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+                  1. Chờ Khóa Tồn & Duyệt Đơn
+                </span>
+                <span className="badge bg-amber-200 text-amber-900 border-amber-300 text-[10px] font-mono font-bold">
+                  {kpis.pendingOrders} đơn
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Đơn hàng mới từ sàn TMĐT, cần giữ tồn Có Thể Bán (Sellable) sang Đã Giữ Cho Đơn (Reserved) trước khi nhặt hàng.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const pendingOrder = orders.find(o => o.status === 'pending');
+                if (pendingOrder) openOrder(pendingOrder);
+                else setStatusFilter('pending');
+              }}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-amber-900 border-amber-300 hover:bg-amber-100 cursor-pointer"
+            >
+              <span>{kpis.pendingOrders > 0 ? 'Xử lý đơn chờ duyệt ngay' : 'Xem danh sách đơn chờ'}</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {/* Card 2: Đơn đang xử lý / đóng gói */}
+          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
+                  2. Đang Chuẩn Bị & Đóng Gói
+                </span>
+                <span className="badge bg-blue-200 text-blue-900 border-blue-300 text-[10px] font-mono font-bold">
+                  {orders.filter(o => o.status === 'processing').length} đơn
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Đã khóa tồn, đang gom sóng nhặt hàng (Wave Picking) và in phiếu đóng gói theo SLA.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const procOrder = orders.find(o => o.status === 'processing');
+                if (procOrder) openOrder(procOrder);
+                else setStatusFilter('processing');
+              }}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-blue-900 border-blue-300 hover:bg-blue-100 cursor-pointer"
+            >
+              <span>Kiểm tra tiến độ đóng gói</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {/* Card 3: Đơn đang giao / chờ POD */}
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
+                  3. Đang Vận Chuyển & Ký POD
+                </span>
+                <span className="badge bg-emerald-200 text-emerald-900 border-emerald-300 text-[10px] font-mono font-bold">
+                  {kpis.inTransitOrders} đơn
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Đã bàn giao bưu tá, theo dõi hành trình và thu thập biên bản POD để ghi nhận Doanh thu Có 511.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const shipOrder = orders.find(o => o.status === 'shipped');
+                if (shipOrder) openOrder(shipOrder);
+                else setStatusFilter('shipped');
+              }}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-emerald-900 border-emerald-300 hover:bg-emerald-100 cursor-pointer"
+            >
+              <span>Xem đơn chờ biên bản POD</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* LEVEL 2 & 3: HIERARCHICAL REUSABLE DATA GRID */}
       <HierarchicalDataGrid
         data={filtered}

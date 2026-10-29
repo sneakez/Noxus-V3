@@ -257,7 +257,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
               <div className="absolute inset-0 rounded-xl bg-white/20 animate-pulse-glow" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-white tracking-tight">NexusOMS</h1>
+              <span className="text-base font-bold text-white tracking-tight">NexusOMS</span>
               <p className="text-[11px] text-ink-400 font-medium flex items-center gap-1">
                 <Sparkles size={9} className="text-brand-400" />
                 V6 Analytics Edition

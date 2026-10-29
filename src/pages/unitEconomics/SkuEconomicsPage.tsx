@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Layers,
   ArrowUpRight,
+  ArrowRight,
   Calculator,
   Boxes,
   ExternalLink,
@@ -297,6 +298,98 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
           value={`${skus.length} SKU`}
           subtitle={`${skus.filter(s => s.contributionRank === 'STAR').length} SKU Ngôi Sao trong Portfolio`}
         />
+      </div>
+
+      {/* LEVEL 2: ACTION CENTER — QUẢN TRỊ DANH MỤC SKU (TASK-FIRST ARCHITECTURE) */}
+      <div className="rounded-xl border border-ink-200 bg-white p-4 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <h3 className="text-sm font-bold text-ink-900 tracking-tight">
+              Tác Vụ Ra Quyết Định Danh Mục SKU (Portfolio Action Center)
+            </h3>
+            <span className="badge bg-emerald-100 text-emerald-900 border-emerald-300 text-[10px] font-bold">
+              {skus.length} SKU hoạt động
+            </span>
+          </div>
+          <span className="text-xs text-ink-500 hidden sm:inline">
+            Tối ưu hóa lợi nhuận đóng góp (Contribution Margin) và tỷ suất sinh lời vốn tồn (Stock ROI)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Card 1: SKU Bò sữa chủ lực */}
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
+                  1. SKU Bò Sữa (Dòng Tiền Chủ Lực)
+                </span>
+                <span className="badge bg-emerald-200 text-emerald-900 border-emerald-300 text-[10px] font-mono font-bold">
+                  {rankCounts.CASH_COW} SKU
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Sản phẩm có dòng tiền ổn định, vòng quay tốt. Cần duy trì mức tồn an toàn và chống đứt hàng.
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedRank('CASH_COW')}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-emerald-900 border-emerald-300 hover:bg-emerald-100 cursor-pointer"
+            >
+              <span>Lọc danh mục Bò sữa</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {/* Card 2: SKU Dấu hỏi tiềm năng */}
+          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
+                  2. SKU Dấu Hỏi (Biên Lãi Cao)
+                </span>
+                <span className="badge bg-blue-200 text-blue-900 border-blue-300 text-[10px] font-mono font-bold">
+                  {rankCounts.QUESTION_MARK} SKU
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Biên CM% ≥ 30% nhưng sản lượng bán còn thấp (&lt; 5 đơn). Cần đẩy mạnh quảng cáo kéo traffic biến thành Ngôi sao.
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedRank('QUESTION_MARK')}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-blue-900 border-blue-300 hover:bg-blue-100 cursor-pointer"
+            >
+              <span>Xem SKU Dấu hỏi</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {/* Card 3: SKU Chậm luân chuyển */}
+          <div className="rounded-lg border border-rose-200 bg-rose-50/50 p-3 flex flex-col justify-between space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-900">
+                  3. SKU Chậm Luân Chuyển (Đọng Vốn)
+                </span>
+                <span className="badge bg-rose-200 text-rose-900 border-rose-300 text-[10px] font-mono font-bold">
+                  {rankCounts.DOG} SKU
+                </span>
+              </div>
+              <p className="text-xs text-ink-600">
+                Biên CM% thấp (&lt; 20%) và bán chậm. Cần lập chương trình Flash Sale xả hàng thu hồi vốn lưu động.
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedRank('DOG')}
+              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-rose-900 border-rose-300 hover:bg-rose-100 cursor-pointer"
+            >
+              <span>Lập kế hoạch xả kho</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Row: 3-Variable Bubble Chart */}

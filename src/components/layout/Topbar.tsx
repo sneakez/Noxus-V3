@@ -151,17 +151,18 @@ export function Topbar({
           </button>
         )}
 
-        {/* Mobile search */}
-        <div className="md:hidden absolute left-0 right-0 top-full bg-white border-b border-ink-200 px-4 py-2.5">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-            <input
-              value={search}
-              onChange={(e) => onSearch(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full rounded-xl border border-ink-200 bg-ink-50 pl-9 pr-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
-            />
-          </div>
+      </div>
+
+      {/* Mobile search - in normal flow so header expands and never overlaps page content */}
+      <div className="md:hidden border-t border-ink-200/50 bg-white/95 px-4 py-2">
+        <div className="relative">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+          <input
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full rounded-xl border border-ink-200 bg-ink-50/80 pl-9 pr-3 py-1.5 text-xs text-ink-800 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
+          />
         </div>
       </div>
     </header>
