@@ -1,6 +1,8 @@
 # BÁO CÁO NGHIỆM THU NEXUSOMS V6.2 — ADVANCED UX & DOMAIN INTELLIGENCE
 
 **Dự án:** Hệ Thống Quản Trị Đơn Hàng & Kho Vận Đa Kênh NexusOMS (Phiên bản V6.2 Digital Commerce Only)  
+**Nhánh Git:** `feature/nexusoms-v6-digital-commerce-only`  
+**Git HEAD Commit:** `424b4e4`  
 **Mục tiêu:** Chuyển hóa toàn diện trải nghiệm người dùng từ dạng CRUD phẳng thành **Digital Commerce Operating System** trực quan, phân tầng dữ liệu phân cấp (Hierarchical Data Grid), luồng trực quan hóa nghiệp vụ (Workflow Stepper), minh bạch hóa Unit Economics và liên kết xuyên module mượt mà.  
 **Môi trường:** 100% Local Prototype Mock Mode (`VITE_DATA_MODE=mock`), không backend production, không Supabase, không migration.  
 **Kết quả kiểm thử:** **100% PASS** (14 file test, 83/83 unit test, `tsc --noEmit` 0 lỗi, Chrome Puppeteer 11 ảnh chụp thực nghiệm đạt chuẩn).
