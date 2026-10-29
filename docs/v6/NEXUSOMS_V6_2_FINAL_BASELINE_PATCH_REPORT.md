@@ -108,5 +108,6 @@ Tất cả các điểm hoài nghi hoặc không nhất quán về dữ liệu g
 * **Lỗi kế toán doanh thu:** 0 sai lệch (Phân tách rõ ràng giữa Quản trị và POD).
 * **Lỗi hạch toán giá vốn RMA:** 0 sai lệch (Đã kiểm chứng restock đảo COGS vs scrap giữ COGS).
 * **Trạng thái hệ thống:** **SẴN SÀNG ĐÓNG BĂNG HOÀN TOÀN (FULLY FROZEN BASELINE)**.
+* **Mã commit chốt đóng băng:** [`d6e4f3f`](file:///d:/Noxus-V3) trên branch `feature/nexusoms-v6-digital-commerce-only`.
 
 Dừng toàn bộ thao tác lập trình để Chủ dự án kiểm tra và phê duyệt chính thức.
