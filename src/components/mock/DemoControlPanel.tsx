@@ -65,7 +65,8 @@ export function DemoControlPanel() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#081B2C] via-[#123A52] to-[#1E647F] text-white text-xs font-bold shadow-2xl border border-[#27B4A0]/60 hover:scale-105 transition-all group"
         >
           <span className="w-2.5 h-2.5 rounded-full bg-[#27B4A0] animate-pulse" />
-          <span className="tracking-wide">BẢNG ĐIỀU KHIỂN DEMO & KỊCH BẢN</span>
+          <span className="tracking-wide hidden sm:inline">BẢNG ĐIỀU KHIỂN DEMO & KỊCH BẢN</span>
+          <span className="tracking-wide sm:hidden">DEMO V5</span>
           <span className="px-2 py-0.5 rounded-full bg-[#27B4A0]/20 text-[#27B4A0] text-[10px] font-mono uppercase">
             {activeRole}
           </span>

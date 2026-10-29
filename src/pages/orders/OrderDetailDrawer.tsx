@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { mockStore } from '@/mock/store';
 import {
   formatCurrency,
   formatDateTime,
@@ -58,7 +59,7 @@ export function OrderDetailDrawer({
   onDeleted,
 }: OrderDetailDrawerProps) {
   const toast = useToast();
-  const { activeTenant } = useAuth();
+  const { activeTenant, activeRole } = useAuth();
   const [items, setItems] = useState<OrderItem[]>([]);
   const [logs, setLogs] = useState<OrderStatusLog[]>([]);
   const [wave, setWave] = useState<FulfillmentWave | null>(null);
@@ -96,42 +97,31 @@ export function OrderDetailDrawer({
     if (!order) return;
     setUpdating(true);
     const oldStatus = order.status;
+    const now = new Date().toISOString();
 
-    const updates: Record<string, unknown> = { status: newStatus };
-    if (newStatus === 'shipped') updates.shipped_at = new Date().toISOString();
-    if (newStatus === 'delivered')
-      updates.delivered_at = new Date().toISOString();
-    if (newStatus === 'cancelled' || newStatus === 'refunded') {
-      updates.shipped_at = null;
-      updates.delivered_at = null;
-    }
-
-    if (newStatus === 'cancelled') {
+    if (newStatus === 'shipped') {
+      const trackingNumber = `VNPOST-${Date.now().toString().slice(-6)}`;
+      mockStore.dispatchOrder(order.id, trackingNumber);
+      await supabase.from('orders').update({
+        status: 'shipped',
+        shipped_at: now,
+        notes: (order.notes ? order.notes + ' | ' : '') + `Vận đơn: ${trackingNumber}`
+      }).eq('id', order.id);
+    } else if (newStatus === 'cancelled') {
       const { error: cancelErr } = await supabase.rpc('cancel_order_atomic', {
         p_order_id: order.id,
         p_tenant_id: activeTenant!.id,
-        p_reason: 'Thay doi trang thai don hang boi user',
+        p_reason: 'Hủy đơn hàng bởi người dùng',
       });
       if (cancelErr) {
-        if (cancelErr.code === '42883') {
-          toast('Loi he thong: RPC cancel_order_atomic chua duoc cau hinh tren database. Thao tac bi chan de tranh sai lech ton kho.', 'error');
-        } else {
-          toast('Huy don that bai: ' + cancelErr.message, 'error');
-        }
+        toast('Hủy đơn thất bại: ' + cancelErr.message, 'error');
         setUpdating(false);
         return;
       }
     } else {
-      const { error } = await supabase
-        .from('orders')
-        .update(updates)
-        .eq('id', order.id);
-
-      if (error) {
-        toast('Cap nhat trang thai that bai: ' + error.message, 'error');
-        setUpdating(false);
-        return;
-      }
+      const updates: Record<string, unknown> = { status: newStatus, updated_at: now };
+      if (newStatus === 'delivered') updates.delivered_at = now;
+      await supabase.from('orders').update(updates).eq('id', order.id);
     }
 
     await supabase.from('order_status_log').insert({
@@ -139,9 +129,10 @@ export function OrderDetailDrawer({
       order_id: order.id,
       from_status: oldStatus,
       to_status: newStatus,
+      created_at: now
     });
 
-    toast(`Trang thai don hang da cap nhat: ${ORDER_STATUS_LABELS[newStatus]}`, 'success');
+    toast(`Đã cập nhật trạng thái đơn: ${ORDER_STATUS_LABELS[newStatus]}`, 'success');
     setUpdating(false);
     onUpdated();
   }
@@ -229,49 +220,174 @@ export function OrderDetailDrawer({
               )}
             </div>
 
-            {/* Status workflow */}
-            <div className="card p-5">
-              <p className="text-sm font-semibold text-ink-700 mb-3">
-                Cap nhat trang thai
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {ORDER_STATUS_FLOW.map((s) => (
-                  <button
-                    key={s}
-                    disabled={updating || s === order.status}
-                    onClick={() => updateStatus(s)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      s === order.status
-                        ? ORDER_STATUS_COLORS[s] + ' opacity-70 cursor-default'
-                        : 'border-ink-200 text-ink-600 hover:border-ink-300 hover:bg-ink-50'
-                    }`}
-                  >
-                    {ORDER_STATUS_LABELS[s]}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-4 pt-4 border-t border-ink-100">
-                <p className="text-sm font-semibold text-ink-700 mb-2">
-                  Trang thai thanh toan
+            {/* Status workflow & Actions based on State Machine */}
+            <div className="card p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-ink-900">
+                  Tiến trình đơn hàng
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    ['unpaid', 'paid', 'partially_paid', 'refunded'] as PaymentStatus[]
-                  ).map((p) => (
-                    <button
-                      key={p}
-                      disabled={updating || p === order.payment_status}
-                      onClick={() => updatePayment(p)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                        p === order.payment_status
-                          ? PAYMENT_STATUS_COLORS[p] + ' opacity-70 cursor-default'
-                          : 'border-ink-200 text-ink-600 hover:border-ink-300 hover:bg-ink-50'
-                      }`}
-                    >
-                      {PAYMENT_STATUS_LABELS[p]}
-                    </button>
-                  ))}
+                <span className={cn('badge font-semibold', ORDER_STATUS_COLORS[order.status])}>
+                  {ORDER_STATUS_LABELS[order.status]}
+                </span>
+              </div>
+
+              {/* Step indicator */}
+              <div className="grid grid-cols-4 gap-1.5 py-1">
+                {[
+                  { id: 'pending', label: 'Chờ duyệt' },
+                  { id: 'processing', label: 'Đang xử lý' },
+                  { id: 'shipped', label: 'Đang giao' },
+                  { id: 'delivered', label: 'Đã nhận' },
+                ].map((step, idx) => {
+                  const stepIndex = ['pending', 'processing', 'shipped', 'delivered'].indexOf(order.status);
+                  const isCurrent = order.status === step.id;
+                  const isDone = order.status !== 'cancelled' && stepIndex >= idx;
+                  const isCancelled = order.status === 'cancelled';
+                  return (
+                    <div key={step.id} className="text-center">
+                      <div
+                        className={cn(
+                          'h-1.5 rounded-full mb-1.5 transition-all',
+                          isCancelled
+                            ? 'bg-rose-200'
+                            : isDone
+                              ? 'bg-[var(--wood-aqua)]'
+                              : 'bg-ink-100'
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          'text-[11px] font-medium block truncate',
+                          isCurrent
+                            ? 'text-ink-900 font-bold'
+                            : isDone
+                              ? 'text-ink-700'
+                              : 'text-ink-400'
+                        )}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* State Machine Next Actions */}
+              <div className="pt-2 border-t border-ink-100">
+                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-2.5">
+                  Hành động khả dụng theo vai trò ({activeRole})
+                </p>
+
+                {activeRole === 'viewer' ? (
+                  <p className="text-xs text-ink-400 italic">
+                    Tài khoản quyền Chỉ Xem (Viewer) không có quyền thay đổi trạng thái đơn.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2.5">
+                    {order.status === 'pending' && (
+                      <>
+                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'manager') && (
+                          <button
+                            disabled={updating}
+                            onClick={() => updateStatus('processing')}
+                            className="btn-primary text-xs py-2 px-3.5"
+                          >
+                            ✓ Xác nhận đơn & Giữ tồn kho
+                          </button>
+                        )}
+                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'manager') && (
+                          <button
+                            disabled={updating}
+                            onClick={() => updateStatus('cancelled')}
+                            className="btn-secondary text-xs text-rose-600 hover:bg-rose-50 border-rose-200 py-2 px-3.5"
+                          >
+                            ✕ Hủy đơn hàng
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {order.status === 'processing' && (
+                      <>
+                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'warehouse') && (
+                          <button
+                            disabled={updating}
+                            onClick={() => updateStatus('shipped')}
+                            className="btn-primary text-xs py-2 px-3.5"
+                          >
+                            📦 Đóng gói & Xuất kho (Dispatch)
+                          </button>
+                        )}
+                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'manager') && (
+                          <button
+                            disabled={updating}
+                            onClick={() => updateStatus('cancelled')}
+                            className="btn-secondary text-xs text-rose-600 hover:bg-rose-50 border-rose-200 py-2 px-3.5"
+                          >
+                            ✕ Hủy đơn & Giải phóng tồn
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {order.status === 'shipped' && (
+                      <>
+                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'warehouse' || activeRole === 'manager') && (
+                          <button
+                            disabled={updating}
+                            onClick={() => updateStatus('delivered')}
+                            className="btn-primary text-xs py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700"
+                          >
+                            🚚 Giao hàng thành công (Đã nhận)
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {order.status === 'delivered' && (
+                      <div className="w-full p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
+                        <span>✓ Đơn hàng đã giao thành công và ghi nhận doanh thu.</span>
+                      </div>
+                    )}
+
+                    {order.status === 'cancelled' && (
+                      <div className="w-full p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                        ✕ Đơn hàng đã hủy. Toàn bộ tồn kho cam kết đã được tự động hoàn lại khả dụng.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Section */}
+              <div className="pt-3 border-t border-ink-100">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">
+                    Thanh toán & Đối soát
+                  </p>
+                  <span className={cn('badge text-[11px]', PAYMENT_STATUS_COLORS[order.payment_status])}>
+                    {PAYMENT_STATUS_LABELS[order.payment_status]}
+                  </span>
                 </div>
+                {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'finance') && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {(['unpaid', 'paid', 'partially_paid', 'refunded'] as PaymentStatus[]).map((p) => (
+                      <button
+                        key={p}
+                        disabled={updating || p === order.payment_status}
+                        onClick={() => updatePayment(p)}
+                        className={cn(
+                          'px-2.5 py-1 rounded-md text-xs font-medium border transition-all',
+                          p === order.payment_status
+                            ? 'bg-ink-900 text-white border-ink-900 shadow-sm opacity-90 cursor-default'
+                            : 'border-ink-200 text-ink-600 hover:border-ink-300 hover:bg-ink-50'
+                        )}
+                      >
+                        {PAYMENT_STATUS_LABELS[p]}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

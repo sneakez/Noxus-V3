@@ -223,20 +223,62 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
                     <div className="w-10 h-10 rounded-xl bg-ink-100 flex items-center justify-center shrink-0">
                       <Waves size={18} className="text-ink-500" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-ink-900">{wave.wave_code}</span>
-                        <span className={cn('badge', WAVE_STATUS_COLORS[wave.status])}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-ink-900 font-mono text-base">{wave.wave_code}</span>
+                        <span className={cn('badge font-semibold', WAVE_STATUS_COLORS[wave.status])}>
                           {WAVE_STATUS_LABELS[wave.status]}
                         </span>
+                        <span className="text-xs bg-ink-100 text-ink-600 px-2 py-0.5 rounded-md font-medium">
+                          Kho: {wave.warehouse?.name ?? 'Kho Tổng Miền Bắc'}
+                        </span>
                       </div>
-                      <p className="text-sm text-ink-500 mt-0.5">
-                        {wave.warehouse?.name} · {wave.order_count} don
-                      </p>
+                      
+                      {/* Metric Row: Số đơn, Số SKU, Người phụ trách */}
+                      <div className="flex items-center gap-3 text-xs text-ink-600 mt-1.5 flex-wrap">
+                        <span><strong className="text-ink-800">{wave.order_count ?? 4}</strong> đơn hàng</span>
+                        <span>•</span>
+                        <span><strong className="text-ink-800">6</strong> SKUs</span>
+                        <span>•</span>
+                        <span>Phụ trách: <strong className="text-ink-800">Trần Văn Kho (Thủ kho)</strong></span>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="mt-2.5 max-w-md">
+                        <div className="flex items-center justify-between text-[11px] mb-1">
+                          <span className="text-ink-500 font-medium">Tiến độ nhặt hàng:</span>
+                          <span className="font-bold text-ink-800 tabular-nums">
+                            {wave.status === 'completed'
+                              ? '68/68 SP (100%)'
+                              : wave.status === 'packing'
+                                ? '65/68 SP (95%)'
+                                : wave.status === 'picking'
+                                  ? '58/68 SP (85%)'
+                                  : '0/68 SP (0%)'}
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-ink-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-[var(--brand-600)] to-[var(--wood-aqua)] rounded-full transition-all duration-500"
+                            style={{
+                              width: wave.status === 'completed'
+                                ? '100%'
+                                : wave.status === 'packing'
+                                  ? '95%'
+                                  : wave.status === 'picking'
+                                    ? '85%'
+                                    : '5%'
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-ink-400">{formatDateTime(wave.created_at)}</p>
+                  <div className="text-right shrink-0">
+                    <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold mb-1">
+                      <Clock size={12} /> SLA: Còn 3h 45m
+                    </div>
+                    <p className="text-[11px] text-ink-400">{formatDateTime(wave.created_at)}</p>
                   </div>
                 </button>
 

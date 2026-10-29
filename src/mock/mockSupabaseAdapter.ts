@@ -503,19 +503,19 @@ export const mockSupabaseClient = {
             .reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
           
           const collectedCash = snap.orders
-            .filter(o => o.payment_status === 'paid')
+            .filter(o => o.payment_status === 'paid' && o.status !== 'cancelled')
             .reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
 
           const refundAmount = snap.returns
             .filter(r => r.status === 'refunded')
             .reduce((sum, r) => sum + Number(r.refund_amount || 1250000), 0);
 
-          const revenue = collectedCash || 842500000;
+          const revenue = nonCancelledOrders.reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
 
           resolve({
             data: {
               revenue,
-              prev_revenue: 720000000,
+              prev_revenue: Math.round(revenue * 0.85),
               recognized_revenue: recognizedRevenue,
               collected_cash: collectedCash,
               refund_amount: refundAmount,
@@ -540,7 +540,7 @@ export const mockSupabaseClient = {
           return;
         }
 
-        // 2. Dashboard Daily Revenue (7 Days Array Calculated from Real Orders)
+        // 2. Dashboard Daily Revenue (7 Days Array Calculated Directly from Real Orders)
         if (fnName === 'get_dashboard_daily') {
           const daily: Array<{ day: string; revenue: number; order_count: number }> = [];
           const now = new Date();
@@ -562,16 +562,11 @@ export const mockSupabaseClient = {
             });
 
             const dayRev = matchedOrders.reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
-            
-            // Baseline organic distribution for past days
-            const baselinePattern = [16500000, 24000000, 21500000, 28000000, 32500000, 36000000, 42500000];
-            const rev = dayRev > 0 ? dayRev : (baselinePattern[6 - i] || 18000000);
-            const count = matchedOrders.length > 0 ? matchedOrders.length : Math.max(1, Math.round(rev / 1250000));
 
             daily.push({
               day: dayStr,
-              revenue: rev,
-              order_count: count
+              revenue: dayRev,
+              order_count: matchedOrders.length
             });
           }
           resolve({ data: daily, error: null });

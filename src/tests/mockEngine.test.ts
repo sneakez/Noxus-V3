@@ -16,7 +16,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
 
     const airPro = snap.inventory5State.find(i => i.sku === 'NX-AIR-PRO');
     expect(airPro).toBeDefined();
-    expect(airPro!.available).toBe(airPro!.physical - airPro!.reserved);
+    expect(airPro!.available).toBe(airPro!.physical - airPro!.reserved - (airPro!.damaged || 0));
   });
 
   it('verifies order data integrity: every order has valid numeric totals and items', () => {
@@ -76,8 +76,8 @@ describe('Centralized Mock Data Engine & Workflows', () => {
   it('verifies strict inventory domain invariants across mutations', () => {
     const beforeStock = mockStore.getInventory5State().find(i => i.sku === 'NX-AIR-PRO')!;
     
-    // Invariant 1: Available = Physical - Reserved
-    expect(beforeStock.available).toBe(beforeStock.physical - beforeStock.reserved);
+    // Invariant 1: Available = Physical - Reserved - Damaged
+    expect(beforeStock.available).toBe(beforeStock.physical - beforeStock.reserved - (beforeStock.damaged || 0));
 
     // Place Order for 5 items
     const orderRes = mockStore.placeOrderAtomic(
@@ -104,7 +104,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     expect(afterOrderStock.physical).toBe(beforeStock.physical);
     expect(afterOrderStock.reserved).toBe(beforeStock.reserved + 5);
     expect(afterOrderStock.available).toBe(beforeStock.available - 5);
-    expect(afterOrderStock.available).toBe(afterOrderStock.physical - afterOrderStock.reserved);
+    expect(afterOrderStock.available).toBe(afterOrderStock.physical - afterOrderStock.reserved - (afterOrderStock.damaged || 0));
 
     // Dispatch Order
     const dispatchRes = mockStore.dispatchOrder(orderRes.orderId!, 'TRACK-999');
@@ -115,7 +115,7 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     expect(afterDispatchStock.physical).toBe(afterOrderStock.physical - 5);
     expect(afterDispatchStock.reserved).toBe(afterOrderStock.reserved - 5);
     expect(afterDispatchStock.available).toBe(afterOrderStock.available);
-    expect(afterDispatchStock.available).toBe(afterDispatchStock.physical - afterDispatchStock.reserved);
+    expect(afterDispatchStock.available).toBe(afterDispatchStock.physical - afterDispatchStock.reserved - (afterDispatchStock.damaged || 0));
   });
 
   it('placeOrderAtomic locks reservation and decrements available stock', () => {
@@ -236,6 +236,48 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     );
     expect(unbalancedRes.success).toBe(false);
     expect(unbalancedRes.error).toContain('không cân bằng');
+  });
+
+  it('verifies inventory invariant holds for all initial SKUs', () => {
+    const snap = mockStore.getSnapshot();
+    for (const inv of snap.inventory5State) {
+      expect(inv.available).toBe(inv.physical - inv.reserved - (inv.damaged || 0));
+    }
+  });
+
+  it('verifies end-to-end RMA multi-stage lifecycle and double-entry refund', () => {
+    mockStore.resetToDefaultSeed();
+    const snapBefore = mockStore.getSnapshot();
+    const rma = snapBefore.returns[0];
+    expect(rma).toBeDefined();
+
+    // 1. QC Restock
+    const invBefore = snapBefore.inventory5State.find(i => i.product_id === 'prod_mouse_pro')!;
+    const qcRes = mockStore.inspectReturnQC(rma.id, true);
+    expect(qcRes.success).toBe(true);
+
+    const invAfter = mockStore.getInventory5State().find(i => i.product_id === 'prod_mouse_pro')!;
+    expect(invAfter.physical).toBe(invBefore.physical + 1);
+    expect(invAfter.available).toBe(invBefore.available + 1);
+    expect(invAfter.available).toBe(invAfter.physical - invAfter.reserved - (invAfter.damaged || 0));
+
+    // 2. Double-entry refund posting
+    const refundJe = mockStore.postJournalEntry(
+      {
+        tenant_id: 'tenant_flagship',
+        entry_number: `JE-RMA-REFUND-${Date.now()}`,
+        reference_type: 'return',
+        reference_id: rma.id,
+        description: 'Chi hoàn tiền khách hàng Nợ 521 / Có 112',
+        posted_at: new Date().toISOString(),
+        posted_by: 'usr_finance_01'
+      },
+      [
+        { account_id: 'a_521', account_code: '521', debit_amount: 850000, credit_amount: 0, description: 'Giảm trừ doanh thu' },
+        { account_id: 'a_112', account_code: '112', debit_amount: 0, credit_amount: 850000, description: 'Chi hoàn tiền' }
+      ]
+    );
+    expect(refundJe.success).toBe(true);
   });
 
   it('executes demo scenarios correctly', async () => {

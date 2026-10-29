@@ -209,16 +209,37 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (page: 'orders') =>
               {formatCurrency(chartData.reduce((s, d) => s + d.value, 0))}
             </div>
           </div>
-          <div className="flex items-end justify-between gap-3 h-48">
-            {chartData.map((day, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-                <div className="w-full flex-1 flex items-end relative">
-                  <div className="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400 transition-all duration-500 hover:from-brand-700 hover:to-brand-500 group-hover:shadow-lg group-hover:shadow-brand-200/60 animate-bar-grow" style={{ height: `${Math.max((day.value / maxChartValue) * 100, 4)}%`, animationDelay: `${i * 80}ms` }} />
-                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-ink-900 text-white text-xs font-medium px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">{formatCurrency(day.value)}</div>
+          <div className="flex items-end justify-between gap-3 h-56 pt-4">
+            {chartData.map((day, i) => {
+              const pct = maxChartValue > 0 ? Math.round((day.value / maxChartValue) * 100) : 0;
+              const barHeightPct = Math.max(pct, day.value > 0 ? 12 : 4);
+              return (
+                <div key={i} className="flex-1 h-full flex flex-col items-center justify-end gap-2 group">
+                  <div className="w-full flex-1 flex items-end justify-center relative bg-ink-50/70 rounded-lg p-1 min-h-[140px]">
+                    <div
+                      className="w-full max-w-[48px] rounded-t-md bg-gradient-to-t from-[var(--brand-600)] to-[var(--wood-aqua)] transition-all duration-300 shadow-sm group-hover:brightness-110"
+                      style={{
+                        height: `${barHeightPct}%`,
+                        minHeight: day.value > 0 ? '16px' : '6px',
+                      }}
+                    />
+                    <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-ink-900 text-white text-[11px] font-semibold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg z-10">
+                      {formatCurrency(day.value)}
+                    </div>
+                  </div>
+                  {day.value > 0 ? (
+                    <span className="text-[11px] font-bold text-ink-700 tabular-nums">
+                      {day.value >= 1000000
+                        ? `${(day.value / 1000000).toFixed(1)}M`
+                        : `${Math.round(day.value / 1000)}k`}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-ink-300 font-medium">0đ</span>
+                  )}
+                  <span className="text-xs text-ink-500 font-medium">{day.label}</span>
                 </div>
-                <span className="text-xs text-ink-400 font-medium">{day.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 

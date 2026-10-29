@@ -172,7 +172,7 @@ class MockDataStore {
         const inv = draft.inventory5State.find(i => i.sku === item.sku || i.product_id === item.product_id);
         if (inv) {
           inv.reserved += item.quantity;
-          inv.available = Math.max(0, inv.physical - inv.reserved);
+          inv.available = Math.max(0, inv.physical - inv.reserved - (inv.damaged || 0));
           inv.runway_days = inv.sales_velocity > 0 ? Math.round(inv.available / inv.sales_velocity) : 14;
           inv.status = inv.available <= inv.safety_stock ? 'Critical' : inv.available <= inv.reorder_level ? 'Warning' : 'Healthy';
         }
@@ -317,7 +317,7 @@ class MockDataStore {
         const inv = draft.inventory5State.find(i => i.product_id === item.product_id);
         if (inv) {
           inv.reserved = Math.max(0, inv.reserved - item.quantity);
-          inv.available = Math.max(0, inv.physical - inv.reserved);
+          inv.available = Math.max(0, inv.physical - inv.reserved - (inv.damaged || 0));
           inv.runway_days = inv.sales_velocity > 0 ? Math.round(inv.available / inv.sales_velocity) : 14;
           inv.status = inv.available <= inv.safety_stock ? 'Critical' : inv.available <= inv.reorder_level ? 'Warning' : 'Healthy';
         }
@@ -379,7 +379,7 @@ class MockDataStore {
         if (inv) {
           inv.physical = Math.max(0, inv.physical - item.quantity);
           inv.reserved = Math.max(0, inv.reserved - item.quantity);
-          inv.available = Math.max(0, inv.physical - inv.reserved);
+          inv.available = Math.max(0, inv.physical - inv.reserved - (inv.damaged || 0));
         }
 
         // Product table stock sync
