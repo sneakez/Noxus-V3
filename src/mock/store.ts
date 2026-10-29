@@ -1566,6 +1566,18 @@ class MockDataStore {
   public getStockLedger(): StockLedgerEntry[] {
     return this.state.stockLedger.filter(s => s.tenant_id === this.state.activeTenantId);
   }
+
+  public getProducts(): Product[] {
+    return this.state.products || [];
+  }
+
+  public getCustomers(): Customer[] {
+    return this.state.customers || [];
+  }
+
+  public getWarehouses(): Warehouse[] {
+    return this.state.warehouses || [];
+  }
 }
 
 export const mockStore = new MockDataStore();

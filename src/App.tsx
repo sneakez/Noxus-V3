@@ -33,7 +33,7 @@ import { AcceptInvitePage } from '@/pages/auth/AcceptInvitePage';
 import { OnboardingWizard } from '@/pages/onboarding/OnboardingWizard';
 
 // Lazy Authenticated App Pages
-const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const ExecutiveAnalyticsDashboard = lazy(() => import('@/pages/analytics/ExecutiveAnalyticsDashboard').then(m => ({ default: m.ExecutiveAnalyticsDashboard })));
 const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const CustomersPage = lazy(() => import('@/pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
@@ -65,6 +65,18 @@ const FlowGuidePage = lazy(() => import('@/pages/flowGuide/FlowGuidePage').then(
 const BusinessRulesReviewPage = lazy(() => import('@/pages/businessRules/BusinessRulesReviewPage').then(m => ({ default: m.BusinessRulesReviewPage })));
 const OwnerValidationCenterPage = lazy(() => import('@/pages/businessValidation/OwnerValidationCenterPage').then(m => ({ default: m.OwnerValidationCenterPage })));
 
+// V6 Specialized Analytics Pages
+const OrderEconomicsPage = lazy(() => import('@/pages/unitEconomics/OrderEconomicsPage').then(m => ({ default: m.OrderEconomicsPage })));
+const SkuEconomicsPage = lazy(() => import('@/pages/unitEconomics/SkuEconomicsPage').then(m => ({ default: m.SkuEconomicsPage })));
+const ChannelEconomicsPage = lazy(() => import('@/pages/unitEconomics/ChannelEconomicsPage').then(m => ({ default: m.ChannelEconomicsPage })));
+const PricingIntelligencePage = lazy(() => import('@/pages/unitEconomics/PricingIntelligencePage').then(m => ({ default: m.PricingIntelligencePage })));
+const SalesAnalyticsPage = lazy(() => import('@/pages/analytics/SalesAnalyticsPage').then(m => ({ default: m.SalesAnalyticsPage })));
+const InventoryAnalyticsPage = lazy(() => import('@/pages/analytics/InventoryAnalyticsPage').then(m => ({ default: m.InventoryAnalyticsPage })));
+const MarketingAnalyticsPage = lazy(() => import('@/pages/analytics/MarketingAnalyticsPage').then(m => ({ default: m.MarketingAnalyticsPage })));
+const CustomerAnalyticsPage = lazy(() => import('@/pages/analytics/CustomerAnalyticsPage').then(m => ({ default: m.CustomerAnalyticsPage })));
+const OperationsAnalyticsPage = lazy(() => import('@/pages/analytics/OperationsAnalyticsPage').then(m => ({ default: m.OperationsAnalyticsPage })));
+const CashWorkingCapitalPage = lazy(() => import('@/pages/analytics/CashWorkingCapitalPage').then(m => ({ default: m.CashWorkingCapitalPage })));
+
 interface PageMeta {
   title: string;
   subtitle: string;
@@ -73,37 +85,66 @@ interface PageMeta {
 }
 
 const PAGE_META: Record<PageId, PageMeta> = {
-  dashboard: { title: 'Dashboard', subtitle: 'Tổng quan hoạt động & phân tích số liệu', searchPlaceholder: 'Tìm kiếm nhanh...', primaryLabel: '' },
+  // Overview
+  dashboard: { title: 'Executive Analytics Dashboard', subtitle: 'Bảng điều hành kinh doanh đa kênh & Unit Economics', searchPlaceholder: 'Tìm kiếm nhanh...', primaryLabel: '' },
+  
+  // Sales
   orders: { title: 'Đơn hàng', subtitle: 'Trung tâm đơn hàng đa kênh — xử lý đa kho', searchPlaceholder: 'Tìm theo mã đơn hoặc khách hàng...', primaryLabel: 'Tạo đơn' },
   customers: { title: 'Khách hàng', subtitle: 'CRM thống nhất với điểm thưởng & RFM', searchPlaceholder: 'Tìm theo tên, email, hoặc công ty...', primaryLabel: 'Thêm khách hàng' },
-  complaints: { title: 'Khiếu nại & AI', subtitle: 'Phân tích khiếu nại an toàn PII với AI sentiment', searchPlaceholder: 'Tìm khiếu nại...', primaryLabel: 'Tạo khiếu nại' },
-  returns: { title: 'Đổi trả / RMA', subtitle: 'Quản lý đổi trả và hoàn tiền', searchPlaceholder: 'Tìm theo mã RMA hoặc đơn hàng...', primaryLabel: 'Tạo yêu cầu' },
-  products: { title: 'Sản phẩm & BOM', subtitle: 'Danh mục với combo/bundle & đa kho', searchPlaceholder: 'Tìm theo tên, SKU, hoặc danh mục...', primaryLabel: 'Thêm sản phẩm' },
-  inventory: { title: 'Tồn kho 5 trạng thái', subtitle: 'Physical, Reserved, Available, Unavailable, Incoming', searchPlaceholder: 'Tìm theo sản phẩm hoặc SKU...', primaryLabel: '' },
-  warehouses: { title: 'Kho & Bin', subtitle: 'Quản lý đa kho với vị trí bin chi tiết', searchPlaceholder: 'Tìm kho...', primaryLabel: 'Thêm kho' },
+  salesAnalytics: { title: 'Phân tích Bán hàng', subtitle: 'Vận tốc bán, tăng trưởng MoM & Bản đồ nhiệt bán hàng', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  
+  // Operations & WMS
+  inventory: { title: 'Tồn kho 5 trạng thái', subtitle: 'Physical = Sellable + Reserved + Unavailable', searchPlaceholder: 'Tìm theo sản phẩm hoặc SKU...', primaryLabel: '' },
+  fulfillment: { title: 'Wave Picking & SLA', subtitle: 'Wave picking, SLA countdown, scan-to-pack', searchPlaceholder: 'Tìm wave...', primaryLabel: 'Tạo wave' },
+  inventoryAnalytics: { title: 'Phân tích Kho vận', subtitle: 'ABC Pareto, tuổi hàng lưu kho & Trí tuệ tái đặt hàng', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
   transfers: { title: 'Chuyển kho', subtitle: 'Chuyển kho liên chi nhánh theo dõi trạng thái', searchPlaceholder: 'Tìm phiếu chuyển...', primaryLabel: 'Tạo phiếu' },
   batches: { title: 'Lô & Serial', subtitle: 'Theo dõi lô FEFO & Serial/IMEI', searchPlaceholder: 'Tìm theo mã lô hoặc serial...', primaryLabel: '' },
+  warehouses: { title: 'Kho & Bin', subtitle: 'Quản lý đa kho với vị trí bin chi tiết', searchPlaceholder: 'Tìm kho...', primaryLabel: 'Thêm kho' },
   stockLedger: { title: 'Sổ giao dịch tồn', subtitle: 'Lịch sử giao dịch tồn kho bất biến (Append-only)', searchPlaceholder: 'Tìm giao dịch...', primaryLabel: '' },
+
+  // Procurement
   purchaseOrders: { title: 'Đơn mua hàng', subtitle: 'Quản lý PO với đặt trước & hàng sắp về', searchPlaceholder: 'Tìm theo mã PO hoặc nhà cung cấp...', primaryLabel: 'Tạo PO' },
-  channelMapping: { title: 'Ánh xạ SKU kênh', subtitle: 'Ánh xạ SKU nội bộ sang SKU kênh TMĐT', searchPlaceholder: 'Tìm ánh xạ...', primaryLabel: 'Thêm ánh xạ' },
+  products: { title: 'Sản phẩm & SKU', subtitle: 'Danh mục với combo/bundle & đa kho', searchPlaceholder: 'Tìm theo tên, SKU, hoặc danh mục...', primaryLabel: 'Thêm sản phẩm' },
+
+  // After-sales
+  returns: { title: 'Đổi trả / RMA', subtitle: 'Quản lý đổi trả 6 nhánh và hạn mức Maker/Checker', searchPlaceholder: 'Tìm theo mã RMA hoặc đơn hàng...', primaryLabel: 'Tạo yêu cầu' },
+
+  // Unit Economics
+  orderEconomics: { title: 'Order Economics', subtitle: 'Bóc tách chi phí & lợi nhuận đóng góp từng đơn hàng (CM1, CM2, CM3)', searchPlaceholder: 'Tìm mã đơn...', primaryLabel: '' },
+  skuEconomics: { title: 'SKU Economics', subtitle: 'Lợi nhuận đóng góp, giá hòa vốn & ma trận BCG sản phẩm', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
+  channelEconomics: { title: 'Channel Economics', subtitle: 'So sánh doanh thu thuần, take rate phí sàn và lợi nhuận từng kênh', searchPlaceholder: 'Tìm kênh...', primaryLabel: '' },
+  pricingCalculator: { title: 'Pricing Intelligence', subtitle: 'Máy tính định giá hòa vốn, giá đề xuất và trần voucher giảm giá', searchPlaceholder: 'Tìm sản phẩm...', primaryLabel: '' },
+
+  // Data Analytics
+  marketingAnalytics: { title: 'Marketing & ROAS', subtitle: 'Phân tích hiệu quả chiến dịch Ads, CAC, CPA & Lợi nhuận sau Ads (CM3)', searchPlaceholder: 'Tìm chiến dịch...', primaryLabel: '' },
+  customerAnalytics: { title: 'Khách hàng & Cohorts', subtitle: 'Ma trận giữ chân theo tháng (Cohort Retention) & Phân tầng RFM', searchPlaceholder: 'Tìm phân khúc...', primaryLabel: '' },
+  operationsAnalytics: { title: 'Vận hành & Chu kỳ SLA', subtitle: 'Năng suất kho, Cycle Time, Picking/Packing time & Tỷ lệ giao thành công', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  cashWorkingCapital: { title: 'Dòng tiền & Vốn lưu động', subtitle: 'Quản trị thanh khoản, chu kỳ chuyển đổi tiền mặt (CCC) & công nợ sàn', searchPlaceholder: 'Tìm đợt đối soát...', primaryLabel: '' },
+
+  // Governance & Admin
   channelConnections: { title: 'Kết nối kênh', subtitle: 'Quản lý kết nối shop Shopee, TikTok, Lazada', searchPlaceholder: 'Tìm kết nối...', primaryLabel: 'Thêm kết nối' },
+  settings: { title: 'Cài đặt & Phân quyền', subtitle: 'Quản lý người dùng & vai trò RBAC', searchPlaceholder: 'Tìm người dùng...', primaryLabel: '' },
+  auditTrail: { title: 'Nhật ký Audit', subtitle: 'Nhật ký SHA-256 chống xóa', searchPlaceholder: 'Tìm nhật ký...', primaryLabel: '' },
+
+  // Demo Lab
+  ownerValidation: { title: 'Trung tâm Nghiệm thu Nghiệp vụ', subtitle: 'Mô phỏng trực tiếp, đối soát Before/After và phê duyệt quy tắc cho Chủ dự án', searchPlaceholder: 'Tìm kịch bản...', primaryLabel: '' },
+  businessRules: { title: 'Phê duyệt Quy tắc Nghiệp vụ', subtitle: 'Rà soát, lựa chọn phương án & gắn cờ giả định ASSUMPTION', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: '' },
+  simulator: { title: 'Chaos Simulator', subtitle: 'Flash sale, duplicate webhook, margin attack', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+
+  // Legacy routes
+  complaints: { title: 'Khiếu nại & AI', subtitle: 'Phân tích khiếu nại an toàn PII với AI sentiment', searchPlaceholder: 'Tìm khiếu nại...', primaryLabel: 'Tạo khiếu nại' },
+  channelMapping: { title: 'Ánh xạ SKU kênh', subtitle: 'Ánh xạ SKU nội bộ sang SKU kênh TMĐT', searchPlaceholder: 'Tìm ánh xạ...', primaryLabel: 'Thêm ánh xạ' },
   syncMonitor: { title: 'Giám sát đồng bộ', subtitle: 'Trạng thái đẩy tồn kho & log retry', searchPlaceholder: 'Tìm log...', primaryLabel: '' },
-  fulfillment: { title: 'Wave Picking & SLA', subtitle: 'Wave picking, SLA countdown, scan-to-pack', searchPlaceholder: 'Tìm wave...', primaryLabel: 'Tạo wave' },
   ledger: { title: 'Sổ kép', subtitle: 'Bút toán kép với Debit == Credit', searchPlaceholder: 'Tìm bút toán...', primaryLabel: 'Tạo bút toán' },
   feeReconciliation: { title: 'Đối soát phí', subtitle: 'Phân tích phí chi tiết & phát hiện chênh lệch', searchPlaceholder: 'Tìm theo mã đơn...', primaryLabel: '' },
   marginControl: { title: 'Margin Circuit Breaker', subtitle: 'Tự động ngắt khi phát hiện margin âm', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   salesVelocity: { title: 'Vận tốc bán', subtitle: 'Báo cáo doanh thu, lợi nhuận, vận tốc bán', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   revenueReport: { title: 'Báo cáo doanh thu', subtitle: 'Phân tích doanh thu theo ngày, tháng, năm', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
-  auditTrail: { title: 'Nhật ký Audit', subtitle: 'Nhật ký SHA-256 chống xóa', searchPlaceholder: 'Tìm nhật ký...', primaryLabel: '' },
   automationRules: { title: 'Luật tự động', subtitle: 'Tự động hóa đơn hàng IF-THEN', searchPlaceholder: 'Tìm luật...', primaryLabel: 'Tạo luật' },
   webhooks: { title: 'Outbound Webhooks', subtitle: 'Sự kiện HMAC gửi hệ thống bên ngoài', searchPlaceholder: 'Tìm webhook...', primaryLabel: 'Thêm webhook' },
-  simulator: { title: 'Chaos Simulator', subtitle: 'Flash sale, duplicate webhook, margin attack', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   bufferRules: { title: 'Tồn kho an toàn', subtitle: 'Cấu hình safety stock & reorder point', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: 'Thêm quy tắc' },
   routingRules: { title: 'Định tuyến kho', subtitle: 'Cấu hình định tuyến kho tự động & tách/gộp đơn', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: 'Thêm quy tắc' },
-  settings: { title: 'Cài đặt & Phân quyền', subtitle: 'Quản lý người dùng & vai trò RBAC', searchPlaceholder: 'Tìm người dùng...', primaryLabel: '' },
   flowGuide: { title: 'Luồng hoạt động', subtitle: 'Hướng dẫn luồng end-to-end & phân quyền', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
-  businessRules: { title: 'Phê duyệt Quy tắc Nghiệp vụ', subtitle: 'Rà soát, lựa chọn phương án & gắn cờ giả định ASSUMPTION', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: '' },
-  ownerValidation: { title: 'Trung tâm Nghiệm thu Nghiệp vụ', subtitle: 'Mô phỏng trực tiếp, đối soát Before/After và phê duyệt quy tắc cho Chủ dự án', searchPlaceholder: 'Tìm kịch bản...', primaryLabel: '' },
 };
 
 function AuthenticatedWorkspace() {
@@ -118,105 +159,110 @@ function AuthenticatedWorkspace() {
     }
     return 'dashboard';
   });
-  const [search, setSearch] = useState('');
-  const [sidebarStats, setSidebarStats] = useState({ pendingOrders: 0, lowStock: 0 });
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  async function refreshStats() {
-    if (!activeTenant) return;
-    try {
-      const [ordersRes, productsRes] = await Promise.all([
-        supabase.from('orders').select('status').eq('tenant_id', activeTenant.id).in('status', ['pending', 'processing']),
-        supabase.from('products').select('stock, reorder_level, safety_stock').eq('tenant_id', activeTenant.id),
-      ]);
-      if (ordersRes.error || productsRes.error) return;
-      setSidebarStats({
-        pendingOrders: ordersRes.data?.length ?? 0,
-        lowStock: productsRes.data?.filter((p) => p.stock <= (p.reorder_level ?? 10)).length ?? 0,
-      });
-    } catch {
-      // Silent fail
-    }
-  }
+  const [search, setSearch] = useState('');
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (!session || !activeTenant) return;
-    refreshStats();
-    const interval = setInterval(refreshStats, 30000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, activeTenant]);
-
-  function navigate(p: PageId) {
-    setPage(p);
-    setSearch('');
-    setMobileSidebarOpen(false);
     if (typeof window !== 'undefined') {
-      window.history.replaceState({}, '', `/app?page=${p}`);
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', page);
+      window.history.replaceState({}, '', url.toString());
     }
-  }
+  }, [page]);
+
+  const handleNavigate = (nextPage: PageId) => {
+    setPage(nextPage);
+    setSearch('');
+  };
 
   const meta = PAGE_META[page] || PAGE_META.dashboard;
-  const showPrimary = page !== 'dashboard' && page !== 'inventory' && page !== 'batches' &&
-    page !== 'stockLedger' && page !== 'feeReconciliation' && page !== 'marginControl' &&
-    page !== 'auditTrail' && page !== 'simulator' && page !== 'syncMonitor' &&
-    page !== 'salesVelocity' && page !== 'revenueReport' && page !== 'settings' &&
-    page !== 'flowGuide';
 
   return (
-    <div className="flex min-h-screen bg-ink-50">
-      <Sidebar 
-        current={page} 
-        onNavigate={navigate} 
-        stats={sidebarStats} 
-        mobileOpen={mobileSidebarOpen} 
-        onMobileClose={() => setMobileSidebarOpen(false)} 
+    <div className="flex h-screen bg-ink-50/50 overflow-hidden font-sans">
+      <Sidebar
+        current={page}
+        onNavigate={handleNavigate}
+        stats={{ pendingOrders: 3, lowStock: 2 }}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
       />
-      <div className="flex-1 min-w-0 flex flex-col">
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar
           title={meta.title}
           subtitle={meta.subtitle}
+          searchPlaceholder={meta.searchPlaceholder}
           search={search}
           onSearch={setSearch}
-          searchPlaceholder={meta.searchPlaceholder}
-          onPrimaryAction={showPrimary ? () => emitPrimaryAction(page) : undefined}
           primaryActionLabel={meta.primaryLabel}
-          onMobileMenu={() => setMobileSidebarOpen(true)}
+          onPrimaryAction={() => emitPrimaryAction(page)}
+          onMobileMenu={() => setMobileOpen(!mobileOpen)}
         />
-        <main key={activeTenant?.id ?? 'default'} className="flex-1">
+
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50/70">
           <ErrorBoundary>
-            <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu trang..." />}>
-              {page === 'dashboard' && <DashboardPage onNavigate={(p) => navigate(p)} />}
+            <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu..." />}>
+              {/* Overview */}
+              {page === 'dashboard' && <ExecutiveAnalyticsDashboard onNavigate={(p) => handleNavigate(p as PageId)} />}
+              
+              {/* Sales */}
               {page === 'orders' && <OrdersPage search={search} />}
               {page === 'customers' && <CustomersPage search={search} />}
-              {page === 'complaints' && <ComplaintsPage search={search} />}
-              {page === 'returns' && <ReturnsPage search={search} />}
-              {page === 'products' && <ProductsPage search={search} />}
+              {page === 'salesAnalytics' && <SalesAnalyticsPage />}
+
+              {/* Operations & WMS */}
               {page === 'inventory' && <InventoryPage search={search} />}
-              {page === 'warehouses' && <WarehousesPage search={search} />}
+              {page === 'fulfillment' && <FulfillmentPage search={search} />}
+              {page === 'inventoryAnalytics' && <InventoryAnalyticsPage />}
               {page === 'transfers' && <TransfersPage search={search} />}
               {page === 'batches' && <BatchesPage search={search} />}
+              {page === 'warehouses' && <WarehousesPage search={search} />}
               {page === 'stockLedger' && <StockLedgerPage search={search} />}
+
+              {/* Procurement */}
               {page === 'purchaseOrders' && <PurchaseOrdersPage search={search} />}
-              {page === 'channelMapping' && <ChannelMappingPage search={search} />}
+              {page === 'products' && <ProductsPage search={search} />}
+
+              {/* After-sales */}
+              {page === 'returns' && <ReturnsPage search={search} />}
+
+              {/* Unit Economics */}
+              {page === 'orderEconomics' && <OrderEconomicsPage />}
+              {page === 'skuEconomics' && <SkuEconomicsPage />}
+              {page === 'channelEconomics' && <ChannelEconomicsPage />}
+              {page === 'pricingCalculator' && <PricingIntelligencePage />}
+
+              {/* Data Analytics */}
+              {page === 'marketingAnalytics' && <MarketingAnalyticsPage />}
+              {page === 'customerAnalytics' && <CustomerAnalyticsPage />}
+              {page === 'operationsAnalytics' && <OperationsAnalyticsPage />}
+              {page === 'cashWorkingCapital' && <CashWorkingCapitalPage />}
+
+              {/* Governance & Admin */}
               {page === 'channelConnections' && <ChannelConnectionsPage search={search} />}
+              {page === 'settings' && <SettingsPage search={search} />}
+              {page === 'auditTrail' && <AuditTrailPage search={search} />}
+
+              {/* Demo Lab */}
+              {page === 'ownerValidation' && <OwnerValidationCenterPage />}
+              {page === 'businessRules' && <BusinessRulesReviewPage />}
+              {page === 'simulator' && <SimulatorPage />}
+
+              {/* Legacy routes preserved */}
+              {page === 'complaints' && <ComplaintsPage search={search} />}
+              {page === 'channelMapping' && <ChannelMappingPage search={search} />}
               {page === 'syncMonitor' && <SyncMonitorPage search={search} />}
-              {page === 'fulfillment' && <FulfillmentPage search={search} />}
               {page === 'ledger' && <LedgerPage search={search} />}
               {page === 'feeReconciliation' && <FeeReconciliationPage search={search} />}
               {page === 'marginControl' && <MarginControlPage />}
               {page === 'salesVelocity' && <SalesVelocityPage />}
               {page === 'revenueReport' && <RevenueReportPage />}
-              {page === 'auditTrail' && <AuditTrailPage search={search} />}
               {page === 'automationRules' && <AutomationRulesPage search={search} />}
               {page === 'webhooks' && <WebhooksPage search={search} />}
-              {page === 'simulator' && <SimulatorPage />}
               {page === 'bufferRules' && <BufferRulesPage search={search} />}
               {page === 'routingRules' && <RoutingRulesPage search={search} />}
-              {page === 'settings' && <SettingsPage search={search} />}
               {page === 'flowGuide' && <FlowGuidePage />}
-              {page === 'businessRules' && <BusinessRulesReviewPage />}
-              {page === 'ownerValidation' && <OwnerValidationCenterPage />}
             </Suspense>
           </ErrorBoundary>
         </main>
@@ -300,13 +346,15 @@ function AppRouter() {
   return <LandingPage onNavigate={navigate} />;
 }
 
-export default function App() {
+export function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
+    <ToastProvider>
+      <AuthProvider>
         <AppRouter />
+        {/* Global Demo Control Panel for quick testing and resets */}
         <DemoControlPanel />
-      </ToastProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
+export default App;
