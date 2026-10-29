@@ -49,7 +49,7 @@ export function OrdersPage({ search }: OrdersPageProps) {
     setLoading(true);
     const { data, error } = await supabase
       .from('orders')
-      .select('*, customer:customers(*)')
+      .select('*, customer:customers(*), order_items(*)')
       .eq('tenant_id', activeTenant?.id)
       .order('placed_at', { ascending: false });
     if (error) {
@@ -173,16 +173,17 @@ export function OrdersPage({ search }: OrdersPageProps) {
         </Card>
       ) : (
         <Card className="overflow-hidden hover:shadow-lg hover:shadow-ink-200/40 transition-shadow duration-300">
-          <div className="overflow-x-auto">
+          {/* 1. Desktop & Tablet Table (viewport >= 768px) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ink-50/80 text-ink-500 text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-5 py-3.5 font-semibold">Don hang</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Khach hang</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Ngay</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Trang thai</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Thanh toan</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Tong</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Đơn hàng</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Khách hàng</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Ngày đặt</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Trạng thái</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Thanh toán</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Tổng tiền</th>
                   <th className="w-10" />
                 </tr>
               </thead>
@@ -198,12 +199,12 @@ export function OrdersPage({ search }: OrdersPageProps) {
                         {order.order_number}
                       </p>
                       <p className="text-xs text-ink-400">
-                        {order.order_items?.length ?? 0} san pham
+                        {order.order_items?.length ? `${order.order_items.length} sản phẩm` : '1 sản phẩm'}
                       </p>
                     </td>
                     <td className="px-5 py-4">
                       <p className="font-medium text-ink-800">
-                        {order.customer?.name ?? 'Khach le'}
+                        {order.customer?.name ?? 'Khách lẻ'}
                       </p>
                       <p className="text-xs text-ink-400">
                         {order.customer?.company ?? '—'}
@@ -223,7 +224,7 @@ export function OrdersPage({ search }: OrdersPageProps) {
                       </span>
                     </td>
                     <td className="px-5 py-4 text-right font-bold text-ink-900 tabular-nums">
-                      {formatCurrency(Number(order.total))}
+                      {formatCurrency(Number(order.total ?? order.total_amount ?? 0))}
                     </td>
                     <td className="px-3 py-4 text-ink-300 group-hover:text-ink-500 transition-colors">
                       <ChevronRight size={18} />
@@ -232,6 +233,46 @@ export function OrdersPage({ search }: OrdersPageProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* 2. Mobile Responsive Order Cards (viewport < 768px) */}
+          <div className="md:hidden divide-y divide-ink-100">
+            {filtered.map((order) => (
+              <div
+                key={order.id}
+                onClick={() => openOrder(order)}
+                className="p-4 hover:bg-ink-50/60 active:bg-ink-100/50 transition-colors cursor-pointer space-y-2.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-ink-900 text-sm tracking-tight">{order.order_number}</span>
+                  <span className={cn('badge text-[11px]', ORDER_STATUS_COLORS[order.status])}>
+                    {ORDER_STATUS_LABELS[order.status]}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-ink-600">
+                  <span className="font-medium text-ink-800 truncate max-w-[180px]">{order.customer?.name ?? 'Khách lẻ'}</span>
+                  <span className="text-ink-400">{formatDate(order.placed_at)}</span>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-ink-500">
+                      {order.order_items?.length ? `${order.order_items.length} sản phẩm` : '1 sản phẩm'}
+                    </span>
+                    <span className={cn('badge text-[10px]', PAYMENT_STATUS_COLORS[order.payment_status])}>
+                      {PAYMENT_STATUS_LABELS[order.payment_status]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-ink-900 text-sm tabular-nums">
+                      {formatCurrency(Number(order.total ?? order.total_amount ?? 0))}
+                    </span>
+                    <ChevronRight size={16} className="text-ink-400" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       )}

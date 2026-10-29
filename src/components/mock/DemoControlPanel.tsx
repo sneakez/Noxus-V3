@@ -57,7 +57,7 @@ export function DemoControlPanel() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 font-sans">
+    <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 font-sans max-w-[calc(100vw-24px)]">
       {/* Floating Trigger Pill */}
       {!isOpen && (
         <button

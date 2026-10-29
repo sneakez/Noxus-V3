@@ -22,7 +22,7 @@ const DEFAULT_LEDGER_ACCOUNTS = [
   { id: 'acc_3331', account_code: '3331', account_name: 'Thuế GTGT phải nộp', account_type: 'liability', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
   { id: 'acc_3388', account_code: '3388', account_name: 'Phải trả phí dịch vụ & hoa hồng sàn', account_type: 'liability', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
   { id: 'acc_511', account_code: '511', account_name: 'Doanh thu bán hàng & cung cấp dịch vụ', account_type: 'revenue', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
-  { id: 'acc_632', account_code: '632', account_name: 'Giá vốn hàng bán', account_type: 'expense', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'acc_632', account_code: '632', account_name: 'Giá vốn hàng bán (COGS)', account_type: 'expense', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
   { id: 'acc_641', account_code: '641', account_name: 'Chi phí bán hàng & Logistics', account_type: 'expense', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
 ];
 
@@ -114,10 +114,79 @@ class MockQueryBuilder {
     return this;
   }
 
+  private normalizeOrder(o: Record<string, unknown>, snap: MockDatabaseSnapshot): Record<string, unknown> {
+    const orderId = String(o.id || '');
+    const items = snap.orderItems.filter(i => i.order_id === orderId).map(item => {
+      const prod = snap.products.find(p => p.id === item.product_id);
+      const unitPrice = Number(item.unit_price || 0);
+      const quantity = Number(item.quantity || 1);
+      const lineTotal = Number(item.line_total ?? item.total_price ?? (unitPrice * quantity));
+      return {
+        ...item,
+        product_name: item.product_name || prod?.name || 'Sản phẩm Nexus',
+        product_sku: item.product_sku || prod?.sku || 'NX-SKU',
+        unit_price: unitPrice,
+        quantity,
+        line_total: lineTotal,
+        total_price: lineTotal,
+        unit_cost_mac_snapshot: item.unit_cost_mac_snapshot || prod?.cost_price || 0,
+        is_free_gift: item.is_free_gift || false
+      };
+    });
+
+    const subtotal = items.length > 0
+      ? items.reduce((s, it) => s + it.line_total, 0)
+      : Number(o.subtotal ?? o.total ?? o.total_amount ?? 0);
+    const tax = Number(o.tax ?? 0);
+    const shipping = Number(o.shipping ?? 0);
+    const discount = Number(o.discount ?? 0);
+    const total = Number(o.total ?? o.total_amount ?? (subtotal + tax + shipping - discount));
+    const customer = snap.customers.find(c => c.id === o.customer_id) || snap.customers[0];
+
+    return {
+      ...o,
+      subtotal,
+      tax,
+      shipping,
+      discount,
+      total,
+      total_amount: total,
+      channel: o.channel || 'shopee',
+      customer,
+      order_items: items,
+      items_count: items.length
+    };
+  }
+
   private getTableData(): Record<string, unknown>[] {
     const snap = mockStore.getSnapshot();
 
-    // 1. Synthetic Inventory Items (Always synced to inventory5State)
+    // 1. Orders (Deep populated & Normalized)
+    if (this.table === 'orders') {
+      return snap.orders.map(o => this.normalizeOrder(o as unknown as Record<string, unknown>, snap));
+    }
+
+    // 2. Order Items (Deep populated)
+    if (this.table === 'order_items') {
+      return snap.orderItems.map(item => {
+        const prod = snap.products.find(p => p.id === item.product_id);
+        const unitPrice = Number(item.unit_price || 0);
+        const quantity = Number(item.quantity || 1);
+        const lineTotal = Number(item.line_total ?? item.total_price ?? (unitPrice * quantity));
+        return {
+          ...item,
+          product_name: item.product_name || prod?.name || 'Sản phẩm Nexus',
+          product_sku: item.product_sku || prod?.sku || 'NX-SKU',
+          unit_price: unitPrice,
+          quantity,
+          line_total: lineTotal,
+          total_price: lineTotal,
+          product: prod || null
+        };
+      });
+    }
+
+    // 3. Synthetic Inventory Items (Always synced to inventory5State)
     if (this.table === 'inventory_items') {
       return snap.inventory5State.map(inv => {
         const prod = snap.products.find(p => p.id === inv.product_id || p.sku === inv.sku);
@@ -139,24 +208,32 @@ class MockQueryBuilder {
       });
     }
 
-    // 2. Fulfillment / Picking Waves
+    // 4. Fulfillment / Picking Waves
     if (this.table === 'fulfillment_waves' || this.table === 'picking_waves') {
       const wh = snap.warehouses[0] || { id: 'wh_north_01', name: 'Tổng kho Miền Bắc (Bắc Ninh)' };
-      return snap.pickingWaves.map(w => ({
-        ...w,
-        wave_code: w.wave_code || w.wave_number || 'WAVE-410',
-        warehouse_id: w.warehouse_id || wh.id,
-        warehouse: wh,
-        must_ship_by_sla: w.must_ship_by_sla || new Date(Date.now() + 18 * 3600000).toISOString(),
-        created_at: w.created_at || new Date().toISOString(),
-        orders: snap.orders.filter(o => o.fulfillment_wave_id === w.id || o.status === 'processing').slice(0, 5)
-      }));
+      return snap.pickingWaves.map(w => {
+        const matchingOrders = snap.orders
+          .filter(o => o.fulfillment_wave_id === w.id || o.status === 'processing')
+          .slice(0, 5)
+          .map(o => this.normalizeOrder(o as unknown as Record<string, unknown>, snap));
+        return {
+          ...w,
+          wave_code: w.wave_code || w.wave_number || 'WAVE-W410',
+          warehouse_id: w.warehouse_id || wh.id,
+          warehouse: wh,
+          must_ship_by_sla: w.must_ship_by_sla || new Date(Date.now() + 18 * 3600000).toISOString(),
+          created_at: w.created_at || new Date().toISOString(),
+          orders: matchingOrders,
+          order_count: matchingOrders.length || w.total_orders || 1
+        };
+      });
     }
 
-    // 3. Return Requests / Returns
+    // 5. Return Requests / Returns
     if (this.table === 'return_requests' || this.table === 'returns') {
       return snap.returns.map(r => {
-        const ord = snap.orders.find(o => o.id === r.order_id) || snap.orders[0];
+        const rawOrd = snap.orders.find(o => o.id === r.order_id) || snap.orders[0];
+        const ord = rawOrd ? this.normalizeOrder(rawOrd as unknown as Record<string, unknown>, snap) : null;
         return {
           ...r,
           id: r.id,
@@ -164,9 +241,9 @@ class MockQueryBuilder {
           order_id: r.order_id,
           return_type: r.return_type || 'customer_return',
           status: r.status || 'quality_check',
-          refund_amount: 1250000,
+          refund_amount: Number(r.refund_amount || 1250000),
           reason: r.reason || 'Khách muốn đổi sang sản phẩm khác',
-          approval_status: r.approval_status || 'pending',
+          approval_status: r.approval_status || (r.status === 'refunded' ? 'checker_approved' : 'pending'),
           order: ord,
           created_at: r.created_at,
           updated_at: r.updated_at
@@ -174,7 +251,7 @@ class MockQueryBuilder {
       });
     }
 
-    // 4. Stock Transactions / Stock Ledger
+    // 6. Stock Transactions / Stock Ledger
     if (this.table === 'stock_transactions' || this.table === 'stock_ledger') {
       return snap.stockLedger.map(sl => {
         const prod = snap.products.find(p => p.id === sl.product_id) || snap.products[0];
@@ -188,7 +265,7 @@ class MockQueryBuilder {
       });
     }
 
-    // 5. Ledger Accounts & Journal Entries
+    // 7. Ledger Accounts & Journal Entries
     if (this.table === 'ledger_accounts') {
       return DEFAULT_LEDGER_ACCOUNTS.map(a => ({ ...a }));
     }
@@ -216,25 +293,29 @@ class MockQueryBuilder {
       });
     }
 
-    // 6. Order Fee Breakdowns (Reconciliation)
+    // 8. Order Fee Breakdowns (Reconciliation)
     if (this.table === 'order_fee_breakdowns') {
-      return snap.orders.map(o => ({
-        id: `fee_${o.id}`,
-        order_id: o.id,
-        order: o,
-        commission_fee: Math.round(o.total_amount * 0.05),
-        transaction_fee: Math.round(o.total_amount * 0.02),
-        voucher_co_fund_fee: 15000,
-        estimated_shipping_fee: 35000,
-        actual_shipping_fee: 35000,
-        weight_penalty_fee: 0,
-        net_payout: Math.round(o.total_amount * 0.93 - 50000),
-        is_reconciled: o.status === 'delivered',
-        created_at: o.placed_at || new Date().toISOString()
-      }));
+      return snap.orders.map(o => {
+        const norm = this.normalizeOrder(o as unknown as Record<string, unknown>, snap);
+        const orderTotal = Number(norm.total || 0);
+        return {
+          id: `fee_${norm.id}`,
+          order_id: norm.id,
+          order: norm,
+          commission_fee: Math.round(orderTotal * 0.05),
+          transaction_fee: Math.round(orderTotal * 0.02),
+          voucher_co_fund_fee: 15000,
+          estimated_shipping_fee: 35000,
+          actual_shipping_fee: 35000,
+          weight_penalty_fee: 0,
+          net_payout: Math.round(orderTotal * 0.93 - 50000),
+          is_reconciled: norm.status === 'delivered',
+          created_at: norm.placed_at || new Date().toISOString()
+        };
+      });
     }
 
-    // 7. Margin Config
+    // 9. Margin Config
     if (this.table === 'margin_config') {
       return [
         {
@@ -249,10 +330,8 @@ class MockQueryBuilder {
       ];
     }
 
-    // 8. Core snapshot maps
+    // 10. Fallback for other standard tables
     const map: Record<string, keyof MockDatabaseSnapshot> = {
-      orders: 'orders',
-      order_items: 'orderItems',
       products: 'products',
       customers: 'customers',
       warehouses: 'warehouses',
@@ -260,13 +339,8 @@ class MockQueryBuilder {
       purchase_orders: 'purchaseOrders',
       purchase_order_items: 'purchaseOrderItems',
       transfers: 'transfers',
-      picking_waves: 'pickingWaves',
-      returns: 'returns',
       return_items: 'returnItems',
       batches: 'batches',
-      stock_ledger: 'stockLedger',
-      journal_entries: 'journalEntries',
-      journal_lines: 'journalLines',
       reconciliations: 'reconciliations',
       audit_logs: 'auditLogs',
       tenants: 'tenants',
@@ -279,7 +353,6 @@ class MockQueryBuilder {
       return (snap[key] as unknown as Record<string, unknown>[]).map(item => ({ ...item }));
     }
 
-    // Default fallback to empty array
     return [];
   }
 
@@ -290,7 +363,6 @@ class MockQueryBuilder {
     for (const f of this.filters) {
       if (f.op === 'eq') {
         if (f.col === 'tenant_id' && (f.val === undefined || f.val === null || f.val === '')) {
-          // Fallback to activeTenantId if tenant_id was not yet loaded during mount
           result = result.filter(r => r.tenant_id === snap.activeTenantId || !r.tenant_id);
         } else {
           result = result.filter(r => r[f.col] === f.val);
@@ -378,15 +450,6 @@ class MockQueryBuilder {
     await mockStore.delay(20);
     const rows = this.getTableData();
     const filtered = this.applyFilters(rows);
-
-    // Deep populate common relations if requested
-    if (this.table === 'orders') {
-      const snap = mockStore.getSnapshot();
-      filtered.forEach(o => {
-        o.customer = snap.customers.find(c => c.id === o.customer_id);
-      });
-    }
-
     const res = { data: filtered, error: null };
     return Promise.resolve(res).then(onfulfilled, onrejected);
   }
@@ -432,16 +495,33 @@ export const mockSupabaseClient = {
         await mockStore.delay(25);
         const snap = mockStore.getSnapshot();
 
-        // 1. Dashboard Metrics
+        // 1. Dashboard Metrics (Fully Computed from Valid Orders)
         if (fnName === 'get_dashboard_metrics') {
-          const rev = snap.orders.reduce((sum, o) => sum + (o.payment_status === 'paid' ? o.total_amount : 0), 0);
+          const nonCancelledOrders = snap.orders.filter(o => o.status !== 'cancelled');
+          const recognizedRevenue = nonCancelledOrders
+            .filter(o => o.status === 'shipped' || o.status === 'delivered')
+            .reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
+          
+          const collectedCash = snap.orders
+            .filter(o => o.payment_status === 'paid')
+            .reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
+
+          const refundAmount = snap.returns
+            .filter(r => r.status === 'refunded')
+            .reduce((sum, r) => sum + Number(r.refund_amount || 1250000), 0);
+
+          const revenue = collectedCash || 842500000;
+
           resolve({
             data: {
-              revenue: rev || 842500000,
+              revenue,
               prev_revenue: 720000000,
+              recognized_revenue: recognizedRevenue,
+              collected_cash: collectedCash,
+              refund_amount: refundAmount,
               total_orders: snap.orders.length,
               recent_orders_count: snap.orders.length,
-              pending_orders: snap.orders.filter(o => o.status === 'pending').length,
+              pending_orders: snap.orders.filter(o => o.status === 'pending' || o.status === 'processing').length,
               active_customers: snap.customers.length,
               total_customers: snap.customers.length,
               total_products: snap.products.length,
@@ -460,18 +540,38 @@ export const mockSupabaseClient = {
           return;
         }
 
-        // 2. Dashboard Daily Revenue (7 Days Array)
+        // 2. Dashboard Daily Revenue (7 Days Array Calculated from Real Orders)
         if (fnName === 'get_dashboard_daily') {
           const daily: Array<{ day: string; revenue: number; order_count: number }> = [];
           const now = new Date();
+          
           for (let i = 6; i >= 0; i--) {
             const d = new Date(now);
             d.setDate(d.getDate() - i);
-            const dayStr = d.toISOString().split('T')[0];
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const dayNum = String(d.getDate()).padStart(2, '0');
+            const dayStr = `${y}-${m}-${dayNum}`;
+
+            // Filter real orders placed on this date (excluding cancelled)
+            const matchedOrders = snap.orders.filter(o => {
+              if (o.status === 'cancelled') return false;
+              const oDate = new Date(o.placed_at);
+              const oDayStr = `${oDate.getFullYear()}-${String(oDate.getMonth() + 1).padStart(2, '0')}-${String(oDate.getDate()).padStart(2, '0')}`;
+              return oDayStr === dayStr;
+            });
+
+            const dayRev = matchedOrders.reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
+            
+            // Baseline organic distribution for past days
+            const baselinePattern = [16500000, 24000000, 21500000, 28000000, 32500000, 36000000, 42500000];
+            const rev = dayRev > 0 ? dayRev : (baselinePattern[6 - i] || 18000000);
+            const count = matchedOrders.length > 0 ? matchedOrders.length : Math.max(1, Math.round(rev / 1250000));
+
             daily.push({
               day: dayStr,
-              revenue: 85000000 + (6 - i) * 14500000,
-              order_count: 22 + (6 - i) * 5
+              revenue: rev,
+              order_count: count
             });
           }
           resolve({ data: daily, error: null });
@@ -522,26 +622,39 @@ export const mockSupabaseClient = {
 
         // 7. Atomic Business Mutations
         if (fnName === 'place_order_atomic') {
-          const rawItems = (params.p_items as Array<{ product_id: string; product_sku?: string; quantity: number; unit_price: number }>) || [];
+          const rawItems = (params.p_items as Array<{ product_id: string; product_name?: string; product_sku?: string; quantity: number; unit_price: number }>) || [];
           const items = rawItems.map(i => {
             const prod = snap.products.find(p => p.id === i.product_id);
             return {
               product_id: i.product_id,
               sku: prod?.sku || i.product_sku || 'NX-SKU',
-              quantity: i.quantity,
-              unit_price: i.unit_price
+              quantity: Number(i.quantity || 1),
+              unit_price: Number(i.unit_price || prod?.price || 0)
             };
           });
+
+          const total = Number(params.p_total) || items.reduce((sum, it) => sum + it.quantity * it.unit_price, 0);
+          const subtotal = Number(params.p_subtotal) || total;
+          const tax = Number(params.p_tax) || 0;
+          const shipping = Number(params.p_shipping) || 0;
+          const discount = Number(params.p_discount) || 0;
 
           const res = mockStore.placeOrderAtomic(
             {
               tenant_id: (params.p_tenant_id as string) || snap.activeTenantId,
               order_number: (params.p_order_number as string) || `ORD-${Date.now()}`,
-              customer_id: params.p_customer_id as string,
-              status: 'pending',
-              payment_status: (params.p_payment_status as unknown as Order['payment_status']) || 'unpaid',
-              total_amount: Number(params.p_total) || 0,
+              customer_id: (params.p_customer_id as string) || snap.customers[0]?.id || 'cust_01',
+              status: (params.p_status as unknown as Order['status']) || 'pending',
+              payment_status: (params.p_payment_status as unknown as Order['payment_status']) || 'paid',
+              subtotal,
+              tax,
+              shipping,
+              discount,
+              total,
+              total_amount: total,
+              channel: 'direct',
               notes: (params.p_notes as string) || null,
+              shipping_address: (params.p_shipping_address as string) || null,
               placed_at: new Date().toISOString()
             },
             items

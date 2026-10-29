@@ -79,62 +79,67 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    label: 'Tong quan',
+    label: 'Tổng quan',
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'flowGuide', label: 'Luong hoat dong', icon: CircuitBoard },
+      { id: 'flowGuide', label: 'Luồng hoạt động', icon: CircuitBoard },
     ],
   },
   {
-    label: 'Ban hang',
+    label: 'Bán hàng',
     items: [
-      { id: 'orders', label: 'Don hang', icon: ShoppingCart },
-      { id: 'customers', label: 'Khach hang', icon: Users },
-      { id: 'complaints', label: 'Khieu nai & AI', icon: Bot },
-      { id: 'returns', label: 'Doi tra / RMA', icon: PackageCheck },
+      { id: 'orders', label: 'Đơn hàng', icon: ShoppingCart },
+      { id: 'customers', label: 'Khách hàng', icon: Users },
+      { id: 'complaints', label: 'Khiếu nại & AI', icon: Bot },
     ],
   },
   {
-    label: 'Danh muc & Ton kho',
+    label: 'Kho vận',
     items: [
-      { id: 'products', label: 'San pham & BOM', icon: Package, roles: ['admin', 'manager'] },
-      { id: 'inventory', label: 'Ton kho 5 trang thai', icon: Boxes },
-      { id: 'warehouses', label: 'Kho & Bin', icon: Warehouse, roles: ['admin', 'manager'] },
-      { id: 'transfers', label: 'Chuyen kho', icon: ArrowLeftRight },
-      { id: 'batches', label: 'Lo & Serial', icon: FlaskConical },
-      { id: 'stockLedger', label: 'So giao dich ton', icon: ScrollText },
-      { id: 'purchaseOrders', label: 'Don mua hang', icon: ClipboardList, roles: ['admin', 'manager'] },
-      { id: 'channelMapping', label: 'Anh xa SKU kenh', icon: Layers, roles: ['admin', 'manager'] },
-      { id: 'channelConnections', label: 'Ket noi kenh', icon: Link2, roles: ['admin', 'manager'] },
-      { id: 'syncMonitor', label: 'Giam sat dong bo', icon: RefreshCw, roles: ['admin', 'manager'] },
-      { id: 'bufferRules', label: 'Ton kho an toan', icon: ShieldAlert, roles: ['admin', 'manager'] },
-      { id: 'routingRules', label: 'Dinh tuyen kho', icon: Activity, roles: ['admin', 'manager'] },
-    ],
-  },
-  {
-    label: 'Giao hang',
-    items: [
+      { id: 'inventory', label: 'Tồn kho 5 trạng thái', icon: Boxes },
       { id: 'fulfillment', label: 'Wave Picking & SLA', icon: Truck },
+      { id: 'warehouses', label: 'Kho & Vị trí Bin', icon: Warehouse, roles: ['admin', 'manager'] },
+      { id: 'transfers', label: 'Chuyển kho', icon: ArrowLeftRight },
+      { id: 'batches', label: 'Lô & Hạn sử dụng', icon: FlaskConical },
+      { id: 'stockLedger', label: 'Sổ giao dịch kho', icon: ScrollText },
     ],
   },
   {
-    label: 'Tai chinh',
+    label: 'Mua hàng',
     items: [
-      { id: 'ledger', label: 'So kep', icon: Banknote, roles: ['admin', 'manager'] },
-      { id: 'feeReconciliation', label: 'Doi soát phi', icon: Receipt, roles: ['admin', 'manager'] },
-      { id: 'marginControl', label: 'Marg Circuit Breaker', icon: BadgePercent, roles: ['admin', 'manager'] },
-      { id: 'salesVelocity', label: 'Van toc ban', icon: Gauge, roles: ['admin', 'manager'] },
-      { id: 'revenueReport', label: 'Bao cao doanh thu', icon: TrendingUp, roles: ['admin', 'manager'] },
+      { id: 'purchaseOrders', label: 'Đơn mua hàng (PO)', icon: ClipboardList, roles: ['admin', 'manager'] },
+      { id: 'products', label: 'Sản phẩm & BOM', icon: Package, roles: ['admin', 'manager'] },
     ],
   },
   {
-    label: 'Quan tri & Nen tang',
+    label: 'Hậu mãi',
     items: [
-      { id: 'auditTrail', label: 'Nhat ky Audit', icon: ShieldCheck, roles: ['admin'] },
-      { id: 'automationRules', label: 'Luat tu dong', icon: Zap, roles: ['admin', 'manager'] },
+      { id: 'returns', label: 'Đổi trả / RMA', icon: PackageCheck },
+    ],
+  },
+  {
+    label: 'Tài chính',
+    items: [
+      { id: 'ledger', label: 'Sổ kế toán kép', icon: Banknote, roles: ['admin', 'manager'] },
+      { id: 'feeReconciliation', label: 'Đối soát phí sàn', icon: Receipt, roles: ['admin', 'manager'] },
+      { id: 'marginControl', label: 'Margin Circuit Breaker', icon: BadgePercent, roles: ['admin', 'manager'] },
+      { id: 'salesVelocity', label: 'Vận tốc bán hàng', icon: Gauge, roles: ['admin', 'manager'] },
+      { id: 'revenueReport', label: 'Báo cáo doanh thu', icon: TrendingUp, roles: ['admin', 'manager'] },
+    ],
+  },
+  {
+    label: 'Quản trị',
+    items: [
+      { id: 'channelMapping', label: 'Ánh xạ SKU kênh', icon: Layers, roles: ['admin', 'manager'] },
+      { id: 'channelConnections', label: 'Kết nối sàn TMĐT', icon: Link2, roles: ['admin', 'manager'] },
+      { id: 'syncMonitor', label: 'Giám sát đồng bộ', icon: RefreshCw, roles: ['admin', 'manager'] },
+      { id: 'bufferRules', label: 'Tồn an toàn & Buffer', icon: ShieldAlert, roles: ['admin', 'manager'] },
+      { id: 'routingRules', label: 'Định tuyến kho', icon: Activity, roles: ['admin', 'manager'] },
+      { id: 'automationRules', label: 'Luật tự động', icon: Zap, roles: ['admin', 'manager'] },
       { id: 'webhooks', label: 'Outbound Webhooks', icon: Webhook, roles: ['admin'] },
+      { id: 'auditTrail', label: 'Nhật ký Audit', icon: ShieldCheck, roles: ['admin'] },
       { id: 'simulator', label: 'Chaos Simulator', icon: Activity, roles: ['admin'] },
-      { id: 'settings', label: 'Cai dat & Phan quyen', icon: Settings, roles: ['admin'] },
+      { id: 'settings', label: 'Cài đặt hệ thống', icon: Settings, roles: ['admin'] },
     ],
   },
 ];

@@ -15,7 +15,8 @@ import type {
   ApprovalStatus,
 } from '@/types';
 
-export function formatCurrency(value: number): string {
+export function formatCurrency(value: number | string | null | undefined): string {
+  const num = typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : (typeof value === 'string' && !isNaN(Number(value)) ? Number(value) : 0);
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',

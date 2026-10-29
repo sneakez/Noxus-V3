@@ -139,12 +139,15 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (page: 'orders') =>
   const chartData: { label: string; value: number }[] = [];
   for (let i = 6; i >= 0; i--) {
     const day = new Date();
-    day.setHours(0, 0, 0, 0);
     day.setDate(day.getDate() - i);
-    const dayStr = day.toISOString().split('T')[0];
-    const matched = dailyData.find((d) => d.day === dayStr);
+    const y = day.getFullYear();
+    const m = String(day.getMonth() + 1).padStart(2, '0');
+    const d = String(day.getDate()).padStart(2, '0');
+    const localDayStr = `${y}-${m}-${d}`;
+    const isoDayStr = day.toISOString().split('T')[0];
+    const matched = dailyData.find((item) => item.day === localDayStr || item.day === isoDayStr);
     chartData.push({
-      label: day.toLocaleDateString('en-US', { weekday: 'short' }),
+      label: day.toLocaleDateString('vi-VN', { weekday: 'short' }),
       value: matched ? Number(matched.revenue) : 0,
     });
   }

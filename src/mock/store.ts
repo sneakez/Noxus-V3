@@ -195,29 +195,95 @@ class MockDataStore {
         draft.stockLedger.unshift(ledgerEntry);
       }
 
-      // 3. Insert Order
+      // 3. Compute Subtotal & Total
+      const subtotal = items.reduce((sum, it) => sum + it.quantity * it.unit_price, 0);
+      const total = Number((newOrder as unknown as Record<string, unknown>).total ?? (newOrder as unknown as Record<string, unknown>).total_amount ?? subtotal);
+      
+      const orderItemsList = items.map((item, idx) => {
+        const prod = draft.products.find(p => p.id === item.product_id || p.sku === item.sku);
+        return {
+          id: `item_${orderId}_${idx + 1}`,
+          order_id: orderId,
+          product_id: item.product_id,
+          product_name: prod?.name || 'Sản phẩm Nexus',
+          product_sku: item.sku || prod?.sku || 'NX-SKU',
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          line_total: item.quantity * item.unit_price,
+          total_price: item.quantity * item.unit_price,
+          created_at: placedAt,
+          parent_bundle_product_id: null,
+          unit_cost_mac_snapshot: prod?.cost_price || Math.round(item.unit_price * 0.6),
+          serial_numbers: null,
+          is_free_gift: false
+        };
+      });
+
       const createdOrder: Order = {
+        subtotal,
+        tax: 0,
+        shipping: 0,
+        discount: 0,
+        total,
+        total_amount: total,
+        channel: (newOrder as unknown as Record<string, unknown>).channel as unknown as Order['channel'] || 'direct',
         ...newOrder,
         id: orderId,
+        order_items: orderItemsList,
         created_at: placedAt,
         updated_at: placedAt
       };
       draft.orders.unshift(createdOrder);
 
       // 4. Insert Order Items
-      items.forEach((item, idx) => {
-        draft.orderItems.push({
-          id: `item_${orderId}_${idx + 1}`,
-          order_id: orderId,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.quantity * item.unit_price,
+      orderItemsList.forEach(it => draft.orderItems.push(it));
+
+      // 5. Accounting Journal Entry (Double-Entry Bookkeeping)
+      if (newOrder.payment_status === 'paid') {
+        const jeId = `je_${Date.now()}`;
+        draft.journalEntries.unshift({
+          id: jeId,
+          tenant_id: draft.activeTenantId,
+          entry_number: `JE-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+          event_source: 'order_sale',
+          reference_type: 'order',
+          reference_id: orderId,
+          description: `Ghi nhận doanh thu bán hàng #${newOrder.order_number}`,
+          posted_at: placedAt,
+          posted_by: 'usr_finance_01',
+          status: 'posted',
           created_at: placedAt
         });
-      });
 
-      // 5. Append Audit Log
+        draft.journalLines.push(
+          {
+            id: `jl_${jeId}_1`,
+            journal_entry_id: jeId,
+            entry_id: jeId,
+            account_id: 'acc_131',
+            account_code: '131',
+            debit_amount: total,
+            credit_amount: 0,
+            debit: total,
+            credit: 0,
+            description: `Phải thu đơn #${newOrder.order_number}`
+          },
+          {
+            id: `jl_${jeId}_2`,
+            journal_entry_id: jeId,
+            entry_id: jeId,
+            account_id: 'acc_511',
+            account_code: '511',
+            debit_amount: 0,
+            credit_amount: total,
+            debit: 0,
+            credit: total,
+            description: `Doanh thu bán hàng #${newOrder.order_number}`
+          }
+        );
+      }
+
+      // 6. Append Audit Log
       draft.auditLogs.unshift({
         id: `audit_${Date.now()}`,
         action: 'ORDER_ATOMIC_RESERVATION',
@@ -426,6 +492,7 @@ class MockDataStore {
       const targetRet = draft.returns.find(r => r.id === returnId);
       if (targetRet) {
         targetRet.status = 'refunded';
+        (targetRet as unknown as Record<string, unknown>).approval_status = 'checker_approved';
         targetRet.updated_at = now;
       }
     }, 'RETURN_INSPECTED', { returnId, isGoodCondition });

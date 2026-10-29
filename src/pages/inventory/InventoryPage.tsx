@@ -205,18 +205,19 @@ export function InventoryPage({ search }: InventoryPageProps) {
         </Card>
       ) : (
         <Card className="overflow-hidden hover:shadow-lg hover:shadow-ink-200/40 transition-shadow duration-300">
-          <div className="overflow-x-auto">
+          {/* 1. Desktop & Tablet Table (viewport >= 768px) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ink-50/80 text-ink-500 text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-5 py-3.5 font-semibold">San pham</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Kho</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Thuc te</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Da giu</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Co san</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Kha dung</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Sap ve</th>
-                  <th className="text-center px-5 py-3.5 font-semibold">Trang thai</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Sản phẩm</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Kho lưu trữ</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Vật lý (On-Hand)</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Đã giữ (Lock)</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Khả dụng (Sellable)</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Hỏng (Damaged)</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Sắp về (PO)</th>
+                  <th className="text-center px-5 py-3.5 font-semibold">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -259,11 +260,11 @@ export function InventoryPage({ search }: InventoryPageProps) {
                       <td className="px-5 py-4 text-center">
                         {isOut ? (
                           <span className="badge bg-rose-100 text-rose-800 border-rose-200">
-                            <XCircle size={12} /> Het
+                            <XCircle size={12} /> Hết
                           </span>
                         ) : isLow ? (
                           <span className="badge bg-amber-100 text-amber-800 border-amber-200">
-                            <AlertTriangle size={12} /> Thap
+                            <AlertTriangle size={12} /> Thấp
                           </span>
                         ) : (
                           <span className="badge bg-emerald-100 text-emerald-800 border-emerald-200">
@@ -276,6 +277,53 @@ export function InventoryPage({ search }: InventoryPageProps) {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* 2. Mobile SKU Cards (viewport < 768px) */}
+          <div className="md:hidden divide-y divide-ink-100">
+            {filtered.map((item) => {
+              const safety = item.products?.safety_stock ?? item.safety_stock;
+              const isLow = item.available_qty <= safety;
+              const isOut = item.available_qty <= 0;
+              return (
+                <div key={item.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-ink-900 text-sm">{item.products?.name ?? 'Sản phẩm'}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <code className="text-xs text-brand-600 font-mono bg-brand-50 px-1.5 py-0.5 rounded font-bold">
+                          {item.products?.sku ?? '—'}
+                        </code>
+                        <span className="text-xs text-ink-400">· {item.warehouses?.name ?? 'Kho tổng'}</span>
+                      </div>
+                    </div>
+                    {isOut ? (
+                      <span className="badge bg-rose-100 text-rose-800 text-[11px] shrink-0">Hết</span>
+                    ) : isLow ? (
+                      <span className="badge bg-amber-100 text-amber-800 text-[11px] shrink-0">Thấp</span>
+                    ) : (
+                      <span className="badge bg-emerald-100 text-emerald-800 text-[11px] shrink-0">OK</span>
+                    )}
+                  </div>
+
+                  {/* 3-Column Key Inventory Metrics */}
+                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-ink-50/70 border border-ink-100 text-center">
+                    <div>
+                      <p className="text-[10px] text-ink-400 uppercase font-medium">Vật lý</p>
+                      <p className="text-sm font-bold text-ink-900 tabular-nums">{(item.physical_qty ?? 0).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-ink-400 uppercase font-medium">Đã giữ</p>
+                      <p className="text-sm font-bold text-amber-600 tabular-nums">{(item.reserved_qty ?? 0).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-ink-400 uppercase font-medium">Khả dụng</p>
+                      <p className="text-sm font-bold text-emerald-600 tabular-nums">{(item.available_qty ?? 0).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
