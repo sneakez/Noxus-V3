@@ -251,8 +251,13 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
             </thead>
             <tbody className="divide-y divide-ink-100">
               {data.channelComparison.map((ch) => (
-                <tr key={ch.channel} className="hover:bg-ink-50/50 transition-colors">
-                  <td className="py-2.5 px-3 font-semibold text-ink-900 flex items-center gap-2">
+                <tr
+                  key={ch.channel}
+                  onClick={() => onNavigate?.('channelEconomics')}
+                  className="hover:bg-brand-50/50 cursor-pointer transition-colors group"
+                  title="Bấm để xem bóc tách chi tiết kênh này trong Channel Economics"
+                >
+                  <td className="py-2.5 px-3 font-semibold text-ink-900 group-hover:text-brand-700 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-brand-500" />
                     <span>{ch.channelName}</span>
                   </td>

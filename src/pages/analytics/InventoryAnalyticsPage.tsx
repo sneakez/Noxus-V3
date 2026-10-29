@@ -20,7 +20,11 @@ import { ParetoChart } from '@/components/charts/ParetoChart';
 import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBanner';
 import { mockStore } from '@/mock/store';
 
-export function InventoryAnalyticsPage() {
+interface InventoryAnalyticsPageProps {
+  onNavigate?: (pageId: string) => void;
+}
+
+export function InventoryAnalyticsPage({ onNavigate }: InventoryAnalyticsPageProps = {}) {
   const [, setTick] = React.useState(0);
   React.useEffect(() => mockStore.subscribe(() => setTick(t => t + 1)), []);
 
@@ -305,6 +309,7 @@ export function InventoryAnalyticsPage() {
                 <th className="py-2.5 px-3 text-right font-bold">Lead Time</th>
                 <th className="py-2.5 px-3 text-right font-bold text-brand-900">Đề Xuất Đặt (PO)</th>
                 <th className="py-2.5 px-3 text-center font-bold">Trạng Thái</th>
+                <th className="py-2.5 px-3 text-right font-bold">Hành Động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
@@ -345,6 +350,25 @@ export function InventoryAnalyticsPage() {
                         <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px] font-bold">
                           ✓ Tồn An Toàn
                         </span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      {isRisk ? (
+                        <button
+                          onClick={() => onNavigate && onNavigate('purchaseOrders')}
+                          className="btn btn-primary text-[10px] py-1 px-2.5 whitespace-nowrap"
+                          title="Tạo đơn mua hàng bổ sung tồn"
+                        >
+                          + Tạo PO
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onNavigate && onNavigate('skuEconomics')}
+                          className="btn btn-secondary text-[10px] py-1 px-2 text-ink-600 hover:text-brand-600"
+                          title="Xem phân tích kinh tế SKU"
+                        >
+                          Xem SKU
+                        </button>
                       )}
                     </td>
                   </tr>

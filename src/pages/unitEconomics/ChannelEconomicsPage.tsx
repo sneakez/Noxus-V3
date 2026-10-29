@@ -7,7 +7,11 @@ import { GroupedBarChart } from '@/components/charts/GroupedBarChart';
 import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBanner';
 import { cn } from '@/lib/cn';
 
-export function ChannelEconomicsPage() {
+interface ChannelEconomicsPageProps {
+  onNavigate?: (pageId: string) => void;
+}
+
+export function ChannelEconomicsPage({ onNavigate }: ChannelEconomicsPageProps) {
   const [chartView, setChartView] = useState<'revenue_cm3' | 'margin_percent' | 'cost_per_order'>('revenue_cm3');
   const channels = analyticsService.getChannelEconomics();
 
@@ -218,6 +222,7 @@ export function ChannelEconomicsPage() {
                 <th className="py-2.5 px-3 text-right font-bold">Chi Phí Ads</th>
                 <th className="py-2.5 px-3 text-right font-bold text-emerald-700">Lãi CM3</th>
                 <th className="py-2.5 px-3 text-right font-bold">ROAS</th>
+                <th className="py-2.5 px-3 text-right font-bold">Hành Động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
@@ -257,6 +262,15 @@ export function ChannelEconomicsPage() {
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono font-bold text-ink-900">
                     {c.blendedRoas}x
+                  </td>
+                  <td className="py-2.5 px-3 text-right">
+                    <button
+                      onClick={() => onNavigate && onNavigate('orders')}
+                      className="btn btn-secondary text-xs py-1 px-2 text-brand-600 hover:text-brand-700 font-sans"
+                      title="Xem các đơn hàng của kênh này trong OMS"
+                    >
+                      Xem Đơn
+                    </button>
                   </td>
                 </tr>
               ))}

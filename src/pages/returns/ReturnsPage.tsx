@@ -14,6 +14,7 @@ import {
   Sparkles,
   Truck,
 } from 'lucide-react';
+import { WorkflowStepVisualizer } from '@/components/common/WorkflowStepVisualizer';
 import { supabase } from '@/lib/supabase';
 import { mockStore } from '@/mock/store';
 import { useAuth } from '@/providers/AuthProvider';
@@ -68,9 +69,10 @@ const RMA_BRANCH_LABELS: Record<RmaBranch, { label: string; color: string; desc:
 
 interface ReturnsPageProps {
   search: string;
+  onNavigate?: (pageId: string) => void;
 }
 
-export function ReturnsPage({ search }: ReturnsPageProps) {
+export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
   const toast = useToast();
   const { activeRole } = useAuth();
   const [returns, setReturns] = useState<ReturnRequest[]>([]);
@@ -212,6 +214,13 @@ export function ReturnsPage({ search }: ReturnsPageProps) {
           <Plus size={16} /> Tạo yêu cầu RMA đa nhánh
         </button>
       </div>
+
+      {/* Visual Workflow Stepper */}
+      <WorkflowStepVisualizer
+        workflowType="rma_lifecycle"
+        currentStatus={returns[0]?.status || 'quality_check'}
+        title="Tiến Trình Đổi Trả RMA & Kiểm Định Chất Lượng QC (Maker/Checker)"
+      />
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner size={28} /></div>

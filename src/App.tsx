@@ -207,14 +207,14 @@ function AuthenticatedWorkspace() {
               {page === 'dashboard' && <ExecutiveAnalyticsDashboard onNavigate={(p) => handleNavigate(p as PageId)} />}
               
               {/* Sales */}
-              {page === 'orders' && <OrdersPage search={search} />}
+              {page === 'orders' && <OrdersPage search={search} onNavigate={(p) => handleNavigate(p as PageId)} />}
               {page === 'customers' && <CustomersPage search={search} />}
               {page === 'salesAnalytics' && <SalesAnalyticsPage />}
 
               {/* Operations & WMS */}
               {page === 'inventory' && <InventoryPage search={search} />}
               {page === 'fulfillment' && <FulfillmentPage search={search} />}
-              {page === 'inventoryAnalytics' && <InventoryAnalyticsPage />}
+              {page === 'inventoryAnalytics' && <InventoryAnalyticsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
               {page === 'transfers' && <TransfersPage search={search} />}
               {page === 'batches' && <BatchesPage search={search} />}
               {page === 'warehouses' && <WarehousesPage search={search} />}
@@ -225,12 +225,12 @@ function AuthenticatedWorkspace() {
               {page === 'products' && <ProductsPage search={search} />}
 
               {/* After-sales */}
-              {page === 'returns' && <ReturnsPage search={search} />}
+              {page === 'returns' && <ReturnsPage search={search} onNavigate={(p) => handleNavigate(p as PageId)} />}
 
               {/* Unit Economics */}
-              {page === 'orderEconomics' && <OrderEconomicsPage />}
-              {page === 'skuEconomics' && <SkuEconomicsPage />}
-              {page === 'channelEconomics' && <ChannelEconomicsPage />}
+              {page === 'orderEconomics' && <OrderEconomicsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
+              {page === 'skuEconomics' && <SkuEconomicsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
+              {page === 'channelEconomics' && <ChannelEconomicsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
               {page === 'pricingCalculator' && <PricingIntelligencePage />}
 
               {/* Data Analytics */}
