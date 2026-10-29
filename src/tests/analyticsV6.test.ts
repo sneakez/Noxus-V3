@@ -75,7 +75,7 @@ describe('V6 Unit Economics & Analytics Engine', () => {
     const dash = analyticsService.getExecutiveDashboardData('last_30_days');
     expect(dash.kpis.netRevenue.value).toBeGreaterThan(0);
     expect(dash.kpis.orderVolume.value).toBeGreaterThan(0);
-    expect(dash.waterfallPnL.length).toBe(11);
+    expect(dash.waterfallPnL.length).toBe(14);
     expect(dash.channelComparison.length).toBe(4);
     expect(dash.decisionInsights.length).toBeGreaterThanOrEqual(3);
   });

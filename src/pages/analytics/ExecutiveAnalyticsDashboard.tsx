@@ -186,11 +186,15 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
                 <th className="py-2.5 px-3 text-left font-bold">Kênh Bán Hàng</th>
                 <th className="py-2.5 px-3 text-right font-bold">Số Đơn</th>
                 <th className="py-2.5 px-3 text-right font-bold">Doanh Thu Thuần</th>
-                <th className="py-2.5 px-3 text-right font-bold">Phí Sàn (Take Rate)</th>
+                <th className="py-2.5 px-3 text-right font-bold">
+                  Phí Sàn <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-mono font-normal">ASSUMPTION</span>
+                </th>
                 <th className="py-2.5 px-3 text-right font-bold">Lãi Gộp CM1</th>
                 <th className="py-2.5 px-3 text-right font-bold">Đóng Góp CM2</th>
                 <th className="py-2.5 px-3 text-right font-bold">CM3 Sau Ads</th>
-                <th className="py-2.5 px-3 text-right font-bold">Tỷ Lệ Hoàn</th>
+                <th className="py-2.5 px-3 text-right font-bold">
+                  Tỷ Lệ Hoàn <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-mono font-normal">ASSUMPTION</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">

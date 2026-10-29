@@ -40,7 +40,10 @@ describe('NexusOMS V6 Phase 2 — Digital Commerce Only Regression & Reconciliat
     const chTotalNet = channelEcon.reduce((sum, c) => sum + c.netRevenue, 0);
     const chTotalCogs = channelEcon.reduce((sum, c) => sum + c.cogs, 0);
     const chTotalFees = channelEcon.reduce((sum, c) => sum + c.marketplaceFees, 0);
+    const chTotalPayFees = channelEcon.reduce((sum, c) => sum + c.paymentFees, 0);
     const chTotalFulfillment = channelEcon.reduce((sum, c) => sum + c.fulfillmentCosts, 0);
+    const chTotalShipSubsidies = channelEcon.reduce((sum, c) => sum + c.shippingSubsidies, 0);
+    const chTotalReturnCosts = channelEcon.reduce((sum, c) => sum + c.returnCosts, 0);
     const chTotalMarketing = channelEcon.reduce((sum, c) => sum + c.marketingSpend, 0);
     const chTotalCm1 = channelEcon.reduce((sum, c) => sum + c.cm1, 0);
     const chTotalCm2 = channelEcon.reduce((sum, c) => sum + c.cm2, 0);
@@ -52,7 +55,10 @@ describe('NexusOMS V6 Phase 2 — Digital Commerce Only Regression & Reconciliat
     const ordTotalNet = orderEcon.reduce((sum, o) => sum + o.netRevenue, 0);
     const ordTotalCogs = orderEcon.reduce((sum, o) => sum + o.cogs, 0);
     const ordTotalFees = orderEcon.reduce((sum, o) => sum + o.marketplaceFees, 0);
+    const ordTotalPayFees = orderEcon.reduce((sum, o) => sum + o.paymentFees, 0);
     const ordTotalFulfillment = orderEcon.reduce((sum, o) => sum + o.fulfillmentCosts, 0);
+    const ordTotalShipSubsidies = orderEcon.reduce((sum, o) => sum + o.shippingSubsidies, 0);
+    const ordTotalReturnCosts = orderEcon.reduce((sum, o) => sum + o.returnCosts, 0);
     const ordTotalMarketing = orderEcon.reduce((sum, o) => sum + o.attributedMarketingCosts, 0);
     const ordTotalCm1 = orderEcon.reduce((sum, o) => sum + o.cm1, 0);
     const ordTotalCm2 = orderEcon.reduce((sum, o) => sum + o.cm2, 0);
@@ -66,11 +72,19 @@ describe('NexusOMS V6 Phase 2 — Digital Commerce Only Regression & Reconciliat
     expect(chTotalNet).toBe(ordTotalNet);
     expect(chTotalCogs).toBe(ordTotalCogs);
     expect(chTotalFees).toBe(ordTotalFees);
+    expect(chTotalPayFees).toBe(ordTotalPayFees);
     expect(chTotalFulfillment).toBe(ordTotalFulfillment);
+    expect(chTotalShipSubsidies).toBe(ordTotalShipSubsidies);
+    expect(chTotalReturnCosts).toBe(ordTotalReturnCosts);
     expect(chTotalMarketing).toBe(ordTotalMarketing);
     expect(chTotalCm1).toBe(ordTotalCm1);
     expect(chTotalCm2).toBe(ordTotalCm2);
     expect(chTotalCm3).toBe(ordTotalCm3);
+
+    // Exact reconciliation: CM1 - CM2 === Sum of all 5 cost components
+    const chAllVarCosts = chTotalFees + chTotalPayFees + chTotalFulfillment + chTotalShipSubsidies + chTotalReturnCosts;
+    expect(chTotalCm1 - chTotalCm2).toBe(chAllVarCosts);
+    expect(ordTotalCm1 - ordTotalCm2).toBe(chAllVarCosts);
   });
 
   it('4. Confirms that no KPI or formula in any module returns NaN or Infinity', () => {
@@ -127,12 +141,16 @@ describe('NexusOMS V6 Phase 2 — Digital Commerce Only Regression & Reconciliat
     expect(warehouses.length).toBeGreaterThan(0);
     expect(orders.length).toBeGreaterThan(0);
 
-    // Verify 5 inventory states exist
+    // Strict Inventory Invariant Check for all SKUs
     inv5.forEach(i => {
-      expect(i.physical).toBeGreaterThanOrEqual(0);
-      expect(i.reserved).toBeGreaterThanOrEqual(0);
-      expect(i.available).toBeGreaterThanOrEqual(0);
-      expect(i.damaged).toBeGreaterThanOrEqual(0);
+      // 1. Physical = Sellable + Reserved + Unavailable
+      expect(i.physical).toBe(i.sellable + i.reserved + i.unavailable);
+      // 2. Unavailable = Pending QC + Damaged
+      expect(i.unavailable).toBe((i.pending_qc || 0) + (i.damaged || 0));
+      // 3. Sellable is alias of Available
+      expect(i.available).toBe(i.sellable);
+      // 4. Pipeline stock is outside Physical
+      expect(i.incoming).toBeGreaterThanOrEqual(0);
       expect(i.in_transit).toBeGreaterThanOrEqual(0);
     });
   });

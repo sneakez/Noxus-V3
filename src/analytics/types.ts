@@ -71,8 +71,12 @@ export interface ChannelUnitEconomics {
   netRevenue: number;
   cogs: number;
   marketplaceFees: number;
-  takeRate: number;             // (Marketplace Fees / Gross Sales) * 100
+  paymentFees: number;
   fulfillmentCosts: number;
+  shippingSubsidies: number;
+  returnCosts: number;
+  totalVariableCosts: number;
+  takeRate: number;             // (Marketplace Fees / Gross Sales) * 100
   marketingSpend: number;
   blendedRoas: number;          // Net Revenue / Marketing Spend
   cm1: number;

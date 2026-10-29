@@ -103,4 +103,39 @@ describe('V6 Independent Reference Reconciliation & Acceptance Verification', ()
     const hasTerus = filesInRoot.some(f => f.toLowerCase().includes('terus') || f.toLowerCase().includes('tài chính terus'));
     expect(hasTerus).toBe(false);
   });
+
+  it('5. Audit all cost components of CM1 - CM2: Gap is exactly 0', () => {
+    const orders = analyticsService.getOrderEconomics();
+    let totalGross = 0;
+    let totalNet = 0;
+    let totalCogs = 0;
+    let totalCm1 = 0;
+    let totalMktFees = 0;
+    let totalPayFees = 0;
+    let totalFulfillment = 0;
+    let totalShipSubsidies = 0;
+    let totalReturnCosts = 0;
+    let totalCm2 = 0;
+
+    orders.forEach(o => {
+      totalGross += o.grossSales;
+      totalNet += o.netRevenue;
+      totalCogs += o.cogs;
+      totalCm1 += o.cm1;
+      totalMktFees += o.marketplaceFees;
+      totalPayFees += o.paymentFees;
+      totalFulfillment += o.fulfillmentCosts;
+      totalShipSubsidies += o.shippingSubsidies;
+      totalReturnCosts += o.returnCosts;
+      totalCm2 += o.cm2;
+
+      // Order-level invariant check
+      const orderVarCosts = o.marketplaceFees + o.paymentFees + o.fulfillmentCosts + o.shippingSubsidies + o.returnCosts;
+      expect(o.cm1 - o.cm2).toBe(orderVarCosts);
+    });
+
+    const sumVarCosts = totalMktFees + totalPayFees + totalFulfillment + totalShipSubsidies + totalReturnCosts;
+    expect(totalCm1 - totalCm2).toBe(sumVarCosts);
+    expect((totalCm1 - totalCm2) - sumVarCosts).toBe(0);
+  });
 });

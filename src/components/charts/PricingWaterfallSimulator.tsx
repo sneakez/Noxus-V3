@@ -82,7 +82,10 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
 
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div>
-              <label className="font-semibold text-ink-800 block text-[11px]">Phí sàn TMĐT (%):</label>
+              <label className="font-semibold text-ink-800 block text-[11px]">
+                Phí sàn TMĐT (%):
+                <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded ml-1 font-mono">ASSUMPTION</span>
+              </label>
               <input
                 type="number"
                 step={0.5}
@@ -92,7 +95,10 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
               />
             </div>
             <div>
-              <label className="font-semibold text-ink-800 block text-[11px]">Phí cổng thanh toán (%):</label>
+              <label className="font-semibold text-ink-800 block text-[11px]">
+                Phí cổng thanh toán (%):
+                <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded ml-1 font-mono">ASSUMPTION</span>
+              </label>
               <input
                 type="number"
                 step={0.5}

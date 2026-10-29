@@ -80,6 +80,8 @@ class AnalyticsService {
       const grossSales = order.subtotal || order.total || 0;
       const discounts = order.discount || 0;
       const returnsRefunds = order.payment_status === 'refunded' ? order.total : order.payment_status === 'partially_paid' ? 0 : 0;
+      const shippingSubsidies = order.shipping > 0 ? 0 : 15000;
+      const returnCosts = returnsRefunds > 0 ? 25000 : 0;
 
       // Estimated marketing allocation per order (~8% for ecommerce)
       const attributedMarketing = Math.round(grossSales * 0.08);
@@ -90,6 +92,8 @@ class AnalyticsService {
         returnsRefunds,
         cogs: totalCogs,
         channel: order.channel || 'website',
+        shippingSubsidies,
+        returnCosts,
         attributedMarketing
       });
 
@@ -111,8 +115,8 @@ class AnalyticsService {
         marketplaceFees: contrib.marketplaceFees,
         paymentFees: contrib.paymentFees,
         fulfillmentCosts: contrib.fulfillmentCosts,
-        shippingSubsidies: order.shipping > 0 ? 0 : 15000,
-        returnCosts: returnsRefunds > 0 ? 25000 : 0,
+        shippingSubsidies: contrib.shippingSubsidies,
+        returnCosts: contrib.returnCosts,
         cm2: contrib.cm2,
         cm2Margin: contrib.cm2Margin,
         attributedMarketingCosts: contrib.attributedMarketingCosts,
@@ -256,7 +260,11 @@ class AnalyticsService {
       const netRevenue = chOrders.reduce((sum, o) => sum + o.netRevenue, 0);
       const cogs = chOrders.reduce((sum, o) => sum + o.cogs, 0);
       const marketplaceFees = chOrders.reduce((sum, o) => sum + o.marketplaceFees, 0);
+      const paymentFees = chOrders.reduce((sum, o) => sum + o.paymentFees, 0);
       const fulfillmentCosts = chOrders.reduce((sum, o) => sum + o.fulfillmentCosts, 0);
+      const shippingSubsidies = chOrders.reduce((sum, o) => sum + o.shippingSubsidies, 0);
+      const returnCosts = chOrders.reduce((sum, o) => sum + o.returnCosts, 0);
+      const totalVariableCosts = marketplaceFees + paymentFees + fulfillmentCosts + shippingSubsidies + returnCosts;
       const marketingSpend = chOrders.reduce((sum, o) => sum + o.attributedMarketingCosts, 0);
       const cm1 = chOrders.reduce((sum, o) => sum + o.cm1, 0);
       const cm2 = chOrders.reduce((sum, o) => sum + o.cm2, 0);
@@ -272,8 +280,12 @@ class AnalyticsService {
         netRevenue,
         cogs,
         marketplaceFees,
-        takeRate: Number((safeDivide(marketplaceFees, grossSales) * 100).toFixed(1)),
+        paymentFees,
         fulfillmentCosts,
+        shippingSubsidies,
+        returnCosts,
+        totalVariableCosts,
+        takeRate: Number((safeDivide(marketplaceFees, grossSales) * 100).toFixed(1)),
         marketingSpend,
         blendedRoas: Number(safeDivide(netRevenue, marketingSpend, 0).toFixed(2)),
         cm1,
@@ -331,27 +343,33 @@ class AnalyticsService {
     const cm2Delta = calculatePercentDelta(cm2Curr, cm2Prev);
     const cm3Delta = calculatePercentDelta(cm3Curr, cm3Prev);
 
-    // Waterfall P&L
+    // Waterfall P&L - All distinct cost components between CM1 and CM2
     const grossSalesTotal = orderEconCurrent.reduce((sum, o) => sum + o.grossSales, 0);
     const discountsTotal = orderEconCurrent.reduce((sum, o) => sum + o.discounts, 0);
     const returnsTotal = orderEconCurrent.reduce((sum, o) => sum + o.returnsRefunds, 0);
     const cogsTotal = orderEconCurrent.reduce((sum, o) => sum + o.cogs, 0);
-    const platformFeesTotal = orderEconCurrent.reduce((sum, o) => sum + o.marketplaceFees + o.paymentFees, 0);
+    const mktFeesTotal = orderEconCurrent.reduce((sum, o) => sum + o.marketplaceFees, 0);
+    const paymentFeesTotal = orderEconCurrent.reduce((sum, o) => sum + o.paymentFees, 0);
     const fulfillmentTotal = orderEconCurrent.reduce((sum, o) => sum + o.fulfillmentCosts, 0);
+    const shippingSubsidiesTotal = orderEconCurrent.reduce((sum, o) => sum + o.shippingSubsidies, 0);
+    const returnCostsTotal = orderEconCurrent.reduce((sum, o) => sum + o.returnCosts, 0);
     const marketingTotal = orderEconCurrent.reduce((sum, o) => sum + o.attributedMarketingCosts, 0);
 
     const waterfallPnL = [
       { name: '1. Tổng giá niêm yết (Gross)', amount: grossSalesTotal, type: 'positive' as const, percentageOfRevenue: 100 },
       { name: '2. Voucher & Khuyến mãi', amount: -discountsTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-discountsTotal, netRevenueCurr) * 100 },
-      { name: '3. Hoàn hàng & Hủy đơn', amount: -returnsTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-returnsTotal, netRevenueCurr) * 100 },
+      { name: '3. Hoàn tiền đơn hủy (Refunds)', amount: -returnsTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-returnsTotal, netRevenueCurr) * 100 },
       { name: '4. Doanh thu thuần (Net Revenue)', amount: netRevenueCurr, type: 'subtotal' as const, percentageOfRevenue: 100 },
       { name: '5. Giá vốn hàng bán (COGS)', amount: -cogsTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-cogsTotal, netRevenueCurr) * 100 },
       { name: '6. Lãi gộp CM1', amount: cm1Curr, type: 'subtotal' as const, percentageOfRevenue: safeDivide(cm1Curr, netRevenueCurr) * 100 },
-      { name: '7. Phí sàn TMĐT & Cổng thanh toán', amount: -platformFeesTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-platformFeesTotal, netRevenueCurr) * 100 },
-      { name: '8. Chi phí nhặt đóng gói (WMS)', amount: -fulfillmentTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-fulfillmentTotal, netRevenueCurr) * 100 },
-      { name: '9. Lợi nhuận đóng góp CM2', amount: cm2Curr, type: 'subtotal' as const, percentageOfRevenue: safeDivide(cm2Curr, netRevenueCurr) * 100 },
-      { name: '10. Chi phí Marketing & Ads', amount: -marketingTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-marketingTotal, netRevenueCurr) * 100 },
-      { name: '11. Lợi nhuận sau Ads CM3', amount: cm3Curr, type: 'subtotal' as const, percentageOfRevenue: safeDivide(cm3Curr, netRevenueCurr) * 100 }
+      { name: '7. Phí hoa hồng sàn TMĐT', amount: -mktFeesTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-mktFeesTotal, netRevenueCurr) * 100 },
+      { name: '8. Phí cổng thanh toán', amount: -paymentFeesTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-paymentFeesTotal, netRevenueCurr) * 100 },
+      { name: '9. Chi phí nhặt & đóng gói (WMS)', amount: -fulfillmentTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-fulfillmentTotal, netRevenueCurr) * 100 },
+      { name: '10. Trợ giá vận chuyển (FreeShip)', amount: -shippingSubsidiesTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-shippingSubsidiesTotal, netRevenueCurr) * 100 },
+      { name: '11. Chi phí xử lý hoàn hàng (RMA)', amount: -returnCostsTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-returnCostsTotal, netRevenueCurr) * 100 },
+      { name: '12. Lợi nhuận đóng góp CM2', amount: cm2Curr, type: 'subtotal' as const, percentageOfRevenue: safeDivide(cm2Curr, netRevenueCurr) * 100 },
+      { name: '13. Chi phí Marketing & Ads', amount: -marketingTotal, type: 'negative' as const, percentageOfRevenue: safeDivide(-marketingTotal, netRevenueCurr) * 100 },
+      { name: '14. Lợi nhuận sau Ads CM3', amount: cm3Curr, type: 'subtotal' as const, percentageOfRevenue: safeDivide(cm3Curr, netRevenueCurr) * 100 }
     ];
 
     // Revenue Trend by Day (Last 7 days or periods)

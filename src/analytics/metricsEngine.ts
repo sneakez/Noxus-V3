@@ -56,6 +56,8 @@ export function calculateOrderContribution(params: {
   channel: Channel;
   customMarketplaceFees?: number;
   customFulfillmentCost?: number;
+  shippingSubsidies?: number;
+  returnCosts?: number;
   attributedMarketing?: number;
 }): {
   netRevenue: number;
@@ -65,6 +67,9 @@ export function calculateOrderContribution(params: {
   marketplaceFees: number;
   paymentFees: number;
   fulfillmentCosts: number;
+  shippingSubsidies: number;
+  returnCosts: number;
+  totalVariableCosts: number;
   cm2: number;
   cm2Margin: number;
   attributedMarketingCosts: number;
@@ -83,9 +88,12 @@ export function calculateOrderContribution(params: {
   const marketplaceFees = params.customMarketplaceFees ?? Math.round(params.grossSales * benchmarks.commissionRate);
   const paymentFees = Math.round(netRevenue * benchmarks.paymentRate);
   const fulfillmentCosts = params.customFulfillmentCost ?? benchmarks.avgFulfillmentCost;
+  const shippingSubsidies = params.shippingSubsidies ?? 0;
+  const returnCosts = params.returnCosts ?? 0;
+  const totalVariableCosts = marketplaceFees + paymentFees + fulfillmentCosts + shippingSubsidies + returnCosts;
 
-  // CM2: CM1 - Variable Fulfillment & Transaction Costs
-  const cm2 = cm1 - (marketplaceFees + paymentFees + fulfillmentCosts);
+  // CM2: CM1 - Variable Fulfillment, Transaction, Shipping & Return Costs
+  const cm2 = cm1 - totalVariableCosts;
   const cm2Margin = safeDivide(cm2, netRevenue) * 100;
 
   // CM3: CM2 - Attributed Marketing Costs
@@ -101,6 +109,9 @@ export function calculateOrderContribution(params: {
     marketplaceFees,
     paymentFees,
     fulfillmentCosts,
+    shippingSubsidies,
+    returnCosts,
+    totalVariableCosts,
     cm2,
     cm2Margin: Number(cm2Margin.toFixed(1)),
     attributedMarketingCosts,
