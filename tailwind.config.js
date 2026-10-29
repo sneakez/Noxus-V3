@@ -5,23 +5,31 @@ export default {
     extend: {
       colors: {
         // Ocean Premium — Nexus Edition
+        ocean: {
+          deep: '#081B2C',
+          midnight: '#123A52',
+          teal: '#1E647F',
+          jade: '#27B4A0',
+          silver: '#D9E3E8',
+          pearl: '#F4F8FA',
+        },
         water: {
           deep: '#081B2C',      // Biển sâu nguồn cội (Deep Ocean)
           midnight: '#123A52',  // Đêm thẳm tĩnh lặng (Midnight Blue)
-          teal: '#0D9488',      // Nước nguồn chuyển động (Ocean Teal - Water)
+          teal: '#1E647F',      // Nước nguồn chuyển động (Ocean Teal)
           cerulean: '#0284C7',  // Sóng biển động lực (Cerulean Blue)
-          foam: '#EBF3F8',      // Bọt nước trong trẻo (Water Foam)
-          50: '#F0FDF4',
-          100: '#E1EDF4',
-          200: '#C3DCE9',
-          300: '#94C0D7',
-          400: '#5C9EC1',
-          500: '#0EA5E9',
-          600: '#0D9488',
-          700: '#0F766E',
-          800: '#115E59',
-          900: '#134E4A',
-          950: '#042F2E',
+          foam: '#F4F8FA',      // Bọt nước trong trẻo (Pearl White)
+          50: '#F0F7FA',
+          100: '#DCECF3',
+          200: '#BBD9E7',
+          300: '#88BDD5',
+          400: '#559EBF',
+          500: '#3281A3',
+          600: '#1E647F',
+          700: '#164E65',
+          800: '#123A52',
+          900: '#0C2839',
+          950: '#081B2C',
         },
         metal: {
           mist: '#D9E3E8',      // Sương bạc ánh kim (Silver Mist)

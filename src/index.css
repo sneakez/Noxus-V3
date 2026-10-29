@@ -3,52 +3,77 @@
 @tailwind utilities;
 
 :root {
+  /* Ocean Premium Color System (NexusOMS Spec) */
+  --ocean-deep: #081B2C;
+  --ocean-midnight: #123A52;
+  --ocean-teal: #1E647F;
+  --ocean-jade: #27B4A0;
+  --ocean-silver: #D9E3E8;
+  --ocean-pearl: #F4F8FA;
+
+  --app-background: #F4F8FA;
+  --panel-background: #FFFFFF;
+  --sidebar-background: #081B2C;
+
+  --text-primary: #123A52;
+  --text-secondary: #475569;
+  --border-default: #D9E3E8;
+
+  --action-primary: #1E647F;
+  --action-primary-hover: #164E65;
+  --action-primary-text: #FFFFFF;
+
+  --status-success: #15803D;
+  --status-warning: #B45309;
+  --status-danger: #BE123C;
+  --status-info: #2563EB;
+
   /* Metal & Ink — Sắc thái trung tính, viền bảng và độ đọc chuẩn WCAG */
-  --color-ink-50: #F8FAFC;
-  --color-ink-100: #F1F5F9;
-  --color-ink-200: #E2E8F0;
+  --color-ink-50: #F4F8FA;
+  --color-ink-100: #EBF3F8;
+  --color-ink-200: #D9E3E8;
   --color-ink-300: #CBD5E1;
   --color-ink-400: #94A3B8;
   --color-ink-500: #64748B;
   --color-ink-600: #475569;
   --color-ink-700: #334155;
-  --color-ink-800: #1E293B;
-  --color-ink-900: #0F172A;
-  --color-ink-950: #020617;
+  --color-ink-800: #123A52;
+  --color-ink-900: #081B2C;
+  --color-ink-950: #04101B;
 
-  /* Ocean Premium: Water / Teal (#0D9488) & Cerulean (#0284C7) */
+  /* Ocean Premium: Water / Teal & Cerulean */
   --water-deep: #081B2C;
   --water-midnight: #123A52;
-  --water-teal: #0D9488;
+  --water-teal: #1E647F;
   --water-cerulean: #0284C7;
-  --water-foam: #EBF3F8;
+  --water-foam: #F4F8FA;
 
-  /* Wood / Emerald — Tăng trưởng & Thành công (#10B981 / #059669) */
-  --wood-aqua: #14B8A6;
-  --wood-emerald: #10B981;
+  /* Wood / Emerald / Jade Aqua */
+  --wood-aqua: #27B4A0;
+  --wood-emerald: #15803D;
 
-  /* Brand Scale — Teal Core */
-  --brand-50: #F0FDFA;
-  --brand-100: #CCFBF1;
-  --brand-200: #99F6E4;
-  --brand-300: #5EEAD4;
-  --brand-400: #2DD4BF;
-  --brand-500: #14B8A6;
-  --brand-600: #0D9488;
-  --brand-700: #0F766E;
-  --brand-800: #115E59;
-  --brand-900: #134E4A;
-  --brand-950: #042F2E;
+  /* Brand Scale — Ocean Teal Core (#1E647F) */
+  --brand-50: #F0F7FA;
+  --brand-100: #DCECF3;
+  --brand-200: #BBD9E7;
+  --brand-300: #88BDD5;
+  --brand-400: #559EBF;
+  --brand-500: #3281A3;
+  --brand-600: #1E647F;
+  --brand-700: #164E65;
+  --brand-800: #123A52;
+  --brand-900: #0C2839;
+  --brand-950: #081B2C;
 }
 
 @layer base {
   * {
-    border-color: var(--color-ink-200);
+    border-color: var(--border-default);
   }
 
   body {
-    background-color: var(--color-ink-50);
-    color: var(--color-ink-800);
+    background-color: var(--app-background);
+    color: var(--text-primary);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -60,89 +85,89 @@
   }
 
   ::selection {
-    background-color: var(--brand-200);
+    background-color: var(--brand-100);
     color: var(--brand-950);
   }
 
   ::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-ink-200);
+    background: var(--ocean-silver);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-ink-300);
+    background: var(--color-ink-400);
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium text-sm
-           px-4 py-2.5 transition-all duration-200 disabled:opacity-50
-           disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2
-           active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-xs
+           px-3.5 py-2 transition-all duration-150 disabled:opacity-50
+           disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-1
+           active:scale-[0.98] cursor-pointer;
   }
   .btn-primary {
-    @apply btn bg-[#0D9488] text-white hover:bg-[#123A52]
-           focus:ring-[#5C9EC1] shadow-sm hover:shadow-md;
+    @apply btn bg-[#1E647F] text-white hover:bg-[#164E65]
+           focus:ring-[#1E647F] shadow-xs hover:shadow-sm;
   }
   .btn-aqua {
-    @apply btn bg-[#27B4A0] text-white hover:bg-[#1f9383]
-           focus:ring-[#27B4A0] shadow-sm hover:shadow-md;
+    @apply btn bg-[#27B4A0] text-white hover:bg-[#1f9b88]
+           focus:ring-[#27B4A0] shadow-xs hover:shadow-sm;
   }
   .btn-dark {
     @apply btn bg-[#081B2C] text-white hover:bg-[#123A52]
-           focus:ring-[#0D9488] shadow-sm hover:shadow-md;
+           focus:ring-[#1E647F] shadow-xs hover:shadow-sm;
   }
   .btn-secondary {
-    @apply btn bg-white border border-ink-200 text-ink-700 hover:bg-ink-50
-           hover:border-ink-300 focus:ring-ink-300;
+    @apply btn bg-white border border-[#D9E3E8] text-[#123A52] hover:bg-[#F4F8FA]
+           hover:border-slate-300 focus:ring-slate-200 shadow-2xs;
   }
   .btn-danger {
-    @apply btn bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-400
-           shadow-sm hover:shadow-md;
+    @apply btn bg-white border border-[#BE123C]/30 text-[#BE123C] hover:bg-rose-50
+           hover:border-[#BE123C] focus:ring-rose-200;
   }
   .btn-ghost {
-    @apply btn text-ink-600 hover:bg-ink-100 focus:ring-ink-300;
+    @apply btn text-[#475569] hover:bg-slate-100 focus:ring-slate-200;
   }
 
   .input {
-    @apply w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm
-           text-ink-800 placeholder:text-ink-400
-           focus:outline-none focus:ring-2 focus:ring-[#0D9488]
-           focus:border-[#0D9488] transition-all duration-200;
+    @apply w-full rounded-lg border border-[#D9E3E8] bg-white px-3 py-2 text-xs
+           text-[#123A52] placeholder:text-slate-400
+           focus:outline-none focus:ring-2 focus:ring-[#1E647F]/20
+           focus:border-[#1E647F] transition-all duration-150;
   }
   .label {
-    @apply block text-sm font-medium text-ink-700 mb-1.5;
+    @apply block text-xs font-semibold text-[#123A52] mb-1;
   }
   .card {
-    @apply bg-white rounded-xl border border-ink-200 shadow-sm
-           transition-shadow duration-300;
+    @apply bg-white rounded-xl border border-[#D9E3E8] shadow-xs
+           transition-shadow duration-200;
   }
   .card-hover {
-    @apply card hover:shadow-lg hover:border-ink-300;
+    @apply card hover:shadow-sm hover:border-slate-300;
   }
 
   .badge {
-    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5
-           text-xs font-medium capitalize transition-colors;
+    @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5
+           text-[11px] font-semibold transition-colors;
   }
 
   .glass {
-    background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .glass-dark {
-    background: rgba(8, 27, 44, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(8, 27, 44, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .gradient-water {

@@ -44,16 +44,16 @@ export function KPICard({
   return (
     <div
       className={cn(
-        'p-4 sm:p-5 rounded-xl border transition-all duration-200 bg-white relative overflow-hidden group shadow-xs',
+        'p-4 sm:p-5 rounded-xl border bg-white relative overflow-hidden group shadow-xs transition-all duration-150',
         highlight
-          ? 'border-brand-500/40 bg-gradient-to-br from-brand-50/30 to-white ring-2 ring-brand-500/10'
-          : 'border-ink-200/80 hover:border-brand-300 hover:shadow-sm',
+          ? 'border-[#D9E3E8] border-l-4 border-l-[#1E647F]'
+          : 'border-[#D9E3E8] hover:border-slate-300',
         className
       )}
     >
       {/* Top Header */}
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold text-ink-500 truncate">{title}</span>
+        <span className="text-xs font-semibold text-[#475569] truncate">{title}</span>
         <div className="flex items-center gap-1.5 shrink-0">
           {sourceType !== 'ACTUAL' && (
             <span
@@ -66,12 +66,12 @@ export function KPICard({
             </span>
           )}
           {badge && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-100 text-brand-800">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-[#1E647F] border border-teal-200">
               {badge}
             </span>
           )}
           {Icon && (
-            <div className="w-7 h-7 rounded-lg bg-ink-50 text-ink-600 flex items-center justify-center shrink-0 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
+            <div className="w-7 h-7 rounded-lg bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 group-hover:bg-teal-50 group-hover:text-[#1E647F] transition-colors">
               <Icon size={14} />
             </div>
           )}
@@ -80,7 +80,7 @@ export function KPICard({
 
       {/* Main Metric Value */}
       <div className="mt-2.5 flex items-baseline gap-2 flex-wrap">
-        <span className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight tabular-nums font-mono">
+        <span className="text-xl sm:text-2xl font-black text-[#123A52] tracking-tight tabular-nums font-mono">
           {value}
         </span>
 

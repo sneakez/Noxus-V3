@@ -225,23 +225,19 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
 
       <aside
         className={cn(
-          'w-64 shrink-0 bg-slate-950 text-slate-100 flex flex-col h-screen overflow-y-auto overflow-x-hidden fixed lg:sticky top-0 z-50 transition-transform duration-300 font-sans border-r border-slate-800/80',
+          'w-64 shrink-0 bg-[#081B2C] text-slate-100 flex flex-col h-screen overflow-y-auto overflow-x-hidden fixed lg:sticky top-0 z-50 transition-transform duration-300 font-sans border-r border-slate-800',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
-        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-teal-600/10 blur-3xl pointer-events-none" />
-
         {/* Brand Header */}
         <div className="relative px-5 py-5 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-950/60">
-              <Boxes size={22} className="text-white" />
-              <div className="absolute inset-0 rounded-xl bg-white/10 animate-pulse-glow" />
+            <div className="w-9 h-9 rounded-lg bg-[#1E647F] flex items-center justify-center shadow-xs">
+              <Boxes size={20} className="text-white" />
             </div>
             <div>
               <span className="text-base font-black text-white tracking-tight">NexusOMS</span>
-              <p className="text-[11px] text-teal-400 font-semibold flex items-center gap-1">
-                <Sparkles size={10} className="text-teal-300" />
+              <p className="text-[11px] text-[#27B4A0] font-semibold flex items-center gap-1">
                 Digital Commerce OS
               </p>
             </div>
@@ -278,9 +274,9 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
                         onMobileClose();
                       }}
                       className={cn(
-                        'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer group',
+                        'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer group',
                         active
-                          ? 'bg-teal-600 text-white shadow-sm shadow-teal-900/40 font-bold'
+                          ? 'bg-[#1E647F] text-white shadow-xs font-bold'
                           : 'text-slate-300 hover:text-white hover:bg-white/5'
                       )}
                     >
@@ -289,7 +285,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
                           size={16}
                           className={cn(
                             'shrink-0 transition-colors',
-                            active ? 'text-white' : 'text-slate-400 group-hover:text-teal-400'
+                            active ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
                           )}
                         />
                         <span className="truncate">{item.label}</span>
@@ -305,7 +301,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
                               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                               : item.id === 'inventory'
                               ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                              : 'bg-[#1E647F]/30 text-teal-300 border border-[#1E647F]/40'
                           )}
                         >
                           {badge}
@@ -320,17 +316,17 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
         </nav>
 
         {/* User Profile & Role Footer */}
-        <div className="relative p-3 border-t border-white/5 shrink-0 bg-slate-900/60">
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/5">
+        <div className="relative p-3 border-t border-white/5 shrink-0 bg-[#081B2C]">
+          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white/5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center font-bold text-teal-300 text-xs shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#1E647F]/40 border border-[#1E647F]/60 flex items-center justify-center font-bold text-teal-200 text-xs shrink-0">
                 {profile?.full_name?.charAt(0) || 'U'}
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-white truncate">
                   {profile?.full_name || 'Phan Phúc Thịnh'}
                 </p>
-                <p className="text-[10px] text-teal-400 truncate font-mono">
+                <p className="text-[10px] text-[#27B4A0] truncate font-mono">
                   {ROLE_LABELS[activeRole]}
                 </p>
               </div>

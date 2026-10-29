@@ -24,12 +24,12 @@ export function AnalyticsCard({
   footer
 }: AnalyticsCardProps) {
   return (
-    <div className={cn('bg-white border border-ink-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col', className)}>
+    <div className={cn('bg-white border border-[#D9E3E8] rounded-xl p-4 sm:p-5 shadow-xs flex flex-col', className)}>
       {/* Card Header */}
-      <div className="flex items-start justify-between gap-3 pb-3 border-b border-ink-100 flex-wrap">
+      <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 flex-wrap">
         <div className="space-y-0.5 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm sm:text-base font-bold text-ink-900 tracking-tight">{title}</h3>
+            <h3 className="text-sm sm:text-base font-bold text-[#123A52] tracking-tight">{title}</h3>
             {sourceType !== 'ACTUAL' && (
               <span
                 className={cn(
@@ -44,15 +44,15 @@ export function AnalyticsCard({
             )}
             {formulaExplanation && (
               <div className="group relative cursor-pointer" title={formulaExplanation}>
-                <HelpCircle size={13} className="text-ink-400 hover:text-ink-600 transition-colors" />
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:block w-64 p-2 bg-ink-900 text-white text-[11px] rounded-lg shadow-xl z-30 pointer-events-none leading-relaxed">
-                  <span className="font-bold text-brand-400 block mb-0.5">Công thức & Nguồn dữ liệu:</span>
+                <HelpCircle size={13} className="text-slate-400 hover:text-slate-600 transition-colors" />
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:block w-64 p-2 bg-[#081B2C] text-white text-[11px] rounded-lg shadow-xl z-30 pointer-events-none leading-relaxed border border-slate-700">
+                  <span className="font-bold text-[#27B4A0] block mb-0.5">Công thức & Nguồn dữ liệu:</span>
                   {formulaExplanation}
                 </div>
               </div>
             )}
           </div>
-          {subtitle && <p className="text-xs text-ink-500 leading-normal">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-500 leading-normal">{subtitle}</p>}
         </div>
 
         {action && <div className="shrink-0 flex items-center gap-2">{action}</div>}

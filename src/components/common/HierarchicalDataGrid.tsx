@@ -388,12 +388,12 @@ export function HierarchicalDataGrid<T>({
   const endRecord = Math.min(sortedData.length, clampedPage * actualPageSize);
 
   return (
-    <div className={cn('rounded-2xl bg-white border border-slate-200/90 shadow-sm overflow-hidden flex flex-col relative', className)}>
+    <div className={cn('rounded-xl bg-white border border-[#D9E3E8] shadow-xs overflow-hidden flex flex-col relative', className)}>
       {/* Floating Bulk Action Bar */}
       {isSelectionEnabled && selectedIds.size > 0 && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white px-4 py-2 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 animate-fade-in-up text-xs font-sans">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40 bg-[#081B2C] text-white px-4 py-2 rounded-lg shadow-lg border border-slate-700 flex items-center gap-3 animate-fade-in-up text-xs font-sans">
           <div className="flex items-center gap-2 font-semibold">
-            <span className="w-5 h-5 rounded-full bg-teal-500 text-white flex items-center justify-center text-[10px] font-bold">
+            <span className="w-5 h-5 rounded-full bg-[#1E647F] text-white flex items-center justify-center text-[10px] font-bold">
               {selectedIds.size}
             </span>
             <span>Đã chọn {selectedIds.size} mục</span>
@@ -414,12 +414,12 @@ export function HierarchicalDataGrid<T>({
       )}
 
       {/* Top Action & Filter Toolbar */}
-      <div className="p-3 sm:p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2.5 flex-wrap">
+      <div className="p-3 sm:p-4 border-b border-[#D9E3E8] bg-[#F4F8FA] flex items-center justify-between gap-2.5 flex-wrap">
         {/* Title & Subtitle or Search */}
         <div className="flex items-center gap-2.5 flex-1 min-w-[240px] flex-wrap">
           {title && (
             <div className="mr-2">
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">{title}</h3>
+              <h3 className="text-sm sm:text-base font-extrabold text-[#123A52] tracking-tight">{title}</h3>
               {subtitle && <p className="text-[11px] text-slate-500 font-medium">{subtitle}</p>}
             </div>
           )}
@@ -435,22 +435,22 @@ export function HierarchicalDataGrid<T>({
                   setSearchQuery(e.target.value);
                   onSearchQueryChange?.(e.target.value);
                 }}
-                className="w-full text-xs py-1.5 pl-8 pr-3 rounded-lg border border-slate-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-sans"
+                className="w-full text-xs py-1.5 pl-8 pr-3 rounded-lg border border-[#D9E3E8] bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E647F]/20 focus:border-[#1E647F] transition-all font-sans"
               />
             </div>
           )}
 
           {/* 4 Standard Presets */}
-          <div className="hidden lg:flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200/60 shrink-0">
+          <div className="hidden lg:flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg border border-slate-200 shrink-0">
             <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5">Góc nhìn:</span>
             {presets.map(p => (
               <button
                 key={p.id}
                 onClick={() => applyPreset(p.id)}
                 className={cn(
-                  'px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer',
+                  'px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
                   activePreset === p.id
-                    ? 'bg-white text-teal-800 shadow-xs font-bold border border-slate-200'
+                    ? 'bg-white text-[#123A52] shadow-2xs font-bold border border-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 )}
                 title={`Chuyển sang góc nhìn ${p.label}`}
@@ -470,8 +470,8 @@ export function HierarchicalDataGrid<T>({
             <button
               onClick={() => setShowGroupSelector(!showGroupSelector)}
               className={cn(
-                'btn btn-secondary text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-all cursor-pointer border-slate-200',
-                visibleGroupIds.size < groups.length && 'border-teal-500 text-teal-700 bg-teal-50/50'
+                'btn btn-secondary text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-all cursor-pointer border-[#D9E3E8]',
+                visibleGroupIds.size < groups.length && 'border-[#1E647F] text-[#1E647F] bg-teal-50/50'
               )}
               title="Tùy chỉnh nhóm cột hiển thị"
             >

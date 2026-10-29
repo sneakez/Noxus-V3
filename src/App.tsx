@@ -181,7 +181,7 @@ function AuthenticatedWorkspace() {
   const meta = PAGE_META[page] || PAGE_META.dashboard;
 
   return (
-    <div className="flex h-screen bg-ink-50/50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#F4F8FA] overflow-hidden font-sans">
       <Sidebar
         current={page}
         onNavigate={handleNavigate}
@@ -202,7 +202,7 @@ function AuthenticatedWorkspace() {
           onMobileMenu={() => setMobileOpen(!mobileOpen)}
         />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50/70">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F4F8FA]">
           <ErrorBoundary>
             <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu..." />}>
               {/* Overview */}
