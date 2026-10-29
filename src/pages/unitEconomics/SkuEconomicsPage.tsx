@@ -241,15 +241,25 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight">
-              SKU Economics & Ma Trận Đóng Góp Sản Phẩm
+              SKU Economics & SKU Portfolio Matrix
             </h1>
             <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 text-xs font-bold">
               Product Profitability & Stock ROI
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Đo lường biên lợi nhuận trên từng sản phẩm, giá hòa vốn (Break-even), vòng quay vốn và phân loại SKU Portfolio Matrix / Pareto.
+            Đo lường biên lợi nhuận trên từng sản phẩm, giá hòa vốn (Break-even), vòng quay vốn và phân loại danh mục SKU Portfolio Matrix.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onNavigate?.('pricingCalculator')}
+            className="btn btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+          >
+            <Calculator size={14} />
+            <span>Mô Phỏng Định Giá Hòa Vốn</span>
+          </button>
         </div>
       </div>
 
@@ -275,15 +285,15 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
         <KPICard
           title="Tổng Số SKU Quản Lý"
           value={`${skus.length} SKU`}
-          subtitle={`${skus.filter(s => s.contributionRank === 'STAR').length} SKU Ngôi Sao (Star)`}
+          subtitle={`${skus.filter(s => s.contributionRank === 'STAR').length} SKU Ngôi Sao trong Portfolio`}
         />
       </div>
 
       {/* Row: 3-Variable Bubble Chart */}
       <AnalyticsCard
-        title="Ma Trận Bong Bóng: Tỷ Suất Biên Lợi Nhuận vs Doanh Thu vs Giá Trị Tồn Kho"
-        subtitle="Xác định nhanh sản phẩm nào đang là Bò sữa (Cash Cow), Ngôi sao (Star), hoặc Con chó (Dog) gây tồn đọng vốn"
-        formulaExplanation="Trục X: CM%, Trục Y: Doanh thu, Kích thước: Giá trị tồn kho. Dữ liệu từ Mock Store."
+        title="SKU Portfolio Matrix: Tỷ Suất Biên Lợi Nhuận vs Doanh Thu vs Giá Trị Tồn Kho"
+        subtitle="Xác định sản phẩm chủ lực Bò sữa (Cash Cow), Ngôi sao (Star), Dấu hỏi (Question Mark) hoặc Chậm luân chuyển (Dog) trong Portfolio"
+        formulaExplanation="Trục X: CM%, Trục Y: Doanh thu, Kích thước: Giá trị vốn tồn kho. Phân tích danh mục SKU Portfolio Matrix."
       >
         <ScatterBubbleChart data={filteredSkus} />
       </AnalyticsCard>

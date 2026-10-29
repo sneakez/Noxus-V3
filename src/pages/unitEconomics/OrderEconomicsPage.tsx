@@ -100,19 +100,19 @@ export function OrderEconomicsPage({ onNavigate }: OrderEconomicsPageProps) {
       badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       columns: [
         {
-          id: 'gross',
-          header: 'Giá Niêm Yết',
+          id: 'net_revenue',
+          header: 'Doanh Thu Thuần',
           align: 'right',
-          width: '110px',
+          width: '125px',
           sortable: true,
-          sortValue: o => o.grossSales,
-          accessor: o => <span className="font-mono text-ink-600">{formatCurrency(o.grossSales)}</span>
+          sortValue: o => o.netRevenue,
+          accessor: o => <strong className="font-mono font-bold text-ink-900">{formatCurrency(o.netRevenue)}</strong>
         },
         {
           id: 'discounts',
           header: 'Voucher / Trợ Giá',
           align: 'right',
-          width: '100px',
+          width: '110px',
           sortable: true,
           sortValue: o => o.discounts,
           accessor: o => (
@@ -120,15 +120,6 @@ export function OrderEconomicsPage({ onNavigate }: OrderEconomicsPageProps) {
               {o.discounts > 0 ? `-${formatCurrency(o.discounts)}` : '0 ₫'}
             </span>
           )
-        },
-        {
-          id: 'net_revenue',
-          header: 'Doanh Thu Thuần',
-          align: 'right',
-          width: '120px',
-          sortable: true,
-          sortValue: o => o.netRevenue,
-          accessor: o => <strong className="font-mono font-bold text-ink-900">{formatCurrency(o.netRevenue)}</strong>
         }
       ]
     },
@@ -137,6 +128,7 @@ export function OrderEconomicsPage({ onNavigate }: OrderEconomicsPageProps) {
       title: 'CHI PHÍ BIẾN ĐỔI (COGS & PHÍ SÀN)',
       badge: 'EXPENSES',
       badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
+      defaultVisible: false,
       columns: [
         {
           id: 'cogs',

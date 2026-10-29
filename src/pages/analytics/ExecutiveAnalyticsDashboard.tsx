@@ -78,6 +78,13 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => onNavigate?.('channelEconomics')}
+            className="btn btn-primary text-xs py-2 px-3 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+          >
+            <Layers size={13} />
+            <span>Phân Tích Kênh Bán</span>
+          </button>
           <DateRangeFilter value={period} onChange={setPeriod} />
           <ComparisonSelector value={comparison} onChange={setComparison} />
         </div>

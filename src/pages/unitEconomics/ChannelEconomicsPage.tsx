@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, TrendingUp, DollarSign, Percent, AlertCircle, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Layers, TrendingUp, DollarSign, Percent, AlertCircle, ShieldCheck, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { analyticsService } from '@/analytics/analyticsService';
 import { AnalyticsCard } from '@/components/charts/AnalyticsCard';
 import { KPICard } from '@/components/charts/KPICard';
@@ -91,6 +91,16 @@ export function ChannelEconomicsPage({ onNavigate }: ChannelEconomicsPageProps) 
           <p className="text-xs text-ink-500 mt-1">
             So sánh thực tế biên lợi nhuận giữa Shopee, TikTok Shop, Lazada và Website D2C để phân bổ nguồn lực tối ưu.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onNavigate?.('orders')}
+            className="btn btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+          >
+            <ShoppingCart size={14} />
+            <span>Xem Đơn Hàng Theo Kênh</span>
+          </button>
         </div>
       </div>
 

@@ -27,6 +27,7 @@ interface WorkflowStepVisualizerProps {
   title?: string;
   workflowType: 'order_lifecycle' | 'rma_lifecycle' | 'po_lifecycle';
   currentStatus: string;
+  rmaBranch?: string;
   customSteps?: WorkflowStep[];
   onActionClick?: (actionId: string) => void;
   actionButton?: {
@@ -41,13 +42,15 @@ export function WorkflowStepVisualizer({
   title,
   workflowType,
   currentStatus,
+  rmaBranch,
   customSteps,
   onActionClick,
   actionButton,
   className
 }: WorkflowStepVisualizerProps) {
-  // Generate steps based on workflow type if customSteps is not provided
-  const steps: WorkflowStep[] = customSteps || getWorkflowSteps(workflowType, currentStatus);
+  // Generate steps based on workflow type and branch if customSteps is not provided
+  const steps: WorkflowStep[] = customSteps || getWorkflowSteps(workflowType, currentStatus, rmaBranch);
+  const resolvedTitle = title || getWorkflowTitle(workflowType, rmaBranch);
 
   return (
     <div className={cn('p-3.5 sm:p-4 rounded-xl bg-ink-900 text-white border border-ink-800 shadow-sm space-y-3', className)}>
@@ -56,7 +59,7 @@ export function WorkflowStepVisualizer({
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
           <h4 className="text-xs sm:text-sm font-bold text-ink-100 uppercase tracking-wide">
-            {title || getWorkflowTitle(workflowType)}
+            {resolvedTitle}
           </h4>
         </div>
 
@@ -71,8 +74,11 @@ export function WorkflowStepVisualizer({
         )}
       </div>
 
-      {/* Horizontal Stepper (Desktop/Tablet) */}
-      <div className="hidden md:grid grid-cols-6 gap-2 pt-1">
+      {/* Horizontal Stepper (Desktop/Tablet) with dynamic columns */}
+      <div
+        className="hidden md:grid gap-2 pt-1"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+      >
         {steps.map((step, idx) => {
           const isCompleted = step.status === 'completed';
           const isActive = step.status === 'active';
@@ -163,18 +169,27 @@ export function WorkflowStepVisualizer({
   );
 }
 
-function getWorkflowTitle(type: 'order_lifecycle' | 'rma_lifecycle' | 'po_lifecycle'): string {
+function getWorkflowTitle(type: 'order_lifecycle' | 'rma_lifecycle' | 'po_lifecycle', rmaBranch?: string): string {
   switch (type) {
     case 'order_lifecycle':
       return 'Tiến Trình 6 Chặng Vận Hành Đơn Hàng & POD Gate';
-    case 'rma_lifecycle':
-      return 'Tiến Trình Đổi Trả RMA & Kiểm Định Chất Lượng QC';
+    case 'rma_lifecycle': {
+      if (rmaBranch === 'returnless_refund') return 'Tiến Trình Hoàn Tiền Không Thu Hồi (Bỏ Qua Nhận Kho & QC)';
+      if (rmaBranch === 'exchange') return 'Tiến Trình Đổi Hàng Mới & Xuất Đơn Bù Thay Thế';
+      if (rmaBranch === 'warranty') return 'Tiến Trình Bảo Hành / Sửa Chữa Thiết Bị Kỹ Thuật';
+      if (rmaBranch === 'transit_damage') return 'Tiến Trình Xử Lý Hàng Vỡ Vận Chuyển & Khiếu Nại Bưu Tá';
+      return 'Tiến Trình Đổi Trả RMA Tiêu Chuẩn & Kiểm Định QC (Maker/Checker)';
+    }
     case 'po_lifecycle':
       return 'Tiến Trình Mua Hàng PO & Kiểm Định Nhập Kho Dock';
   }
 }
 
-function getWorkflowSteps(type: 'order_lifecycle' | 'rma_lifecycle' | 'po_lifecycle', status: string): WorkflowStep[] {
+function getWorkflowSteps(
+  type: 'order_lifecycle' | 'rma_lifecycle' | 'po_lifecycle',
+  status: string,
+  rmaBranch?: string
+): WorkflowStep[] {
   if (type === 'order_lifecycle') {
     const s = status.toLowerCase();
     const isPlaced = true;
@@ -196,18 +211,81 @@ function getWorkflowSteps(type: 'order_lifecycle' | 'rma_lifecycle' | 'po_lifecy
 
   if (type === 'rma_lifecycle') {
     const s = status.toLowerCase();
-    const isPending = true;
+    const branch = rmaBranch || 'refund';
+
+    // 1. Returnless Refund: Skip receiving and QC
+    if (branch === 'returnless_refund') {
+      const isApproved = ['approved', 'qc_passed', 'refunded'].includes(s);
+      const isRefunded = s === 'refunded';
+
+      return [
+        { id: 'req', label: '1. Yêu Cầu', sublabel: 'Khách tạo RMA', status: 'completed' },
+        { id: 'waive', label: '2. Miễn Thu Hồi', sublabel: '⚡ Bỏ qua kho & QC', status: 'completed' },
+        { id: 'appr', label: '3. Phê Duyệt', sublabel: 'Maker/Checker', status: isApproved ? (isRefunded ? 'completed' : 'active') : 'active' },
+        { id: 'ref', label: '4. Hoàn Tiền Ngay', sublabel: 'Không đợi kiện về', status: isRefunded ? 'completed' : 'pending' }
+      ];
+    }
+
+    // 2. Exchange: Replace with new item
+    if (branch === 'exchange') {
+      const isReceived = ['received', 'quality_check', 'qc_passed', 'qc_failed', 'refunded'].includes(s);
+      const isQC = ['quality_check', 'qc_passed', 'qc_failed', 'refunded'].includes(s);
+      const isApproved = ['qc_passed', 'refunded'].includes(s);
+      const isDispatched = s === 'refunded';
+
+      return [
+        { id: 'req', label: '1. Đổi Hàng', sublabel: 'Khách chọn mẫu', status: 'completed' },
+        { id: 'recv', label: '2. Thu Hồi Kiện', sublabel: 'Bưu tá lấy hàng', status: isReceived ? (isQC ? 'completed' : 'active') : 'pending' },
+        { id: 'qc', label: '3. Kiểm Định QC', sublabel: 'Đạt điều kiện đổi', status: isQC ? (isApproved ? 'completed' : 'active') : 'pending' },
+        { id: 'appr', label: '4. Duyệt Xuất Đổi', sublabel: 'Lệnh xuất hàng bù', status: isApproved ? (isDispatched ? 'completed' : 'active') : 'pending' },
+        { id: 'disp', label: '5. Giao Hàng Mới', sublabel: 'Tạo đơn bù mới', status: isDispatched ? 'completed' : 'pending' }
+      ];
+    }
+
+    // 3. Warranty / Repair
+    if (branch === 'warranty') {
+      const isReceived = ['received', 'quality_check', 'qc_passed', 'qc_failed', 'refunded'].includes(s);
+      const isQC = ['quality_check', 'qc_passed', 'qc_failed', 'refunded'].includes(s);
+      const isRepaired = ['qc_passed', 'refunded'].includes(s);
+      const isCompleted = s === 'refunded';
+
+      return [
+        { id: 'req', label: '1. Tiếp Nhận BH', sublabel: 'Ghi nhận Serial', status: 'completed' },
+        { id: 'recv', label: '2. Nhận Thiết Bị', sublabel: 'Kiểm tra ngoại quan', status: isReceived ? (isQC ? 'completed' : 'active') : 'pending' },
+        { id: 'diag', label: '3. Giám Định Lỗi', sublabel: 'Kỹ thuật test lỗi', status: isQC ? (isRepaired ? 'completed' : 'active') : 'pending' },
+        { id: 'repair', label: '4. Sửa Chữa', sublabel: 'Linh kiện chính hãng', status: isRepaired ? (isCompleted ? 'completed' : 'active') : 'pending' },
+        { id: 'handover', label: '5. Bàn Giao Khách', sublabel: 'Xuất trả kèm bảo hành', status: isCompleted ? 'completed' : 'pending' }
+      ];
+    }
+
+    // 4. Transit Damage (Scrap)
+    if (branch === 'transit_damage') {
+      const isClaimed = true;
+      const isScrapped = ['received', 'quality_check', 'qc_passed', 'qc_failed', 'refunded'].includes(s);
+      const isApproved = ['qc_passed', 'qc_failed', 'refunded'].includes(s);
+      const isSettled = s === 'refunded';
+
+      return [
+        { id: 'req', label: '1. Báo Hỏng Ship', sublabel: 'Kiện vỡ khi giao', status: 'completed' },
+        { id: 'courier', label: '2. Biên Bản Bưu Tá', sublabel: 'Xác nhận ĐVVC', status: isClaimed ? (isScrapped ? 'completed' : 'active') : 'pending' },
+        { id: 'scrap', label: '3. Kho Damaged', sublabel: 'Cách ly phế phẩm', status: isScrapped ? (isApproved ? 'completed' : 'active') : 'pending' },
+        { id: 'appr', label: '4. Duyệt Bồi Thường', sublabel: 'Hồ sơ bảo hiểm sàn', status: isApproved ? (isSettled ? 'completed' : 'active') : 'pending' },
+        { id: 'ref', label: '5. Chi Bồi Hoàn', sublabel: 'Hoàn tiền khách', status: isSettled ? 'completed' : 'pending' }
+      ];
+    }
+
+    // 5. Standard Refund (Default)
     const isReceived = ['received', 'quality_check', 'qc_passed', 'qc_failed', 'refunded'].includes(s);
     const isQC = ['quality_check', 'qc_passed', 'qc_failed', 'refunded'].includes(s);
     const isApproved = ['qc_passed', 'refunded'].includes(s);
     const isRefunded = s === 'refunded';
 
     return [
-      { id: 'req', label: '1. Yêu Cầu', sublabel: 'Khách tạo RMA', status: isPending ? (isReceived ? 'completed' : 'active') : 'pending' },
-      { id: 'recv', label: '2. Nhận Kho', sublabel: 'Kiện về dock', status: isReceived ? (isQC ? 'completed' : 'active') : 'pending' },
-      { id: 'qc', label: '3. Kiểm Định QC', sublabel: 'Pass / Scrap', status: isQC ? (isApproved ? 'completed' : 'active') : 'pending' },
+      { id: 'req', label: '1. Yêu Cầu Hoàn', sublabel: 'Khách tạo RMA', status: 'completed' },
+      { id: 'recv', label: '2. Nhận Hàng Kho', sublabel: 'Kiện về dock', status: isReceived ? (isQC ? 'completed' : 'active') : 'pending' },
+      { id: 'qc', label: '3. Kiểm Định QC', sublabel: 'Restock / Scrap', status: isQC ? (isApproved ? 'completed' : 'active') : 'pending' },
       { id: 'appr', label: '4. Phê Duyệt', sublabel: 'Maker/Checker', status: isApproved ? (isRefunded ? 'completed' : 'active') : 'pending' },
-      { id: 'ref', label: '5. Hoàn Tất', sublabel: 'Hoàn tiền / Đổi', status: isRefunded ? 'completed' : 'pending' }
+      { id: 'ref', label: '5. Quyết Toán Tiền', sublabel: 'Ghi Có 111/112', status: isRefunded ? 'completed' : 'pending' }
     ];
   }
 

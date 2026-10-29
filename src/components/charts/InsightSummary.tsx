@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sparkles, AlertTriangle, TrendingUp, CheckCircle, ArrowRight, Lightbulb } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, AlertTriangle, TrendingUp, CheckCircle, ArrowRight, Lightbulb, ChevronDown, Info } from 'lucide-react';
 import type { DecisionInsight } from '@/analytics/types';
 import { cn } from '@/lib/cn';
 
@@ -10,11 +10,22 @@ interface InsightSummaryProps {
 }
 
 export function InsightSummary({ insights, onActionClick, className }: InsightSummaryProps) {
+  const [expandedInsightIds, setExpandedInsightIds] = useState<Set<string>>(new Set());
+
   if (!insights || !insights.length) return null;
+
+  const toggleExpand = (id: string) => {
+    setExpandedInsightIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg bg-brand-500/10 text-brand-700 flex items-center justify-center">
             <Lightbulb size={14} className="text-brand-600" />
@@ -33,6 +44,7 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
           const isCritical = item.severity === 'CRITICAL';
           const isWarning = item.severity === 'WARNING';
           const isOpportunity = item.severity === 'OPPORTUNITY';
+          const isExpanded = expandedInsightIds.has(item.id);
 
           return (
             <div
@@ -71,7 +83,7 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
                   {item.title}
                 </h4>
 
-                {/* 4 Layers of Intelligence */}
+                {/* Progressive Disclosure: Core Finding + Prescriptive Action first */}
                 <div className="space-y-2 text-[11px] text-ink-700">
                   <div className="p-2 rounded-lg bg-ink-50 border border-ink-100/70">
                     <span className="font-bold text-ink-900 block text-[10px] uppercase text-ink-400">
@@ -80,25 +92,47 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
                     <p className="mt-0.5 leading-relaxed">{item.descriptive}</p>
                   </div>
 
-                  <div className="p-2 rounded-lg bg-ink-50 border border-ink-100/70">
-                    <span className="font-bold text-amber-700 block text-[10px] uppercase">
-                      2. Nguyên nhân (Diagnostic):
-                    </span>
-                    <p className="mt-0.5 leading-relaxed">{item.diagnostic}</p>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-ink-50 border border-ink-100/70">
-                    <span className="font-bold text-rose-700 block text-[10px] uppercase">
-                      3. Rủi ro / Dự báo (Predictive):
-                    </span>
-                    <p className="mt-0.5 leading-relaxed">{item.predictive}</p>
-                  </div>
-
                   <div className="p-2.5 rounded-lg bg-brand-50/70 border border-brand-200">
                     <span className="font-bold text-brand-900 block text-[10px] uppercase">
-                      4. Hành động đề xuất (Prescriptive):
+                      2. Hành động đề xuất (Prescriptive):
                     </span>
                     <p className="mt-0.5 text-brand-950 font-medium leading-relaxed">{item.prescriptive}</p>
+                  </div>
+
+                  {/* Collapsible Deep Diagnostic & Predictive Layers */}
+                  <div className="pt-1">
+                    <button
+                      onClick={() => toggleExpand(item.id)}
+                      className="text-[10px] font-bold text-brand-700 hover:text-brand-900 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <span>{isExpanded ? 'Thu gọn phân tích sâu' : 'Xem nguyên nhân, rủi ro & nguồn dữ liệu'}</span>
+                      <ChevronDown size={12} className={cn('transition-transform duration-200', isExpanded && 'rotate-180')} />
+                    </button>
+
+                    {isExpanded && (
+                      <div className="mt-2 space-y-2 animate-fade-in">
+                        <div className="p-2 rounded-lg bg-ink-50/90 border border-ink-100/70">
+                          <span className="font-bold text-amber-700 block text-[10px] uppercase">
+                            Nguyên nhân (Diagnostic):
+                          </span>
+                          <p className="mt-0.5 leading-relaxed text-[11px]">{item.diagnostic}</p>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-ink-50/90 border border-ink-100/70">
+                          <span className="font-bold text-rose-700 block text-[10px] uppercase">
+                            Rủi ro / Dự báo (Predictive):
+                          </span>
+                          <p className="mt-0.5 leading-relaxed text-[11px]">{item.predictive}</p>
+                        </div>
+
+                        {item.attributionNote && (
+                          <div className="p-2 rounded-lg bg-ink-100/60 border border-ink-200 text-[10px] font-mono text-ink-600 flex items-start gap-1.5">
+                            <Info size={12} className="shrink-0 mt-0.5 text-ink-500" />
+                            <span><strong>Nguồn kiểm toán:</strong> {item.attributionNote}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -112,7 +146,7 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
                 {item.relatedEntityLink && (
                   <button
                     onClick={() => onActionClick?.(item.relatedEntityLink)}
-                    className="text-xs font-bold text-brand-700 hover:text-brand-900 flex items-center gap-1 group"
+                    className="text-xs font-bold text-brand-700 hover:text-brand-900 flex items-center gap-1 group cursor-pointer"
                   >
                     <span>{item.relatedEntityLink.label}</span>
                     <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />

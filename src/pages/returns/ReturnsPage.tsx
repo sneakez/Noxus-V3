@@ -79,6 +79,8 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedRmaId, setSelectedRmaId] = useState<string | null>(null);
+  const [branchFilter, setBranchFilter] = useState<string>('all');
   const rmaConfig = mockStore.getRmaConfig();
   const threshold = rmaConfig.approvalThreshold;
 
@@ -105,11 +107,19 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
     setOrders((data as Order[]) ?? []);
   }
 
-  const filtered = returns.filter((r) =>
-    !search ||
-    r.return_number.toLowerCase().includes(search.toLowerCase()) ||
-    r.order?.order_number?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = returns.filter((r) => {
+    if (branchFilter !== 'all' && (r.rma_branch || 'refund') !== branchFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        r.return_number.toLowerCase().includes(q) ||
+        r.order?.order_number?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const activeReturn = returns.find(r => r.id === selectedRmaId) || filtered[0] || returns[0];
 
   // 1. Accept Return Request
   async function handleAccept(id: string) {
@@ -215,12 +225,46 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
         </button>
       </div>
 
-      {/* Visual Workflow Stepper */}
+      {/* Visual Workflow Stepper - Adaptive by RMA Branch */}
       <WorkflowStepVisualizer
         workflowType="rma_lifecycle"
-        currentStatus={returns[0]?.status || 'quality_check'}
-        title="Tiến Trình Đổi Trả RMA & Kiểm Định Chất Lượng QC (Maker/Checker)"
+        currentStatus={activeReturn?.status || 'quality_check'}
+        rmaBranch={activeReturn?.rma_branch || (branchFilter !== 'all' ? branchFilter : 'refund')}
+        title={
+          activeReturn
+            ? `Tiến Trình RMA: #${activeReturn.return_number} — [${RMA_BRANCH_LABELS[(activeReturn.rma_branch || 'refund') as RmaBranch]?.label || 'Hoàn tiền'}] (${RETURN_STATUS_LABELS[activeReturn.status] || activeReturn.status})`
+            : undefined
+        }
       />
+
+      {/* Branch Quick Filter Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        {[
+          { key: 'all', label: 'Tất Cả Nhánh' },
+          { key: 'refund', label: '1. Hoàn Tiền Tiêu Chuẩn' },
+          { key: 'returnless_refund', label: '2. Returnless Refund (Bỏ Qua QC)' },
+          { key: 'exchange', label: '3. Đổi Hàng Mới' },
+          { key: 'warranty', label: '4. Bảo Hành / Sửa Chữa' },
+          { key: 'transit_damage', label: '5. Vỡ Do Vận Chuyển' }
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => {
+              setBranchFilter(tab.key);
+              const firstMatch = returns.find(r => tab.key === 'all' || (r.rma_branch || 'refund') === tab.key);
+              if (firstMatch) setSelectedRmaId(firstMatch.id);
+            }}
+            className={cn(
+              'px-3 py-1.5 rounded-lg font-medium transition-all shrink-0 border cursor-pointer',
+              branchFilter === tab.key
+                ? 'bg-ink-900 text-white border-ink-900 shadow-xs font-bold'
+                : 'bg-white text-ink-600 border-ink-200 hover:bg-ink-50'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner size={28} /></div>
@@ -260,7 +304,15 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
                   const requiresChecker = amount >= threshold;
 
                   return (
-                    <tr key={r.id} className="hover:bg-ink-50/50 transition-colors">
+                    <tr
+                      key={r.id}
+                      onClick={() => setSelectedRmaId(r.id)}
+                      className={cn(
+                        'hover:bg-brand-50/40 transition-colors cursor-pointer',
+                        activeReturn?.id === r.id && 'bg-brand-50/60 ring-1 ring-inset ring-brand-300'
+                      )}
+                      title="Bấm để xem tiến trình và thao tác nhánh RMA này"
+                    >
                       <td className="px-5 py-4 font-bold text-ink-900 font-mono">
                         {r.return_number}
                       </td>

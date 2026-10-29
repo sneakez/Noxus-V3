@@ -228,19 +228,22 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
       badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       columns: [
         {
-          id: 'total_gross',
-          header: 'Giá Niêm Yết',
+          id: 'net_sales',
+          header: 'Doanh Thu Thuần',
           align: 'right',
-          width: '110px',
+          width: '125px',
           sortable: true,
-          sortValue: o => o.total || 0,
-          accessor: o => <span className="font-mono text-ink-700">{formatCurrency(o.total || 0)}</span>
+          sortValue: o => (orderEconsMap.get(o.id)?.netRevenue ?? o.total ?? 0),
+          accessor: o => {
+            const net = orderEconsMap.get(o.id)?.netRevenue ?? o.total ?? 0;
+            return <strong className="font-mono font-bold text-ink-900">{formatCurrency(net)}</strong>;
+          }
         },
         {
           id: 'discount',
           header: 'Voucher / Giảm',
           align: 'right',
-          width: '100px',
+          width: '105px',
           sortable: true,
           sortValue: o => o.discount || 0,
           accessor: o => (
@@ -248,18 +251,6 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
               {o.discount ? `-${formatCurrency(o.discount)}` : '0 ₫'}
             </span>
           )
-        },
-        {
-          id: 'net_sales',
-          header: 'Net Sales',
-          align: 'right',
-          width: '120px',
-          sortable: true,
-          sortValue: o => (orderEconsMap.get(o.id)?.netRevenue ?? o.total ?? 0),
-          accessor: o => {
-            const net = orderEconsMap.get(o.id)?.netRevenue ?? o.total ?? 0;
-            return <strong className="font-mono font-bold text-ink-900">{formatCurrency(net)}</strong>;
-          }
         }
       ]
     },
@@ -268,6 +259,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
       title: 'UNIT ECONOMICS (CM1 / CM2 / CM3)',
       badge: 'LỢI NHUẬN',
       badgeColor: 'bg-brand-50 text-brand-800 border-brand-200',
+      defaultVisible: false,
       columns: [
         {
           id: 'cogs',
