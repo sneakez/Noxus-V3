@@ -857,67 +857,114 @@ class MockDataStore {
       .filter(r => r.tenant_id === this.state.activeTenantId && (r.status === 'refunded' || r.status === 'approved'))
       .reduce((sum, r) => sum + (r.refund_amount || 0), 0);
 
-    // Calculate Recognized Revenue under 4 distinct policies
+    // Calculate Recognized Revenue & Matching COGS under 3 distinct Accrual GAAP/VAS policies
     // Policy A: FOB Destination (POD delivered)
-    const revFobDestination = orders
+    const revFobDestination = Math.max(0, orders
       .filter(o => o.delivery_status === 'delivered' || o.status === 'delivered')
-      .reduce((sum, o) => sum + (o.total || o.total_amount || 0), 0) - totalRefunds;
+      .reduce((sum, o) => sum + (o.total || o.total_amount || 0), 0) - totalRefunds);
+    const cogsFobDestination = Math.round(revFobDestination * 0.6);
+    const feesFobDestination = Math.round(revFobDestination * 0.085);
 
     // Policy B: FOB Shipping Point (Dispatched / in-transit / delivered)
-    const revFobShippingPoint = orders
+    const revFobShippingPoint = Math.max(0, orders
       .filter(o => o.status === 'shipped' || o.status === 'delivered' || o.delivery_status === 'in_transit' || o.delivery_status === 'delivered')
-      .reduce((sum, o) => sum + (o.total || o.total_amount || 0), 0) - totalRefunds;
+      .reduce((sum, o) => sum + (o.total || o.total_amount || 0), 0) - totalRefunds);
+    const cogsFobShippingPoint = Math.round(revFobShippingPoint * 0.6);
+    const feesFobShippingPoint = Math.round(revFobShippingPoint * 0.085);
 
     // Policy C: Post-Clearance 7 Days (Delivered and placed > 7 days ago)
     const sevenDaysAgo = Date.now() - 7 * 86400000;
-    const revPostClearance = orders
+    const revPostClearance = Math.max(0, orders
       .filter(o => (o.delivery_status === 'delivered' || o.status === 'delivered') && new Date(o.placed_at).getTime() < sevenDaysAgo)
-      .reduce((sum, o) => sum + (o.total || o.total_amount || 0), 0) - totalRefunds;
+      .reduce((sum, o) => sum + (o.total || o.total_amount || 0), 0) - totalRefunds);
+    const cogsPostClearance = Math.round(revPostClearance * 0.6);
+    const feesPostClearance = Math.round(revPostClearance * 0.085);
 
-    // Policy D: Cash Basis (All paid orders)
-    const revCashBasis = totalCashCollected - totalRefunds;
-
-    // COGS estimation (average 60% of order value)
-    const estimatedCogs = Math.round(revFobDestination * 0.6);
-    // Estimated platform & shipping fees (approx 8.5% of order value)
-    const estimatedFees = Math.round(totalOrderValue * 0.085);
+    // Cash Flow Analysis (Dòng tiền thực thu - KHÔNG PHẢI DOANH THU KẾ TOÁN DỒN TÍCH)
+    const totalCashIn = totalCashCollected;
+    const totalCashRefunded = totalRefunds;
+    const netCashFlow = Math.max(0, totalCashIn - totalCashRefunded);
 
     return {
       totalOrderValue,
       totalCashCollected,
       totalReceivables,
       totalRefunds,
-      estimatedCogs,
-      estimatedFees,
+      estimatedCogs: cogsFobDestination,
+      estimatedFees: feesFobDestination,
+      accrualPolicies: {
+        FOB_DESTINATION: {
+          name: 'Chính sách 1: FOB Điểm đến (Giao có POD)',
+          recognizedRevenue: revFobDestination,
+          matchingCogs: cogsFobDestination,
+          grossProfit: Math.max(0, revFobDestination - cogsFobDestination),
+          platformFees: feesFobDestination,
+          refunds: totalRefunds,
+          arBalance: totalReceivables,
+          status: 'ASSUMPTION (Đang kích hoạt mô phỏng)',
+          comparisonNote: 'Ghi nhận an toàn tuyệt đối, đối soát đúng thời điểm chuyển giao quyền sở hữu khi khách ký POD.'
+        },
+        FOB_SHIPPING_POINT: {
+          name: 'Chính sách 2: FOB Điểm gửi (Xuất kho giao bưu tá)',
+          recognizedRevenue: revFobShippingPoint,
+          matchingCogs: cogsFobShippingPoint,
+          grossProfit: Math.max(0, revFobShippingPoint - cogsFobShippingPoint),
+          platformFees: feesFobShippingPoint,
+          refunds: totalRefunds,
+          arBalance: totalReceivables,
+          status: 'Phương án thay thế',
+          comparisonNote: 'Ghi nhận doanh thu sớm hơn 2-4 ngày nhưng chịu rủi ro bão hòa hoàn đơn RTS nếu giao thất bại.'
+        },
+        POST_CLEARANCE_7D: {
+          name: 'Chính sách 3: Hết hạn đổi trả (Sau 7 ngày giao)',
+          recognizedRevenue: revPostClearance,
+          matchingCogs: cogsPostClearance,
+          grossProfit: Math.max(0, revPostClearance - cogsPostClearance),
+          platformFees: feesPostClearance,
+          refunds: totalRefunds,
+          arBalance: totalReceivables + (revFobDestination - revPostClearance),
+          status: 'Phương án siêu thận trọng',
+          comparisonNote: 'Giữ lại doanh thu trong 7 ngày đối soát bảo hành, loại trừ hoàn toàn rủi ro đảo sổ nhưng tạo độ trễ báo cáo.'
+        }
+      },
+      // Backward compatibility alias for policies
       policies: {
         FOB_DESTINATION: {
           name: 'FOB Điểm đến (Xác nhận POD)',
-          recognizedRevenue: Math.max(0, revFobDestination),
-          grossProfit: Math.max(0, revFobDestination - estimatedCogs),
+          recognizedRevenue: revFobDestination,
+          grossProfit: Math.max(0, revFobDestination - cogsFobDestination),
           arBalance: totalReceivables,
           status: 'ASSUMPTION (Đang kích hoạt)'
         },
         FOB_SHIPPING_POINT: {
           name: 'FOB Điểm gửi (Xuất kho giao bưu tá)',
-          recognizedRevenue: Math.max(0, revFobShippingPoint),
-          grossProfit: Math.max(0, revFobShippingPoint - estimatedCogs),
+          recognizedRevenue: revFobShippingPoint,
+          grossProfit: Math.max(0, revFobShippingPoint - cogsFobShippingPoint),
           arBalance: totalReceivables,
           status: 'Phương án thay thế'
         },
         POST_CLEARANCE_7D: {
           name: 'Hết hạn đổi trả (Sau 7 ngày giao)',
-          recognizedRevenue: Math.max(0, revPostClearance),
-          grossProfit: Math.max(0, revPostClearance - Math.round(revPostClearance * 0.6)),
+          recognizedRevenue: revPostClearance,
+          grossProfit: Math.max(0, revPostClearance - cogsPostClearance),
           arBalance: totalReceivables + (revFobDestination - revPostClearance),
           status: 'Phương án thận trọng'
         },
         CASH_BASIS: {
-          name: 'Tiền về thực thu (Cash Basis)',
-          recognizedRevenue: Math.max(0, revCashBasis),
-          grossProfit: Math.max(0, revCashBasis - estimatedCogs),
+          name: 'Dòng tiền thực thu (Cash Basis)',
+          recognizedRevenue: netCashFlow,
+          grossProfit: Math.max(0, netCashFlow - cogsFobDestination),
           arBalance: 0,
-          status: 'Kế toán đơn'
+          status: 'Dòng tiền thuần (Tham chiếu)'
         }
+      },
+      cashFlowAnalysis: {
+        name: 'Kịch Bản Phân Tích Dòng Tiền & Thanh Khoản (Cash Flow / Liquidity)',
+        totalCashIn,
+        totalCashRefunded,
+        netCashFlow,
+        uncollectedReceivables: totalReceivables,
+        regulatoryNote: 'Theo chuẩn mực VAS / IFRS, Cash Basis chỉ phục vụ quản trị thanh khoản và dòng tiền thực thu (Cash Flow), KHÔNG được hạch toán là chính sách ghi nhận doanh thu dồn tích hợp lệ trong sổ cái kế toán.'
       }
     };
   }
@@ -1331,6 +1378,20 @@ class MockDataStore {
         }
       ],
       affectedModules: ['Inventory5State', 'StockLedger', 'Warehouses'],
+      eventLogs: [
+        {
+          timestamp: new Date().toISOString(),
+          topic: `INV_${scenarioType.toUpperCase()}`,
+          details: `Thực hiện mô phỏng ${scenarioType} trên SKU ${sku} (Số lượng: ${qty})`,
+          actor: 'Warehouse Operator (Demo)'
+        },
+        {
+          timestamp: new Date().toISOString(),
+          topic: 'STOCK_LEDGER_APPENDED',
+          details: `Đã sinh bút toán lưu vết tại Sổ Giao Dịch Kho (Stock Ledger)`,
+          actor: 'NexusOMS Central Store'
+        }
+      ],
       notes: isPhysicalBalanced ? 'Toàn vẹn bất biến toán học đạt chuẩn 100%' : 'LỖI: Phát hiện sai lệch bất biến'
     };
   }
@@ -1469,6 +1530,20 @@ class MockDataStore {
         }
       ],
       affectedModules: ['Orders', 'Fulfillment', 'DeliveryLogistics', 'FinanceLedger'],
+      eventLogs: [
+        {
+          timestamp: new Date().toISOString(),
+          topic: `ORDER_${scenarioType.toUpperCase()}`,
+          details: `Chuyển dịch trạng thái đơn ${targetOrder?.order_number || ''} sang ${scenarioType}`,
+          actor: 'Order Lifecycle Engine'
+        },
+        {
+          timestamp: new Date().toISOString(),
+          topic: scenarioType === 'deliver_with_pod' ? 'POD_REVENUE_RECOGNIZED' : 'STATUS_LOG_PERSISTED',
+          details: scenarioType === 'deliver_with_pod' ? 'Xác thực Bằng chứng Giao hàng POD thành công và kích hoạt Có 511' : 'Đã ghi vết lịch sử trạng thái đơn hàng',
+          actor: scenarioType === 'deliver_with_pod' ? 'Logistics Carrier Webhook' : 'System Store'
+        }
+      ],
       notes: 'Trạng thái chuyển dịch trơn tru và phân tách rạch ròi'
     };
   }

@@ -50,7 +50,11 @@ export function BusinessRulesReviewPage() {
   const [selectedRuleForHistory, setSelectedRuleForHistory] = useState<BusinessRuleConfig | null>(null);
   const [simulatingRule, setSimulatingRule] = useState<BusinessRuleConfig | null>(null);
   const [scenarioResult, setScenarioResult] = useState<ScenarioValidationResult | null>(null);
-  const [customReason, setCustomReason] = useState<string>('');
+  const [ruleToApprove, setRuleToApprove] = useState<BusinessRuleConfig | null>(null);
+  const [approvalOptionId, setApprovalOptionId] = useState<string>('');
+  const [approvalReason, setApprovalReason] = useState<string>('Đã kiểm tra kỹ lưỡng số liệu mô phỏng và chốt phương án kinh doanh này.');
+  const [approvalScope, setApprovalScope] = useState<'global' | 'single_tenant'>('global');
+  const [ownerConfirmed, setOwnerConfirmed] = useState<boolean>(true);
 
   function loadRules() {
     const list = mockStore.getBusinessRules();
@@ -73,11 +77,27 @@ export function BusinessRulesReviewPage() {
     toast(`Đang mô phỏng phương án: ${opt?.label}`, 'success');
   }
 
-  function handleApproveRule(rule: BusinessRuleConfig) {
-    const reason = customReason.trim() || 'Chủ Doanh Nghiệp trực tiếp kiểm duyệt và phê duyệt chính thức';
-    mockStore.updateBusinessRule(rule.id, rule.selectedOptionId, 'approved', reason);
-    setCustomReason('');
-    toast(`✓ Đã chính thức phê duyệt quy tắc: ${rule.name}`, 'success');
+  function handleOpenApprovalModal(rule: BusinessRuleConfig) {
+    setRuleToApprove(rule);
+    setApprovalOptionId(rule.selectedOptionId || rule.proposedOptionId);
+    setApprovalReason('Đã kiểm tra kỹ lưỡng số liệu mô phỏng và chốt phương án kinh doanh này.');
+    setApprovalScope(rule.tenantScope || 'global');
+    setOwnerConfirmed(true);
+  }
+
+  function handleSubmitOfficialApproval() {
+    if (!ruleToApprove) return;
+    const opt = ruleToApprove.options.find(o => o.id === approvalOptionId);
+    mockStore.updateBusinessRule(
+      ruleToApprove.id,
+      approvalOptionId,
+      'approved',
+      approvalReason.trim(),
+      ruleToApprove.version || 'v1.0',
+      approvalScope
+    );
+    toast(`✓ Chủ Doanh Nghiệp đã chính thức phê duyệt phương án: ${opt?.label || approvalOptionId}`, 'success');
+    setRuleToApprove(null);
   }
 
   function handleResetToAssumption(rule: BusinessRuleConfig) {
@@ -86,9 +106,8 @@ export function BusinessRulesReviewPage() {
   }
 
   function handleMarkNeedsRevision(rule: BusinessRuleConfig) {
-    const reason = customReason.trim() || 'Yêu cầu điều chỉnh lại logic nghiệp vụ hoặc công thức hạch toán';
+    const reason = 'Yêu cầu điều chỉnh lại logic nghiệp vụ hoặc công thức hạch toán';
     mockStore.updateBusinessRule(rule.id, rule.selectedOptionId, 'under_review', reason);
-    setCustomReason('');
     toast(`Đã gắn nhãn CẦN SỬA ĐỔI cho: ${rule.name}`, 'info');
   }
 
@@ -484,7 +503,7 @@ ${(r.history || []).map(h => `  * [${new Date(h.timestamp).toLocaleString('vi-VN
                   </button>
 
                   <button
-                    onClick={() => handleApproveRule(rule)}
+                    onClick={() => handleOpenApprovalModal(rule)}
                     className="px-3 py-1.5 rounded-md text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm flex items-center gap-1"
                   >
                     <CheckCircle2 size={13} />
@@ -599,13 +618,14 @@ ${(r.history || []).map(h => `  * [${new Date(h.timestamp).toLocaleString('vi-VN
               </button>
               <button
                 onClick={() => {
-                  handleApproveRule(simulatingRule);
+                  const rule = simulatingRule;
                   setSimulatingRule(null);
                   setScenarioResult(null);
+                  handleOpenApprovalModal(rule);
                 }}
                 className="btn-primary text-xs bg-emerald-600 hover:bg-emerald-700"
               >
-                ✓ Phê duyệt Quy tắc này ngay
+                ✓ Tiến hành Phê duyệt Quy tắc này
               </button>
             </div>
           </div>
@@ -651,6 +671,107 @@ ${(r.history || []).map(h => `  * [${new Date(h.timestamp).toLocaleString('vi-VN
                 className="btn-secondary text-xs"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Official Owner Approval Decision Modal */}
+      {ruleToApprove && (
+        <Modal
+          open={!!ruleToApprove}
+          onClose={() => setRuleToApprove(null)}
+          title={`Xác Nhận Quyết Định Phê Duyệt: ${ruleToApprove.name}`}
+          size="md"
+        >
+          <div className="space-y-4 text-xs">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg space-y-1">
+              <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-emerald-700" />
+                Xác nhận chính thức từ Chủ Doanh Nghiệp (Owner Decision):
+              </span>
+              <p className="text-emerald-800 text-[11px] leading-relaxed">
+                Hệ thống chỉ chuyển trạng thái sang <strong>[APPROVED]</strong> khi Chủ Doanh Nghiệp trực tiếp xác nhận phương án áp dụng, ghi nhận lý do và cam kết làm căn cứ xây dựng backend thật.
+              </p>
+            </div>
+
+            <div>
+              <label className="label">Phương án phê duyệt chính thức *</label>
+              <select
+                value={approvalOptionId}
+                onChange={(e) => setApprovalOptionId(e.target.value)}
+                className="input text-xs w-full font-bold"
+              >
+                {ruleToApprove.options.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label} {opt.isAssumption ? '(Đang là giả định)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">Người phê duyệt</label>
+                <input
+                  type="text"
+                  disabled
+                  value="👑 Chủ Doanh Nghiệp (Owner)"
+                  className="input text-xs w-full bg-ink-50 font-semibold"
+                />
+              </div>
+              <div>
+                <label className="label">Phạm vi áp dụng</label>
+                <select
+                  value={approvalScope}
+                  onChange={(e) => setApprovalScope(e.target.value as any)}
+                  className="input text-xs w-full font-semibold"
+                >
+                  <option value="global">Toàn bộ hệ thống (Global)</option>
+                  <option value="single_tenant">Chỉ chi nhánh hiện tại</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="label">Lý do phê duyệt & Căn cứ kinh doanh *</label>
+              <textarea
+                value={approvalReason}
+                onChange={(e) => setApprovalReason(e.target.value)}
+                rows={3}
+                placeholder="Nhập lý do chốt phương án này..."
+                className="input text-xs w-full"
+              />
+            </div>
+
+            <label className="flex items-start gap-2 p-3 rounded-lg border border-emerald-200 bg-emerald-50/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={ownerConfirmed}
+                onChange={(e) => setOwnerConfirmed(e.target.checked)}
+                className="rounded border-ink-300 text-emerald-600 focus:ring-emerald-500 mt-0.5"
+              />
+              <span className="text-[11px] font-medium text-emerald-950">
+                Tôi xác nhận với tư cách Chủ dự án chính thức phê duyệt phương án trên làm căn cứ kỹ thuật cho NexusOMS V5.
+              </span>
+            </label>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-ink-100">
+              <button
+                type="button"
+                onClick={() => setRuleToApprove(null)}
+                className="btn-secondary text-xs"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={!ownerConfirmed || !approvalReason.trim()}
+                onClick={handleSubmitOfficialApproval}
+                className="btn-primary text-xs bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+              >
+                ✓ Xác Nhận Phê Duyệt Chính Thức
               </button>
             </div>
           </div>

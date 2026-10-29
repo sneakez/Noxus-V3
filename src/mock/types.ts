@@ -228,6 +228,12 @@ export interface ScenarioValidationResult {
     details: string;
   }>;
   affectedModules: string[];
+  eventLogs?: Array<{
+    timestamp: string;
+    topic: string;
+    details: string;
+    actor: string;
+  }>;
   notes: string;
 }
 
