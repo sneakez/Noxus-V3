@@ -80,7 +80,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
     });
   }, [orders, search, statusFilter]);
 
-  if (loading) return <FullPageSpinner label="Dang tai don mua hang..." />;
+  if (loading) return <FullPageSpinner label="Đang tải danh sách đơn mua hàng..." />;
 
   const totalValue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
   const pendingCount = orders.filter((o) => o.status === 'ordered' || o.status === 'partial').length;
@@ -89,13 +89,13 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
     <div className="p-6 lg:p-8 animate-fade-in-up space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink-900 tracking-tight">Don mua hang</h1>
+          <h1 className="text-xl font-bold text-[#123A52] tracking-tight">Đơn Mua Hàng (Purchase Orders)</h1>
           <p className="text-sm text-ink-500 mt-0.5">
-            {orders.length} don · {pendingCount} dang cho · {formatCurrency(totalValue)} tong gia tri
+            {orders.length} đơn · {pendingCount} đang chờ giao · {formatCurrency(totalValue)} tổng giá trị
           </p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary">
-          <Plus size={16} /> Tao PO
+          <Plus size={16} /> Tạo đơn PO
         </button>
       </div>
 
@@ -118,7 +118,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
         <Card>
           <EmptyState
             icon={ShoppingCart}
-            title={search || statusFilter !== 'all' ? 'Khong tim thay don mua hang' : 'Chua co don mua hang'}
+            title={search || statusFilter !== 'all' ? 'Không tìm thấy đơn mua hàng phù hợp' : 'Chưa có đơn mua hàng nào'}
             description={
               search || statusFilter !== 'all'
                 ? 'Thu dieu chinh tim kiem hoac bo loc trang thai'
@@ -178,7 +178,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
                           <Calendar size={12} /> {formatDate(po.expected_arrival_date)}
                         </span>
                       ) : (
-                        'Chua co ETA'
+                        'Chưa có ngày ETA'
                       )}
                     </p>
                   </div>
@@ -189,11 +189,11 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
                     <table className="w-full text-sm">
                       <thead className="text-ink-500 text-xs uppercase tracking-wider">
                         <tr>
-                          <th className="text-left py-2 font-semibold">San pham</th>
-                          <th className="text-right py-2 font-semibold">Dat</th>
-                          <th className="text-right py-2 font-semibold">Da nhan</th>
-                          <th className="text-right py-2 font-semibold">Don gia</th>
-                          <th className="text-right py-2 font-semibold">Thanh tien</th>
+                          <th className="text-left py-2 font-semibold">Sản phẩm</th>
+                          <th className="text-right py-2 font-semibold">Số lượng đặt</th>
+                          <th className="text-right py-2 font-semibold">Đã nhận</th>
+                          <th className="text-right py-2 font-semibold">Đơn giá</th>
+                          <th className="text-right py-2 font-semibold">Thành tiền</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-ink-50">

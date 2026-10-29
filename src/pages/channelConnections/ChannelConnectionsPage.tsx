@@ -79,12 +79,12 @@ export function ChannelConnectionsPage({ search }: ChannelConnectionsPageProps) 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-lg font-semibold text-ink-900">Ket noi kenh ban ({filtered.length})</h2>
+        <h2 className="text-lg font-semibold text-ink-900">Kênh Bán & Kết Nối API ({filtered.length})</h2>
         <button onClick={() => setShowModal(true)} className="btn-primary shrink-0"><Plus size={16} /> Them ket noi</button>
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Link2} title="Chua co ket noi" description="Them ket noi shop Shopee, TikTok, Lazada hoac Website" />
+        <EmptyState icon={Link2} title="Chưa có kết nối nào" description="Thêm kết nối gian hàng TikTok Shop, Shopee, Lazada hoặc Website D2C" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((c) => {
@@ -107,15 +107,15 @@ export function ChannelConnectionsPage({ search }: ChannelConnectionsPageProps) 
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-ink-400">Shop ID</span><span className="text-ink-700 font-medium">{c.shop_id}</span></div>
-                  <div className="flex justify-between"><span className="text-ink-400">Trang thai</span>
+                  <div className="flex justify-between"><span className="text-ink-400">Trạng thái</span>
                     <span className={`badge ${isConnected ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-rose-100 text-rose-800 border-rose-200'}`}>
-                      {isConnected ? 'Da ket noi' : 'Ngat'}
+                      {isConnected ? 'Đang kết nối' : 'Đã ngắt'}
                     </span>
                   </div>
-                  <div className="flex justify-between"><span className="text-ink-400">Dong bo cuoi</span><span className="text-ink-600 text-xs">{formatDateTime(c.last_sync_at)}</span></div>
+                  <div className="flex justify-between"><span className="text-ink-400">Đồng bộ lần cuối</span><span className="text-ink-600 text-xs">{formatDateTime(c.last_sync_at)}</span></div>
                 </div>
                 <button onClick={() => toggleStatus(c)} className={`btn-ghost w-full mt-4 justify-center text-sm ${isConnected ? 'text-rose-600' : 'text-emerald-600'}`}>
-                  <Plug size={14} /> {isConnected ? 'Ngat ket noi' : 'Ket noi lai'}
+                  <Plug size={14} /> {isConnected ? 'Ngắt kết nối' : 'Kết nối lại'}
                 </button>
               </div>
             );

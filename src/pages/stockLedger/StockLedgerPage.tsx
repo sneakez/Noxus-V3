@@ -88,14 +88,14 @@ export function StockLedgerPage({ search }: StockLedgerPageProps) {
     });
   }, [txns, search, typeFilter, whFilter]);
 
-  if (loading) return <FullPageSpinner label="Loading stock ledger..." />;
+  if (loading) return <FullPageSpinner label="Đang tải sổ cái thẻ kho..." />;
 
   return (
     <div className="p-6 lg:p-8 animate-fade-in-up space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-ink-900 tracking-tight">Stock Ledger</h1>
+        <h1 className="text-xl font-bold text-[#123A52] tracking-tight">Sổ Cái Thẻ Kho</h1>
         <p className="text-sm text-ink-500 mt-0.5">
-          Immutable transaction history · {txns.length} record{txns.length !== 1 ? 's' : ''}
+          Lịch sử giao dịch biến động tồn kho bất biến (Append-only) · {txns.length} bản ghi
         </p>
       </div>
 
@@ -103,14 +103,14 @@ export function StockLedgerPage({ search }: StockLedgerPageProps) {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-ink-400" />
-          <span className="text-sm font-medium text-ink-600">Type</span>
+          <span className="text-sm font-medium text-ink-600">Nghiệp vụ</span>
         </div>
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="input w-auto min-w-[160px]"
         >
-          <option value="all">All Types</option>
+          <option value="all">Tất cả nghiệp vụ</option>
           {TXN_TYPES.map((t) => (
             <option key={t} value={t}>
               {INVENTORY_TXN_TYPE_LABELS[t]}
@@ -119,14 +119,14 @@ export function StockLedgerPage({ search }: StockLedgerPageProps) {
         </select>
         <div className="flex items-center gap-2 ml-2">
           <Search size={15} className="text-ink-400" />
-          <span className="text-sm font-medium text-ink-600">Warehouse</span>
+          <span className="text-sm font-medium text-ink-600">Kho bãi</span>
         </div>
         <select
           value={whFilter}
           onChange={(e) => setWhFilter(e.target.value)}
           className="input w-auto min-w-[160px]"
         >
-          <option value="all">All Warehouses</option>
+          <option value="all">Tất cả kho</option>
           {warehouses.map((w) => (
             <option key={w.id} value={w.id}>
               {w.code} — {w.name}
@@ -139,7 +139,7 @@ export function StockLedgerPage({ search }: StockLedgerPageProps) {
         <Card>
           <EmptyState
             icon={ScrollText}
-            title={search || typeFilter !== 'all' || whFilter !== 'all' ? 'No matching transactions' : 'No transactions yet'}
+            title={search || typeFilter !== 'all' || whFilter !== 'all' ? 'Không tìm thấy giao dịch phù hợp' : 'Chưa có giao dịch thẻ kho nào'}
             description={
               search || typeFilter !== 'all' || whFilter !== 'all'
                 ? 'Try adjusting your filters or search'

@@ -90,7 +90,7 @@ export function ChannelEconomicsPage({ onNavigate }: ChannelEconomicsPageProps) 
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            So sánh thực tế biên lợi nhuận giữa Shopee, TikTok Shop, Lazada và Website D2C để phân bổ nguồn lực tối ưu.
+            So sánh biên lợi nhuận giữa TikTok Shop, Shopee, Lazada và Website D2C để phân bổ chi phí tối ưu.
           </p>
         </div>
 

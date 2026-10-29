@@ -94,23 +94,23 @@ export function TransfersPage({ search }: TransfersPageProps) {
       toast('Failed to update status: ' + error.message, 'error');
       return;
     }
-    toast(`Transfer moved to ${TRANSFER_STATUS_LABELS[next]}`, 'success');
+    toast(`✓ Phiếu chuyển đã chuyển sang trạng thái ${TRANSFER_STATUS_LABELS[next]}`, 'success');
     load();
   }
 
-  if (loading) return <FullPageSpinner label="Loading transfers..." />;
+  if (loading) return <FullPageSpinner label="Đang tải danh sách phiếu chuyển kho..." />;
 
   return (
     <div className="p-6 lg:p-8 animate-fade-in-up space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink-900 tracking-tight">Stock Transfers</h1>
+          <h1 className="text-xl font-bold text-[#123A52] tracking-tight">Chuyển Kho Chi Nhánh</h1>
           <p className="text-sm text-ink-500 mt-0.5">
-            {transfers.length} transfer{transfers.length !== 1 ? 's' : ''} · Requested → In Transit → Received
+            {transfers.length} phiếu điều chuyển · Yêu cầu → Đang vận chuyển → Đã nhận
           </p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary">
-          <Plus size={16} /> New Transfer
+          <Plus size={16} /> Tạo phiếu chuyển
         </button>
       </div>
 
@@ -118,7 +118,7 @@ export function TransfersPage({ search }: TransfersPageProps) {
         <Card>
           <EmptyState
             icon={ArrowLeftRight}
-            title={search ? 'No matching transfers' : 'No transfers yet'}
+            title={search ? 'Không tìm thấy phiếu chuyển kho phù hợp' : 'Chưa có phiếu chuyển kho nào'}
             description={
               search
                 ? 'Try adjusting your search'

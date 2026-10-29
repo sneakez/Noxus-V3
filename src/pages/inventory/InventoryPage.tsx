@@ -236,9 +236,9 @@ export function InventoryPage({ search }: InventoryPageProps) {
       {/* Header Actions */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight">Kiểm Soát Tồn Kho Chuẩn Nexus</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-[#123A52] tracking-tight">Kiểm Soát Tồn Kho 5 Trạng Thái</h1>
           <p className="text-xs text-ink-500 mt-0.5">
-            Mô hình toán học bất biến: Physical = Sellable + Reserved + Unavailable (QC + Damaged) · Pipeline (In-transit + Incoming) tách biệt
+            Mô hình tồn kho chuẩn: Vật lý = Khả dụng + Đã giữ + Không khả dụng (Chờ QC & Lỗi) · Hàng sắp về (Incoming) tách biệt
           </p>
         </div>
 

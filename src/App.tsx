@@ -87,59 +87,59 @@ interface PageMeta {
 
 const PAGE_META: Record<PageId, PageMeta> = {
   // Overview
-  dashboard: { title: 'Executive Analytics Dashboard', subtitle: 'Bảng điều hành kinh doanh đa kênh & Unit Economics', searchPlaceholder: 'Tìm kiếm nhanh...', primaryLabel: '' },
+  dashboard: { title: 'Bảng điều hành kinh doanh', subtitle: 'Tổng quan doanh thu quản trị, dòng đóng góp lợi nhuận (CM1, CM2, CM3)', searchPlaceholder: 'Tìm kiếm nhanh...', primaryLabel: '' },
   
   // Sales
-  orders: { title: 'Đơn hàng', subtitle: 'Trung tâm đơn hàng đa kênh — xử lý đa kho', searchPlaceholder: 'Tìm theo mã đơn hoặc khách hàng...', primaryLabel: 'Tạo đơn' },
-  customers: { title: 'Khách hàng', subtitle: 'CRM thống nhất với điểm thưởng & RFM', searchPlaceholder: 'Tìm theo tên, email, hoặc công ty...', primaryLabel: 'Thêm khách hàng' },
-  salesAnalytics: { title: 'Phân tích Bán hàng', subtitle: 'Vận tốc bán, tăng trưởng MoM & Bản đồ nhiệt bán hàng', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  orders: { title: 'Quản trị đơn hàng', subtitle: 'Theo dõi tiến trình từ đặt hàng, giữ kho, đóng gói đến đối soát POD', searchPlaceholder: 'Tìm mã đơn, khách hàng...', primaryLabel: 'Tạo đơn' },
+  customers: { title: 'Khách hàng (CRM)', subtitle: 'Hồ sơ khách hàng, phân tầng giá trị và lịch sử mua hàng', searchPlaceholder: 'Tìm tên khách, SĐT...', primaryLabel: 'Thêm khách' },
+  salesAnalytics: { title: 'Phân tích bán hàng', subtitle: 'Vận tốc bán, tăng trưởng MoM và xu hướng doanh số', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   
   // Operations & WMS
-  inventory: { title: 'Tồn kho 5 trạng thái', subtitle: 'Physical = Sellable + Reserved + Unavailable', searchPlaceholder: 'Tìm theo sản phẩm hoặc SKU...', primaryLabel: '' },
-  fulfillment: { title: 'Wave Picking & SLA', subtitle: 'Wave picking, SLA countdown, scan-to-pack', searchPlaceholder: 'Tìm wave...', primaryLabel: 'Tạo wave' },
-  inventoryAnalytics: { title: 'Phân tích Kho vận', subtitle: 'ABC Pareto, tuổi hàng lưu kho & Trí tuệ tái đặt hàng', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
-  transfers: { title: 'Chuyển kho', subtitle: 'Chuyển kho liên chi nhánh theo dõi trạng thái', searchPlaceholder: 'Tìm phiếu chuyển...', primaryLabel: 'Tạo phiếu' },
-  batches: { title: 'Lô & Serial', subtitle: 'Theo dõi lô FEFO & Serial/IMEI', searchPlaceholder: 'Tìm theo mã lô hoặc serial...', primaryLabel: '' },
-  warehouses: { title: 'Kho & Bin', subtitle: 'Quản lý đa kho với vị trí bin chi tiết', searchPlaceholder: 'Tìm kho...', primaryLabel: 'Thêm kho' },
-  stockLedger: { title: 'Sổ giao dịch tồn', subtitle: 'Lịch sử giao dịch tồn kho bất biến (Append-only)', searchPlaceholder: 'Tìm giao dịch...', primaryLabel: '' },
+  inventory: { title: 'Tồn kho 5 trạng thái', subtitle: 'Vật lý = Khả dụng + Đang giữ + Không khả dụng · Hàng sắp về', searchPlaceholder: 'Tìm tên sản phẩm hoặc SKU...', primaryLabel: '' },
+  fulfillment: { title: 'Xử lý đơn & Đóng gói', subtitle: 'Điều phối xuất kho, nhặt hàng theo wave và cam kết SLA', searchPlaceholder: 'Tìm wave...', primaryLabel: 'Tạo wave' },
+  inventoryAnalytics: { title: 'Phân tích kho vận', subtitle: 'Phân loại ABC, tuổi hàng tồn kho và điểm đặt hàng lại', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
+  transfers: { title: 'Chuyển kho chi nhánh', subtitle: 'Điều chuyển hàng hóa giữa các kho nội bộ', searchPlaceholder: 'Tìm phiếu chuyển...', primaryLabel: 'Tạo phiếu' },
+  batches: { title: 'Lô & Serial', subtitle: 'Theo dõi lô hàng theo hạn dùng và số serial/IMEI', searchPlaceholder: 'Tìm mã lô hoặc serial...', primaryLabel: '' },
+  warehouses: { title: 'Kho & Vị trí Bin', subtitle: 'Quản lý danh sách kho và sơ đồ vị trí lưu trữ', searchPlaceholder: 'Tìm kho...', primaryLabel: 'Thêm kho' },
+  stockLedger: { title: 'Sổ cái thẻ kho', subtitle: 'Lịch sử giao dịch biến động tồn kho bất biến (Append-only)', searchPlaceholder: 'Tìm giao dịch...', primaryLabel: '' },
 
   // Procurement
-  purchaseOrders: { title: 'Đơn mua hàng', subtitle: 'Quản lý PO với đặt trước & hàng sắp về', searchPlaceholder: 'Tìm theo mã PO hoặc nhà cung cấp...', primaryLabel: 'Tạo PO' },
-  products: { title: 'Sản phẩm & SKU', subtitle: 'Danh mục với combo/bundle & đa kho', searchPlaceholder: 'Tìm theo tên, SKU, hoặc danh mục...', primaryLabel: 'Thêm sản phẩm' },
+  purchaseOrders: { title: 'Đơn mua hàng (PO)', subtitle: 'Quản lý đặt hàng nhà cung cấp và theo dõi hàng sắp về', searchPlaceholder: 'Tìm mã PO, nhà cung cấp...', primaryLabel: 'Tạo PO' },
+  products: { title: 'Sản phẩm & SKU', subtitle: 'Danh mục sản phẩm, biến thể SKU và giá vốn', searchPlaceholder: 'Tìm sản phẩm, SKU...', primaryLabel: 'Thêm sản phẩm' },
 
   // After-sales
-  returns: { title: 'Đổi trả / RMA', subtitle: 'Quản lý đổi trả 6 nhánh và hạn mức Maker/Checker', searchPlaceholder: 'Tìm theo mã RMA hoặc đơn hàng...', primaryLabel: 'Tạo yêu cầu' },
+  returns: { title: 'Đổi trả & Xử lý RMA', subtitle: 'Quy trình đổi trả hàng, hoàn tiền và nhập lại kho', searchPlaceholder: 'Tìm mã RMA, mã đơn...', primaryLabel: 'Tạo yêu cầu' },
 
   // Unit Economics
-  orderEconomics: { title: 'Order Economics', subtitle: 'Bóc tách chi phí & lợi nhuận đóng góp từng đơn hàng (CM1, CM2, CM3)', searchPlaceholder: 'Tìm mã đơn...', primaryLabel: '' },
-  skuEconomics: { title: 'SKU Economics', subtitle: 'Lợi nhuận đóng góp, giá hòa vốn & SKU Portfolio Matrix', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
-  channelEconomics: { title: 'Channel Economics', subtitle: 'So sánh doanh thu thuần, take rate phí sàn và lợi nhuận từng kênh', searchPlaceholder: 'Tìm kênh...', primaryLabel: '' },
-  pricingCalculator: { title: 'Pricing Intelligence', subtitle: 'Máy tính định giá hòa vốn, giá đề xuất và trần voucher giảm giá', searchPlaceholder: 'Tìm sản phẩm...', primaryLabel: '' },
+  orderEconomics: { title: 'Kinh tế đơn hàng (P&L)', subtitle: 'Bóc tách chi phí & biên đóng góp từng đơn hàng (CM1, CM2, CM3)', searchPlaceholder: 'Tìm mã đơn...', primaryLabel: '' },
+  skuEconomics: { title: 'Biên lợi nhuận SKU', subtitle: 'Lợi nhuận đóng góp, giá hòa vốn và ma trận danh mục SKU', searchPlaceholder: 'Tìm SKU...', primaryLabel: '' },
+  channelEconomics: { title: 'Hiệu quả kênh & Phí sàn', subtitle: 'So sánh doanh thu thuần, take-rate phí sàn và lợi nhuận từng kênh', searchPlaceholder: 'Tìm kênh...', primaryLabel: '' },
+  pricingCalculator: { title: 'Định giá & Hòa vốn', subtitle: 'Máy tính định giá hòa vốn, giá mục tiêu và trần voucher giảm giá', searchPlaceholder: 'Tìm sản phẩm...', primaryLabel: '' },
 
   // Data Analytics
-  marketingAnalytics: { title: 'Marketing & ROAS', subtitle: 'Phân tích hiệu quả chiến dịch Ads, CAC, CPA & Lợi nhuận sau Ads (CM3)', searchPlaceholder: 'Tìm chiến dịch...', primaryLabel: '' },
-  customerAnalytics: { title: 'Khách hàng & Cohorts', subtitle: 'Ma trận giữ chân theo tháng (Cohort Retention) & Phân tầng RFM', searchPlaceholder: 'Tìm phân khúc...', primaryLabel: '' },
-  operationsAnalytics: { title: 'Vận hành & Chu kỳ SLA', subtitle: 'Năng suất kho, Cycle Time, Picking/Packing time & Tỷ lệ giao thành công', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  marketingAnalytics: { title: 'Hiệu quả Ads & ROAS', subtitle: 'Phân tích chi phí quảng cáo, CAC và lợi nhuận sau Ads (CM3)', searchPlaceholder: 'Tìm chiến dịch...', primaryLabel: '' },
+  customerAnalytics: { title: 'Khách hàng & Cohorts', subtitle: 'Ma trận giữ chân theo tháng (Cohort Retention) và phân tầng RFM', searchPlaceholder: 'Tìm phân khúc...', primaryLabel: '' },
+  operationsAnalytics: { title: 'Vận hành & SLA kho', subtitle: 'Năng suất kho, thời gian xử lý đơn (Cycle Time) và tỷ lệ giao thành công', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   cashWorkingCapital: { title: 'Dòng tiền & Vốn lưu động', subtitle: 'Quản trị thanh khoản, chu kỳ chuyển đổi tiền mặt (CCC) & công nợ sàn', searchPlaceholder: 'Tìm đợt đối soát...', primaryLabel: '' },
-  founderExecution: { title: 'Founder Execution Cockpit', subtitle: 'Quản trị mục tiêu OKRs, nhiệm vụ điều hành & nhật ký quyết định', searchPlaceholder: 'Tìm kiếm mục tiêu hoặc nhiệm vụ...', primaryLabel: 'Thêm nhiệm vụ' },
+  founderExecution: { title: 'Kế hoạch OKRs & Quyết định', subtitle: 'Quản trị mục tiêu điều hành, nhiệm vụ trọng yếu và nhật ký quyết định', searchPlaceholder: 'Tìm kiếm mục tiêu hoặc nhiệm vụ...', primaryLabel: 'Thêm nhiệm vụ' },
 
   // Governance & Admin
-  channelConnections: { title: 'Kết nối kênh', subtitle: 'Quản lý kết nối shop Shopee, TikTok, Lazada', searchPlaceholder: 'Tìm kết nối...', primaryLabel: 'Thêm kết nối' },
-  settings: { title: 'Cài đặt & Phân quyền', subtitle: 'Quản lý người dùng & vai trò RBAC', searchPlaceholder: 'Tìm người dùng...', primaryLabel: '' },
-  auditTrail: { title: 'Nhật ký Audit', subtitle: 'Nhật ký SHA-256 chống xóa', searchPlaceholder: 'Tìm nhật ký...', primaryLabel: '' },
+  channelConnections: { title: 'Kênh bán & Kết nối API', subtitle: 'Quản lý kết nối shop TikTok, Shopee, Lazada', searchPlaceholder: 'Tìm kết nối...', primaryLabel: 'Thêm kết nối' },
+  settings: { title: 'Cài đặt & Phân quyền', subtitle: 'Quản trị người dùng, vai trò phân quyền và chính sách', searchPlaceholder: 'Tìm người dùng...', primaryLabel: '' },
+  auditTrail: { title: 'Nhật ký hệ thống (Audit)', subtitle: 'Nhật ký kiểm toán SHA-256 bất biến chống sửa xóa', searchPlaceholder: 'Tìm nhật ký...', primaryLabel: '' },
 
   // Demo Lab
-  ownerValidation: { title: 'Trung tâm Nghiệm thu Nghiệp vụ', subtitle: 'Mô phỏng trực tiếp, đối soát Before/After và phê duyệt quy tắc cho Chủ dự án', searchPlaceholder: 'Tìm kịch bản...', primaryLabel: '' },
-  businessRules: { title: 'Phê duyệt Quy tắc Nghiệp vụ', subtitle: 'Rà soát, lựa chọn phương án & gắn cờ giả định ASSUMPTION', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: '' },
-  simulator: { title: 'Chaos Simulator', subtitle: 'Flash sale, duplicate webhook, margin attack', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  ownerValidation: { title: 'Nghiệm thu nghiệp vụ', subtitle: 'Mô phỏng trực tiếp và đối soát quy tắc vận hành cho người quản trị', searchPlaceholder: 'Tìm kịch bản...', primaryLabel: '' },
+  businessRules: { title: 'Quy tắc nghiệp vụ', subtitle: 'Rà soát và thiết lập phương án vận hành', searchPlaceholder: 'Tìm quy tắc...', primaryLabel: '' },
+  simulator: { title: 'Mô phỏng tình huống', subtitle: 'Kiểm thử tải cao điểm và kịch bản bất thường', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
 
   // Legacy routes
-  complaints: { title: 'Khiếu nại & AI', subtitle: 'Phân tích khiếu nại an toàn PII với AI sentiment', searchPlaceholder: 'Tìm khiếu nại...', primaryLabel: 'Tạo khiếu nại' },
+  complaints: { title: 'Khiếu nại khách hàng', subtitle: 'Phân loại khiếu nại và đánh giá mức độ hài lòng', searchPlaceholder: 'Tìm khiếu nại...', primaryLabel: 'Tạo khiếu nại' },
   channelMapping: { title: 'Ánh xạ SKU kênh', subtitle: 'Ánh xạ SKU nội bộ sang SKU kênh TMĐT', searchPlaceholder: 'Tìm ánh xạ...', primaryLabel: 'Thêm ánh xạ' },
   syncMonitor: { title: 'Giám sát đồng bộ', subtitle: 'Trạng thái đẩy tồn kho & log retry', searchPlaceholder: 'Tìm log...', primaryLabel: '' },
   ledger: { title: 'Sổ kép', subtitle: 'Bút toán kép với Debit == Credit', searchPlaceholder: 'Tìm bút toán...', primaryLabel: 'Tạo bút toán' },
   feeReconciliation: { title: 'Đối soát phí', subtitle: 'Phân tích phí chi tiết & phát hiện chênh lệch', searchPlaceholder: 'Tìm theo mã đơn...', primaryLabel: '' },
-  marginControl: { title: 'Margin Circuit Breaker', subtitle: 'Tự động ngắt khi phát hiện margin âm', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
+  marginControl: { title: 'Kiểm soát biên lợi nhuận', subtitle: 'Cảnh báo và kiểm soát đơn hàng có biên lợi nhuận âm', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   salesVelocity: { title: 'Vận tốc bán', subtitle: 'Báo cáo doanh thu, lợi nhuận, vận tốc bán', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   revenueReport: { title: 'Báo cáo doanh thu', subtitle: 'Phân tích doanh thu theo ngày, tháng, năm', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   automationRules: { title: 'Luật tự động', subtitle: 'Tự động hóa đơn hàng IF-THEN', searchPlaceholder: 'Tìm luật...', primaryLabel: 'Tạo luật' },

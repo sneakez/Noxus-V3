@@ -396,7 +396,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Theo dõi toàn trình từ Đặt hàng, Khóa tồn Sellable, Pick/Pack, Bàn giao bưu tá đến Biên bản POD và Lợi nhuận CM3.
+            Theo dõi toàn trình từ Đặt hàng, Khóa tồn giữ đơn, Pick/Pack, Bàn giao bưu tá đến Biên bản POD và Lợi nhuận CM3.
           </p>
         </div>
 

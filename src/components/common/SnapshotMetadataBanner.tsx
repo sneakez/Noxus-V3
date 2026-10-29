@@ -52,7 +52,7 @@ export function SnapshotMetadataBanner({
         {/* Left: Summary Essentials */}
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <span className="badge bg-purple-950 text-purple-300 border-purple-800 text-[10px] font-bold shrink-0">
-            SIMULATED PROTOTYPE
+            DỮ LIỆU ĐỐI SOÁT KIỂM TOÁN
           </span>
 
           <span className="text-ink-400 hidden sm:inline">•</span>
@@ -138,7 +138,7 @@ export function SnapshotMetadataBanner({
             title="Khôi phục trạng thái Mock Data về snapshot gốc"
           >
             <RefreshCw size={11} className={isResetting ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Factory Reset</span>
+            <span className="hidden sm:inline">Khôi phục ban đầu</span>
             <span className="sm:hidden">Reset</span>
           </button>
         </div>
@@ -161,9 +161,9 @@ export function SnapshotMetadataBanner({
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-ink-900 tracking-tight">Xác nhận Factory Reset Dữ Liệu?</h3>
+              <h3 className="text-sm font-bold text-ink-900 tracking-tight">Xác nhận khôi phục dữ liệu ban đầu?</h3>
               <p className="text-xs text-ink-500 leading-relaxed">
-                Thao tác này sẽ xóa mọi đơn hàng mới tạo, hoàn lại trạng thái kho về mốc Snapshot gốc và khôi phục revision về ban đầu.
+                Thao tác này sẽ hoàn lại toàn bộ đơn hàng, kho bãi và sổ sách tài chính về trạng thái chuẩn ban đầu.
               </p>
             </div>
 

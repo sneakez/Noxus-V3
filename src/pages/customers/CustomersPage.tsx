@@ -105,7 +105,7 @@ export function CustomersPage({ search }: CustomersPageProps) {
     load();
   }
 
-  if (loading) return <FullPageSpinner label="Dang tai khach hang..." />;
+  if (loading) return <FullPageSpinner label="Đang tải dữ liệu khách hàng..." />;
 
   return (
     <div className="p-6 lg:p-8 animate-fade-in-up">
@@ -113,7 +113,7 @@ export function CustomersPage({ search }: CustomersPageProps) {
         <Card>
           <EmptyState
             icon={Users}
-            title={search ? 'Khong tim thay khach hang' : 'Chua co khach hang'}
+            title={search ? 'Không tìm thấy khách hàng phù hợp' : 'Chưa có khách hàng nào'}
             description={
               search
                 ? 'Thu dieu chinh tim kiem'

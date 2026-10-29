@@ -103,7 +103,7 @@ export function ProductsPage({ search }: ProductsPageProps) {
     load();
   }
 
-  if (loading) return <FullPageSpinner label="Dang tai san pham..." />;
+  if (loading) return <FullPageSpinner label="Đang tải danh mục sản phẩm..." />;
 
   const totalInventoryValue = products.reduce(
     (s, p) => s + Number(p.cost) * p.stock,
@@ -194,7 +194,7 @@ export function ProductsPage({ search }: ProductsPageProps) {
         <Card>
           <EmptyState
             icon={Package}
-            title={search ? 'Khong tim thay san pham' : 'Chua co san pham'}
+            title={search ? 'Không tìm thấy sản phẩm phù hợp' : 'Chưa có sản phẩm nào'}
             description={
               search
                 ? 'Thu dieu chinh tim kiem hoac bo loc danh muc'
@@ -221,12 +221,12 @@ export function ProductsPage({ search }: ProductsPageProps) {
             <table className="w-full text-sm">
               <thead className="bg-ink-50/80 text-ink-500 text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-5 py-3.5 font-semibold">San pham</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Sản phẩm</th>
                   <th className="text-left px-5 py-3.5 font-semibold">SKU</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Danh muc</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Gia ban</th>
-                  <th className="text-right px-5 py-3.5 font-semibold">Ton kho</th>
-                  <th className="text-left px-5 py-3.5 font-semibold">Trang thai</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Danh mục</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Giá bán</th>
+                  <th className="text-right px-5 py-3.5 font-semibold">Tồn kho</th>
+                  <th className="text-left px-5 py-3.5 font-semibold">Trạng thái</th>
                   <th className="w-24" />
                 </tr>
               </thead>

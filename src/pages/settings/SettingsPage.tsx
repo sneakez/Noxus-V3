@@ -16,9 +16,9 @@ interface SettingsPageProps {
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Quan tri vien',
-  manager: 'Quan ly',
-  warehouse: 'Nhan vien kho',
+  admin: 'Quản trị viên (Admin)',
+  manager: 'Quản lý (Manager)',
+  warehouse: 'Thủ kho (Warehouse)',
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -35,7 +35,7 @@ export function SettingsPage({ search }: SettingsPageProps) {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-ink-900">Cai dat & Phan quyen</h2>
+        <h2 className="text-lg font-semibold text-ink-900">Cài Đặt & Phân Quyền Hệ Thống</h2>
       </div>
 
       <div className="flex gap-1 border-b border-ink-200">
@@ -49,7 +49,7 @@ export function SettingsPage({ search }: SettingsPageProps) {
           )}
         >
           <Shield size={16} className="inline mr-2 -mt-0.5" />
-          Phan quyen & Nguoi dung
+          Phân quyền & Người dùng
         </button>
         <button
           onClick={() => setTab('warehouses')}
@@ -61,7 +61,7 @@ export function SettingsPage({ search }: SettingsPageProps) {
           )}
         >
           <WarehouseIcon size={16} className="inline mr-2 -mt-0.5" />
-          Kho & Vi tri
+          Kho bãi & Vị trí Bin
         </button>
       </div>
 
@@ -82,7 +82,7 @@ function RbacTab({ search }: { search: string }) {
   async function load() {
     setLoading(true);
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (error) { toast('Loi tai danh sach', 'error'); setProfiles([]); }
+    if (error) { toast('Lỗi khi tải danh sách người dùng', 'error'); setProfiles([]); }
     else { setProfiles(data as Profile[]); }
     setLoading(false);
   }

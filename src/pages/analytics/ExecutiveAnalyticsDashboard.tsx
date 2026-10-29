@@ -73,7 +73,7 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Bảng điều hành kinh doanh đa kênh, phân tích dòng đóng góp (Unit Economics) và khuyến nghị hành động tức thì.
+            Tổng quan doanh thu quản trị, phân tích dòng đóng góp (CM1, CM2, CM3) và khuyến nghị hành động tức thì.
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
 
       {/* Snapshot Metadata Gate */}
       <SnapshotMetadataBanner
-        currentModule="Executive Analytics Dashboard"
+        currentModule="Bảng Điều Hành Kinh Doanh"
         orderCount={data.kpis.orderVolume.value}
         dateFilter={period === 'last_30_days' ? '30 Ngày Qua (Toàn Bộ Đơn Hàng)' : period}
       />

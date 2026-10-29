@@ -27,7 +27,7 @@ export function MarketingAnalyticsPage() {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Đo lường lợi nhuận thực tế sau chi phí Ads (CM3), phân tách giữa Meta Ads, TikTok Ads, Shopee In-App và Booking KOC.
+            Đo lường chi phí Ads, doanh thu phân bổ và lợi nhuận ròng sau quảng cáo (CM3).
           </p>
         </div>
       </div>

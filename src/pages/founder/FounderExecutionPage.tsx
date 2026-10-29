@@ -300,7 +300,7 @@ export function FounderExecutionPage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Quản trị mục tiêu OKRs kinh doanh số, nhiệm vụ điều hành & nhật ký quyết định chiến lược
+            Quản trị mục tiêu OKRs kinh doanh số, nhiệm vụ điều hành và nhật ký 8 bước ra quyết định chiến lược
           </p>
         </div>
 

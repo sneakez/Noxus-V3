@@ -23,7 +23,7 @@ export function PricingIntelligencePage() {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Mô phỏng tức thì giá hòa vốn (Break-even), giá bán đề xuất theo target margin, và mức voucher giảm giá tối đa trước khi lợi nhuận chuyển sang âm.
+            Tính toán giá hòa vốn, giá bán mục tiêu và hạn mức chiết khấu an toàn cho từng sản phẩm.
           </p>
         </div>
 

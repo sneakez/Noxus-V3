@@ -267,14 +267,14 @@ export function OrderEconomicsPage({ onNavigate }: OrderEconomicsPageProps) {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Phân tích tỷ suất sinh lời thực tế từng đơn sau khi trừ chi phí giá vốn (COGS), phí sàn, đóng gói và quảng cáo.
+            Bóc tách chi phí giá vốn (COGS), phí sàn, đóng gói và quảng cáo để xác định chính xác lãi gộp CM1, CM2 và CM3.
           </p>
         </div>
       </div>
 
       {/* Snapshot Metadata Gate */}
       <SnapshotMetadataBanner
-        currentModule="Order Economics"
+        currentModule="Kinh Tế Từng Đơn Hàng"
         orderCount={filteredOrders.length}
         dateFilter={selectedChannel === 'all' ? 'Toàn Bộ 12 Đơn Hàng (Đa Kênh)' : `Kênh: ${selectedChannel}`}
       />

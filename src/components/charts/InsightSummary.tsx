@@ -31,11 +31,11 @@ export function InsightSummary({ insights, onActionClick, className }: InsightSu
             <Lightbulb size={14} className="text-brand-600" />
           </div>
           <h3 className="text-sm font-bold text-ink-900 tracking-tight">
-            Decision Intelligence — Khuyến Nghị Chủ Doanh Nghiệp
+            Khuyến Nghị Vận Hành & Quyết Định
           </h3>
         </div>
         <span className="text-[11px] text-ink-500 font-medium">
-          Mô hình chuẩn đoán 4 tầng • Minh bạch nguồn dữ liệu [DEMO-OBSERVED / ESTIMATED / SIMULATED]
+          Khuyến nghị tự động từ mô hình phân tích kinh doanh
         </span>
       </div>
 

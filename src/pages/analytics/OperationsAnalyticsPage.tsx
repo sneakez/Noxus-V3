@@ -21,7 +21,7 @@ export function OperationsAnalyticsPage() {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Đo lường thời gian xử lý đơn hàng (Cycle Time), tiến độ nhặt hàng theo wave, tỷ lệ tuân thủ SLA sàn và hiệu suất từng kho.
+            Đo lường thời gian xử lý đơn (Cycle Time), tiến độ nhặt hàng, tỷ lệ tuân thủ SLA và hiệu suất xuất kho.
           </p>
         </div>
       </div>

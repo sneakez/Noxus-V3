@@ -51,12 +51,12 @@ export function AuditTrailPage({ search }: AuditTrailPageProps) {
             <ShieldCheck size={24} className="text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-ink-900">Tamper-Evident Audit Trail</h2>
-            <p className="text-sm text-ink-500">SHA-256 Hash Chain — any DB tampering is instantly detectable</p>
+            <h2 className="text-lg font-semibold text-ink-900">Nhật Ký Kiểm Toán Bất Biến (Audit Trail)</h2>
+            <p className="text-sm text-ink-500">Chuỗi băm SHA-256 liên kết — phát hiện ngay lập tức mọi can thiệp sửa đổi trái phép</p>
           </div>
         </div>
         <button onClick={verifyChain} disabled={verifying} className="btn-primary">
-          {verifying ? <Spinner size={16} /> : <ShieldCheck size={16} />} Verify Chain
+          {verifying ? <Spinner size={16} /> : <ShieldCheck size={16} />} Kiểm tra chuỗi SHA-256
         </button>
       </div>
 

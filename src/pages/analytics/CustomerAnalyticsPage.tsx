@@ -22,7 +22,7 @@ export function CustomerAnalyticsPage() {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Theo dõi tỷ lệ giữ chân khách hàng qua từng tháng (Cohort Retention) và phân tầng RFM để tối ưu chiến lược chăm sóc khách hàng.
+            Theo dõi tỷ lệ giữ chân khách hàng (Cohort Retention), tỷ lệ mua lại và phân tầng RFM.
           </p>
         </div>
       </div>

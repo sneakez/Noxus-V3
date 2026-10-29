@@ -22,7 +22,7 @@ export function CashWorkingCapitalPage() {
             </span>
           </div>
           <p className="text-xs text-ink-500 mt-1">
-            Quản trị dòng tiền thực thu, theo dõi công nợ sàn TMĐT chờ đối soát (Pending Settlements) và chu kỳ chuyển đổi tiền mặt (CCC).
+            Quản trị thanh khoản, theo dõi công nợ sàn TMĐT chờ đối soát và chu kỳ luân chuyển tiền mặt (CCC).
           </p>
         </div>
       </div>

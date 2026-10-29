@@ -147,13 +147,13 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
     <div className="p-6 lg:p-8 animate-fade-in-up space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink-900 tracking-tight">Wave giao hang</h1>
+          <h1 className="text-xl font-bold text-[#123A52] tracking-tight">Xử Lý Đơn & Đóng Gói (Wave Picking)</h1>
           <p className="text-sm text-ink-500 mt-0.5">
-            {waves.length} wave · {unassignedOrders.length} don chua gan
+            {waves.length} đợt nhặt hàng · {unassignedOrders.length} đơn chờ gom đợt
           </p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary">
-          <Plus size={16} /> Tao wave
+          <Plus size={16} /> Tạo đợt mới
         </button>
       </div>
 
@@ -161,7 +161,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
         <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
           <AlertTriangle size={18} className="text-rose-600" />
           <p className="text-sm text-rose-800">
-            <span className="font-semibold">{slaBreaches}</span> don chua gan vuot SLA — can tao wave ngay lap tuc.
+            <span className="font-semibold">{slaBreaches}</span> đơn chưa gom đợt sắp chạm hạn SLA — cần tạo đợt nhặt hàng ngay.
           </p>
         </div>
       )}
@@ -181,7 +181,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
         <Card>
           <EmptyState
             icon={Waves}
-            title={search || statusFilter !== 'all' ? 'Khong tim thay wave' : 'Chua co wave nao'}
+            title={search || statusFilter !== 'all' ? 'Không tìm thấy đợt nhặt hàng' : 'Chưa có đợt nhặt hàng nào'}
             description={
               search || statusFilter !== 'all'
                 ? 'Thu dieu chinh tim kiem hoac bo loc trang thai'
@@ -285,14 +285,14 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
                 {isOpen && (
                   <div className="border-t border-ink-100 p-5 animate-fade-in">
                     {(wave.orders ?? []).length === 0 ? (
-                      <p className="text-sm text-ink-400 py-2">Chua co don hang nao duoc gan vao wave nay.</p>
+                      <p className="text-sm text-ink-400 py-2">Chưa có đơn hàng nào được gắn vào đợt nhặt hàng này.</p>
                     ) : (
                       <table className="w-full text-sm">
                         <thead className="text-ink-500 text-xs uppercase tracking-wider">
                           <tr>
-                            <th className="text-left py-2 font-semibold">Don hang</th>
-                            <th className="text-left py-2 font-semibold">Khach hang</th>
-                            <th className="text-left py-2 font-semibold">Trang thai</th>
+                            <th className="text-left py-2 font-semibold">Đơn hàng</th>
+                            <th className="text-left py-2 font-semibold">Khách hàng</th>
+                            <th className="text-left py-2 font-semibold">Trạng thái</th>
                             <th className="text-left py-2 font-semibold">SLA</th>
                           </tr>
                         </thead>
@@ -349,7 +349,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
                       <div className="mt-4 flex justify-end">
                         <button onClick={() => advanceWave(wave)} className="btn-primary">
                           <Truck size={16} />
-                          Chuyen sang {WAVE_STATUS_LABELS[next]}
+                          Chuyển sang {WAVE_STATUS_LABELS[next]}
                         </button>
                       </div>
                     )}
@@ -409,11 +409,11 @@ function WaveFormModal({ open, warehouses, unassignedOrders, onClose, onSaved }:
 
   async function handleSave() {
     if (!warehouseId) {
-      toast('Vui long chon kho', 'error');
+      toast('Vui lòng chọn kho xuất hàng', 'error');
       return;
     }
     if (selectedOrders.size === 0) {
-      toast('Chon it nhat mot don hang', 'error');
+      toast('Vui lòng chọn ít nhất một đơn hàng', 'error');
       return;
     }
     setSaving(true);
@@ -442,7 +442,7 @@ function WaveFormModal({ open, warehouses, unassignedOrders, onClose, onSaved }:
       setSaving(false);
       return;
     }
-    toast(`Da tao wave voi ${selectedOrders.size} don`, 'success');
+    toast(`✓ Đã tạo đợt nhặt hàng với ${selectedOrders.size} đơn`, 'success');
     setSaving(false);
     onSaved();
   }
@@ -451,17 +451,17 @@ function WaveFormModal({ open, warehouses, unassignedOrders, onClose, onSaved }:
     <Modal
       open={open}
       onClose={onClose}
-      title="Tao wave giao hang moi"
-      subtitle="Gom don chua gan de picking va packing"
+      title="Tạo đợt nhặt hàng (Wave) mới"
+      subtitle="Gom đơn chờ để phân công nhặt hàng và đóng gói"
       size="lg"
       footer={
         <>
           <button onClick={onClose} className="btn-secondary">
-            Huy
+            Hủy
           </button>
           <button onClick={handleSave} disabled={saving} className="btn-primary">
             {saving && <Spinner size={16} />}
-            Tao wave ({selectedOrders.size})
+            Tạo đợt ({selectedOrders.size})
           </button>
         </>
       }
@@ -484,7 +484,7 @@ function WaveFormModal({ open, warehouses, unassignedOrders, onClose, onSaved }:
           </label>
           {whOrders.length === 0 ? (
             <p className="text-sm text-ink-400 py-4 text-center bg-ink-50 rounded-lg">
-              Khong co don chua gan cho kho nay.
+              Không có đơn chờ gom cho kho này.
             </p>
           ) : (
             <div className="max-h-64 overflow-y-auto border border-ink-200 rounded-lg divide-y divide-ink-100">
@@ -508,7 +508,7 @@ function WaveFormModal({ open, warehouses, unassignedOrders, onClose, onSaved }:
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-ink-900 text-sm">{o.order_number}</p>
                       <p className="text-xs text-ink-400 truncate">
-                        {o.customer?.name ?? 'Khach le'}
+                        {o.customer?.name ?? 'Khách lẻ'}
                       </p>
                     </div>
                     {o.must_ship_by_sla && (

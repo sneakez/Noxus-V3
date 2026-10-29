@@ -5,7 +5,6 @@ import {
   Users,
   ShoppingCart,
   Boxes,
-  Sparkles,
   ArrowLeftRight,
   ScrollText,
   ClipboardList,
@@ -104,25 +103,25 @@ const isMockMode = typeof import.meta !== 'undefined' && (import.meta.env?.VITE_
 export const navGroups: NavGroup[] = [
   // 1. Command Center
   {
-    label: '01 — Command Center',
+    label: '01 — Bảng Điều Hành',
     items: [
-      { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
-      { id: 'operationsAnalytics', label: 'Operations Cockpit & SLA', icon: Activity },
+      { id: 'dashboard', label: 'Bảng điều hành kinh doanh', icon: LayoutDashboard },
+      { id: 'operationsAnalytics', label: 'Vận hành & SLA kho', icon: Activity },
     ],
   },
   // 2. Commerce Operations
   {
-    label: '02 — Commerce Operations',
+    label: '02 — Vận Hành Đơn Hàng',
     items: [
       { id: 'orders', label: 'Đơn hàng đa kênh', icon: ShoppingCart },
-      { id: 'fulfillment', label: 'Wave Picking & SLA', icon: Truck },
-      { id: 'returns', label: 'Đổi trả & RMA 6 Nhánh', icon: PackageCheck },
+      { id: 'fulfillment', label: 'Xử lý đơn & Đóng gói', icon: Truck },
+      { id: 'returns', label: 'Đổi trả & Xử lý RMA', icon: PackageCheck },
       { id: 'customers', label: 'Khách hàng (CRM)', icon: Users },
     ],
   },
   // 3. Product & Inventory
   {
-    label: '03 — Product Intelligence',
+    label: '03 — Kho Vận & Sản Phẩm',
     items: [
       { id: 'products', label: 'Sản phẩm & SKU', icon: Package },
       { id: 'inventory', label: 'Tồn kho 5 trạng thái', icon: Boxes },
@@ -133,41 +132,41 @@ export const navGroups: NavGroup[] = [
   },
   // 4. Finance & Economics
   {
-    label: '04 — Finance Control Tower',
+    label: '04 — Tài Chính & P&L',
     items: [
-      { id: 'orderEconomics', label: 'Order Economics (P&L)', icon: Receipt },
-      { id: 'skuEconomics', label: 'SKU Portfolio Matrix', icon: BadgePercent },
-      { id: 'channelEconomics', label: 'Channel Economics & Phí sàn', icon: Layers },
+      { id: 'orderEconomics', label: 'Kinh tế đơn hàng (P&L)', icon: Receipt },
+      { id: 'skuEconomics', label: 'Biên lợi nhuận SKU', icon: BadgePercent },
+      { id: 'channelEconomics', label: 'Hiệu quả kênh & Phí sàn', icon: Layers },
       { id: 'cashWorkingCapital', label: 'Dòng tiền & Vốn lưu động', icon: Wallet },
-      { id: 'pricingCalculator', label: 'Pricing Intelligence', icon: Calculator, badge: 'Simulator' },
+      { id: 'pricingCalculator', label: 'Định giá & Hòa vốn', icon: Calculator },
     ],
   },
   // 5. Growth & Marketing
   {
-    label: '05 — Growth Engine',
+    label: '05 — Tăng Trưởng & Tiếp Thị',
     items: [
-      { id: 'marketingAnalytics', label: 'Marketing & Blended ROAS', icon: Target },
+      { id: 'marketingAnalytics', label: 'Hiệu quả Ads & ROAS', icon: Target },
       { id: 'customerAnalytics', label: 'Khách hàng & Cohorts', icon: HeartHandshake },
-      { id: 'salesAnalytics', label: 'Phân tích bán hàng & Vận tốc', icon: TrendingUp },
+      { id: 'salesAnalytics', label: 'Phân tích bán hàng', icon: TrendingUp },
     ],
   },
   // 6. Founder Execution
   {
-    label: '06 — Execution OS',
+    label: '06 — Điều Hành Chiến Lược',
     items: [
-      { id: 'founderExecution', label: 'Founder Cockpit & OKRs', icon: CheckSquare, badge: 'Mới' },
+      { id: 'founderExecution', label: 'Kế hoạch OKRs & Quyết định', icon: CheckSquare },
     ],
   },
   // System Settings & Utilities
   {
-    label: '07 — System & Trust',
+    label: '07 — Hệ Thống & Cấu Hình',
     items: [
       { id: 'channelConnections', label: 'Kênh bán & Kết nối API', icon: Link2 },
-      { id: 'settings', label: 'Cài đặt & RBAC', icon: Settings },
-      { id: 'auditTrail', label: 'Nhật ký Audit', icon: ShieldCheck },
+      { id: 'settings', label: 'Cài đặt & Phân quyền', icon: Settings },
+      { id: 'auditTrail', label: 'Nhật ký hệ thống (Audit)', icon: ShieldCheck },
       ...(isMockMode
         ? [
-            { id: 'ownerValidation' as PageId, label: '🧪 Demo Lab & Nghiệm Thu', icon: CheckCircle2, badge: 'Demo Lab' },
+            { id: 'ownerValidation' as PageId, label: 'Nghiệm thu nghiệp vụ', icon: CheckCircle2, badge: 'Demo' },
           ]
         : []),
     ],
@@ -187,7 +186,7 @@ const ROLE_LABELS: Record<TenantRole, string> = {
   admin: '⚡ Admin Quản Trị',
   manager: '📊 Trưởng Phòng OMS',
   warehouse: '📦 Nhân Viên Kho',
-  finance: '💰 Kế Toán Sổ Kép',
+  finance: '💰 Kế Toán Tài Chính',
   viewer: '👁️ Người Xem (Chỉ Đọc)',
 };
 
@@ -231,7 +230,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
         )}
       >
         {/* Brand Header */}
-        <div className="relative px-5 py-5 border-b border-white/5 shrink-0">
+        <div className="relative px-5 py-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-[#1E647F] flex items-center justify-center shadow-xs">
               <Boxes size={20} className="text-white" />
