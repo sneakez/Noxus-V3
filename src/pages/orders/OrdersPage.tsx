@@ -562,6 +562,35 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
         groups={columnGroups}
         rowKey={o => o.id}
         storageKey="orders"
+        selectable
+        bulkActions={(selectedIds, clearSelection) => (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                selectedIds.forEach(id => {
+                  mockStore.updateOrder(id, { status: 'processing' });
+                });
+                clearSelection();
+                toast(`Đã duyệt và khóa tồn thành công cho ${selectedIds.length} đơn hàng!`, 'success');
+              }}
+              className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold flex items-center gap-1 cursor-pointer transition-colors text-xs"
+            >
+              <CheckCircle2 size={13} />
+              <span>Duyệt Hàng Loạt</span>
+            </button>
+            <button
+              onClick={() => {
+                const targetOrders = orders.filter(o => selectedIds.includes(o.id));
+                exportOrdersToExcel(targetOrders);
+                toast(`Đã xuất Excel cho ${selectedIds.length} đơn hàng!`, 'success');
+              }}
+              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1 cursor-pointer transition-colors text-xs"
+            >
+              <Download size={13} />
+              <span>Xuất Excel</span>
+            </button>
+          </div>
+        )}
         searchPlaceholder="Tìm kiếm mã đơn, tên khách hàng, số điện thoại..."
         searchFilter={(o, q) =>
           o.order_number.toLowerCase().includes(q) ||

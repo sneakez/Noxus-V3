@@ -76,6 +76,7 @@ const MarketingAnalyticsPage = lazy(() => import('@/pages/analytics/MarketingAna
 const CustomerAnalyticsPage = lazy(() => import('@/pages/analytics/CustomerAnalyticsPage').then(m => ({ default: m.CustomerAnalyticsPage })));
 const OperationsAnalyticsPage = lazy(() => import('@/pages/analytics/OperationsAnalyticsPage').then(m => ({ default: m.OperationsAnalyticsPage })));
 const CashWorkingCapitalPage = lazy(() => import('@/pages/analytics/CashWorkingCapitalPage').then(m => ({ default: m.CashWorkingCapitalPage })));
+const FounderExecutionPage = lazy(() => import('@/pages/founder/FounderExecutionPage').then(m => ({ default: m.FounderExecutionPage })));
 
 interface PageMeta {
   title: string;
@@ -120,6 +121,7 @@ const PAGE_META: Record<PageId, PageMeta> = {
   customerAnalytics: { title: 'Khách hàng & Cohorts', subtitle: 'Ma trận giữ chân theo tháng (Cohort Retention) & Phân tầng RFM', searchPlaceholder: 'Tìm phân khúc...', primaryLabel: '' },
   operationsAnalytics: { title: 'Vận hành & Chu kỳ SLA', subtitle: 'Năng suất kho, Cycle Time, Picking/Packing time & Tỷ lệ giao thành công', searchPlaceholder: 'Tìm kiếm...', primaryLabel: '' },
   cashWorkingCapital: { title: 'Dòng tiền & Vốn lưu động', subtitle: 'Quản trị thanh khoản, chu kỳ chuyển đổi tiền mặt (CCC) & công nợ sàn', searchPlaceholder: 'Tìm đợt đối soát...', primaryLabel: '' },
+  founderExecution: { title: 'Founder Execution Cockpit', subtitle: 'Quản trị mục tiêu OKRs, nhiệm vụ điều hành & nhật ký quyết định', searchPlaceholder: 'Tìm kiếm mục tiêu hoặc nhiệm vụ...', primaryLabel: 'Thêm nhiệm vụ' },
 
   // Governance & Admin
   channelConnections: { title: 'Kết nối kênh', subtitle: 'Quản lý kết nối shop Shopee, TikTok, Lazada', searchPlaceholder: 'Tìm kết nối...', primaryLabel: 'Thêm kết nối' },
@@ -238,6 +240,7 @@ function AuthenticatedWorkspace() {
               {page === 'customerAnalytics' && <CustomerAnalyticsPage />}
               {page === 'operationsAnalytics' && <OperationsAnalyticsPage />}
               {page === 'cashWorkingCapital' && <CashWorkingCapitalPage />}
+              {page === 'founderExecution' && <FounderExecutionPage />}
 
               {/* Governance & Admin */}
               {page === 'channelConnections' && <ChannelConnectionsPage search={search} />}

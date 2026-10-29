@@ -1,18 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   SlidersHorizontal,
   Search,
-  Eye,
-  EyeOff,
   Maximize2,
   Minimize2,
-  RotateCcw,
-  Check
+  Check,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -53,7 +54,7 @@ export interface HierarchicalDataGridProps<T> {
   groups: DataGridColumnGroup<T>[];
   rowKey: (item: T) => string;
   renderExpandedRow?: (item: T) => React.ReactNode;
-  renderMobileCard?: (item: T, isExpanded: boolean, onToggleExpand: () => void) => React.ReactNode;
+  renderMobileCard?: (item: T, isExpanded: boolean, onToggleExpand: () => void, isSelected?: boolean, onToggleSelect?: () => void) => React.ReactNode;
   onRowClick?: (item: T) => void;
   searchPlaceholder?: string;
   searchFilter?: (item: T, query: string) => boolean;
@@ -64,6 +65,12 @@ export interface HierarchicalDataGridProps<T> {
   emptyState?: React.ReactNode;
   defaultSort?: { columnId: string; direction: 'asc' | 'desc' };
   pageSize?: number;
+  pageSizeOptions?: number[];
+  enablePagination?: boolean;
+  selectable?: boolean;
+  selectedRowIds?: Set<string>;
+  onSelectionChange?: (selectedIds: Set<string>) => void;
+  bulkActions?: (selectedIds: string[], clearSelection: () => void) => React.ReactNode;
   storageKey?: string;
   customPresets?: GridPreset[];
   className?: string;
@@ -84,23 +91,37 @@ export function HierarchicalDataGrid<T>({
   actions,
   emptyState,
   defaultSort,
-  pageSize = 15,
+  pageSize: initialPageSize = 15,
+  pageSizeOptions = [10, 15, 25, 50],
+  enablePagination = true,
+  selectable = false,
+  selectedRowIds: controlledSelectedIds,
+  onSelectionChange,
+  bulkActions,
   storageKey,
   customPresets,
   className
 }: HierarchicalDataGridProps<T>) {
-  // State for search query
+  // Search query
   const [searchQuery, setSearchQuery] = useState('');
 
-  // State for expanded rows (Set of row IDs)
+  // Expanded rows
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [actualPageSize, setActualPageSize] = useState(initialPageSize);
+
+  // Selection states
+  const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
+  const selectedIds = controlledSelectedIds ?? internalSelectedIds;
+  const isSelectionEnabled = selectable || Boolean(bulkActions);
 
   // Default presets based on groups
   const presets: GridPreset[] = useMemo(() => {
     if (customPresets && customPresets.length > 0) return customPresets;
     const allGroupIds = groups.map(g => g.id);
 
-    // Auto-detect groups
     const infoIds = groups.filter(g => g.id.includes('info') || g.id.includes('sku') || g.id.includes('order')).map(g => g.id);
     const financeIds = groups.filter(g => g.id.includes('finance') || g.id.includes('revenue')).map(g => g.id);
     const opIds = groups.filter(g => g.id.includes('operations') || g.id.includes('stock') || g.id.includes('inventory')).map(g => g.id);
@@ -131,10 +152,9 @@ export function HierarchicalDataGrid<T>({
     ];
   }, [groups, customPresets]);
 
-  // Active preset state
   const [activePreset, setActivePreset] = useState<GridPresetType | null>(null);
 
-  // State for visible column groups with localStorage initialization
+  // Visible groups with localStorage initialization
   const [visibleGroupIds, setVisibleGroupIds] = useState<Set<string>>(() => {
     if (storageKey && typeof window !== 'undefined') {
       try {
@@ -159,7 +179,6 @@ export function HierarchicalDataGrid<T>({
     return initial;
   });
 
-  // Save to localStorage when visibleGroupIds changes
   const savePreferences = (newSet: Set<string>) => {
     setVisibleGroupIds(newSet);
     if (storageKey && typeof window !== 'undefined') {
@@ -171,7 +190,6 @@ export function HierarchicalDataGrid<T>({
     }
   };
 
-  // Switch to a preset
   const applyPreset = (presetId: GridPresetType) => {
     const target = presets.find(p => p.id === presetId);
     if (target) {
@@ -181,15 +199,13 @@ export function HierarchicalDataGrid<T>({
     }
   };
 
-  // State for column group dropdown menu
   const [showGroupSelector, setShowGroupSelector] = useState(false);
 
-  // State for sorting
+  // Sorting state
   const [sortState, setSortState] = useState<{ columnId: string; direction: 'asc' | 'desc' } | null>(
     defaultSort || null
   );
 
-  // Filter visible groups & their columns
   const activeGroups = useMemo(() => {
     return groups.filter(g => visibleGroupIds.has(g.id));
   }, [groups, visibleGroupIds]);
@@ -204,19 +220,23 @@ export function HierarchicalDataGrid<T>({
     return cols;
   }, [activeGroups]);
 
-  // Filter data by search query
+  // Filter by search
   const searchedData = useMemo(() => {
     if (!searchQuery.trim() || !searchFilter) return data;
     const q = searchQuery.trim().toLowerCase();
     return data.filter(item => searchFilter(item, q));
   }, [data, searchQuery, searchFilter]);
 
+  // Reset page when search or data length changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, data.length]);
+
   // Sort data
   const sortedData = useMemo(() => {
     if (!sortState) return searchedData;
     const { columnId, direction } = sortState;
 
-    // Find column
     let targetCol: DataGridColumn<T> | undefined;
     for (const g of groups) {
       targetCol = g.columns.find(c => c.id === columnId);
@@ -235,6 +255,77 @@ export function HierarchicalDataGrid<T>({
     });
   }, [searchedData, sortState, groups]);
 
+  // Pagination calculation
+  const totalPages = useMemo(() => {
+    if (!enablePagination || sortedData.length === 0) return 1;
+    return Math.max(1, Math.ceil(sortedData.length / actualPageSize));
+  }, [sortedData.length, actualPageSize, enablePagination]);
+
+  const clampedPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedData = useMemo(() => {
+    if (!enablePagination) return sortedData;
+    const startIdx = (clampedPage - 1) * actualPageSize;
+    return sortedData.slice(startIdx, startIdx + actualPageSize);
+  }, [sortedData, clampedPage, actualPageSize, enablePagination]);
+
+  // Row selection helpers
+  const handleToggleSelectRow = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    if (onSelectionChange) {
+      onSelectionChange(next);
+    } else {
+      setInternalSelectedIds(next);
+    }
+  };
+
+  const handleToggleSelectAll = () => {
+    const next = new Set<string>();
+    const currentKeys = paginatedData.map(rowKey);
+    const allSelectedOnPage = currentKeys.every(k => selectedIds.has(k));
+
+    if (!allSelectedOnPage) {
+      // Select all on current page
+      selectedIds.forEach(k => next.add(k));
+      currentKeys.forEach(k => next.add(k));
+    } else {
+      // Deselect all on current page
+      selectedIds.forEach(k => {
+        if (!currentKeys.includes(k)) next.add(k);
+      });
+    }
+
+    if (onSelectionChange) {
+      onSelectionChange(next);
+    } else {
+      setInternalSelectedIds(next);
+    }
+  };
+
+  const handleClearSelection = () => {
+    const next = new Set<string>();
+    if (onSelectionChange) {
+      onSelectionChange(next);
+    } else {
+      setInternalSelectedIds(next);
+    }
+  };
+
+  // Header checkbox indeterminate ref
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!headerCheckboxRef.current) return;
+    const currentKeys = paginatedData.map(rowKey);
+    const countSelected = currentKeys.filter(k => selectedIds.has(k)).length;
+    headerCheckboxRef.current.indeterminate = countSelected > 0 && countSelected < currentKeys.length;
+  }, [paginatedData, selectedIds, rowKey]);
+
   // Toggle single row expand
   const toggleRowExpand = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -251,14 +342,13 @@ export function HierarchicalDataGrid<T>({
 
   // Toggle all rows expand
   const toggleExpandAll = () => {
-    if (expandedRowIds.size === sortedData.length) {
+    if (expandedRowIds.size === paginatedData.length) {
       setExpandedRowIds(new Set());
     } else {
-      setExpandedRowIds(new Set(sortedData.map(rowKey)));
+      setExpandedRowIds(new Set(paginatedData.map(rowKey)));
     }
   };
 
-  // Toggle column group visibility
   const toggleGroupVisibility = (groupId: string) => {
     setActivePreset(null);
     const next = new Set(visibleGroupIds);
@@ -272,47 +362,73 @@ export function HierarchicalDataGrid<T>({
     savePreferences(next);
   };
 
-  // Handle column header sort click
   const handleSortClick = (column: DataGridColumn<T>) => {
     if (!column.sortable) return;
     setSortState(prev => {
       if (prev?.columnId === column.id) {
         if (prev.direction === 'asc') return { columnId: column.id, direction: 'desc' };
-        return null; // Reset to unsorted
+        return null;
       }
       return { columnId: column.id, direction: 'asc' };
     });
   };
 
+  const startRecord = sortedData.length === 0 ? 0 : (clampedPage - 1) * actualPageSize + 1;
+  const endRecord = Math.min(sortedData.length, clampedPage * actualPageSize);
+
   return (
-    <div className={cn('rounded-2xl bg-white border border-ink-200/90 shadow-sm overflow-hidden flex flex-col', className)}>
+    <div className={cn('rounded-2xl bg-white border border-slate-200/90 shadow-sm overflow-hidden flex flex-col relative', className)}>
+      {/* Floating Bulk Action Bar */}
+      {isSelectionEnabled && selectedIds.size > 0 && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white px-4 py-2 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 animate-fade-in-up text-xs font-sans">
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="w-5 h-5 rounded-full bg-teal-500 text-white flex items-center justify-center text-[10px] font-bold">
+              {selectedIds.size}
+            </span>
+            <span>Đã chọn {selectedIds.size} mục</span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700" />
+
+          {bulkActions && bulkActions(Array.from(selectedIds), handleClearSelection)}
+
+          <button
+            onClick={handleClearSelection}
+            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-1 cursor-pointer"
+            title="Bỏ chọn tất cả"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Top Action & Filter Toolbar */}
-      <div className="p-3 sm:p-4 border-b border-ink-100 bg-ink-50/40 flex items-center justify-between gap-2.5 flex-wrap">
+      <div className="p-3 sm:p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2.5 flex-wrap">
         {/* Title & Subtitle or Search */}
         <div className="flex items-center gap-2.5 flex-1 min-w-[240px] flex-wrap">
           {title && (
             <div className="mr-2">
-              <h3 className="text-sm sm:text-base font-extrabold text-ink-900 tracking-tight">{title}</h3>
-              {subtitle && <p className="text-[11px] text-ink-500 font-medium">{subtitle}</p>}
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">{title}</h3>
+              {subtitle && <p className="text-[11px] text-slate-500 font-medium">{subtitle}</p>}
             </div>
           )}
 
           {searchFilter && (
             <div className="relative flex-1 max-w-xs min-w-[180px]">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full text-xs py-1.5 pl-8 pr-3 rounded-lg border border-ink-200 bg-white placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-sans"
+                className="w-full text-xs py-1.5 pl-8 pr-3 rounded-lg border border-slate-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-sans"
               />
             </div>
           )}
 
-          {/* 4 Standard Presets (Simple, Operations, Analytics, All) */}
-          <div className="hidden lg:flex items-center gap-1 bg-ink-100/70 p-0.5 rounded-xl border border-ink-200/60 shrink-0">
-            <span className="text-[10px] font-bold text-ink-500 uppercase px-1.5">Góc nhìn:</span>
+          {/* 4 Standard Presets */}
+          <div className="hidden lg:flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200/60 shrink-0">
+            <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5">Góc nhìn:</span>
             {presets.map(p => (
               <button
                 key={p.id}
@@ -320,8 +436,8 @@ export function HierarchicalDataGrid<T>({
                 className={cn(
                   'px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer',
                   activePreset === p.id
-                    ? 'bg-white text-brand-800 shadow-xs font-bold border border-ink-200'
-                    : 'text-ink-600 hover:text-ink-900 hover:bg-white/60'
+                    ? 'bg-white text-teal-800 shadow-xs font-bold border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 )}
                 title={`Chuyển sang góc nhìn ${p.label}`}
               >
@@ -340,8 +456,8 @@ export function HierarchicalDataGrid<T>({
             <button
               onClick={() => setShowGroupSelector(!showGroupSelector)}
               className={cn(
-                'btn btn-secondary text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-all cursor-pointer',
-                visibleGroupIds.size < groups.length && 'border-brand-500 text-brand-700 bg-brand-50/50'
+                'btn btn-secondary text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-all cursor-pointer border-slate-200',
+                visibleGroupIds.size < groups.length && 'border-teal-500 text-teal-700 bg-teal-50/50'
               )}
               title="Tùy chỉnh nhóm cột hiển thị"
             >
@@ -350,12 +466,10 @@ export function HierarchicalDataGrid<T>({
               <ChevronDown size={12} className={cn('transition-transform', showGroupSelector && 'rotate-180')} />
             </button>
 
-            {/* Dropdown Menu */}
             {showGroupSelector && (
-              <div className="absolute right-0 top-full mt-1.5 w-64 rounded-xl bg-white border border-ink-200 shadow-xl z-50 p-2 space-y-1.5 animate-fade-in-up text-xs font-sans">
-                {/* Presets in Dropdown for Mobile / Tablet */}
-                <div className="lg:hidden pb-1.5 border-b border-ink-100">
-                  <span className="text-[10px] font-bold text-ink-400 uppercase block mb-1">Góc nhìn mẫu:</span>
+              <div className="absolute right-0 top-full mt-1.5 w-64 rounded-xl bg-white border border-slate-200 shadow-xl z-50 p-2 space-y-1.5 animate-fade-in-up text-xs font-sans">
+                <div className="lg:hidden pb-1.5 border-b border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Góc nhìn mẫu:</span>
                   <div className="grid grid-cols-2 gap-1">
                     {presets.map(p => (
                       <button
@@ -364,8 +478,8 @@ export function HierarchicalDataGrid<T>({
                         className={cn(
                           'px-2 py-1 rounded text-[10px] font-bold border text-center transition-all',
                           activePreset === p.id
-                            ? 'bg-brand-50 border-brand-500 text-brand-800'
-                            : 'bg-ink-50 border-ink-200 text-ink-600'
+                            ? 'bg-teal-50 border-teal-500 text-teal-800'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'
                         )}
                       >
                         {p.label}
@@ -374,7 +488,7 @@ export function HierarchicalDataGrid<T>({
                   </div>
                 </div>
 
-                <div className="px-2 py-1 border-b border-ink-100 flex items-center justify-between text-[11px] font-bold text-ink-500 uppercase tracking-wider">
+                <div className="px-2 py-1 border-b border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <span>Ẩn / Hiện Nhóm Cột</span>
                   <button
                     onClick={() => {
@@ -382,7 +496,7 @@ export function HierarchicalDataGrid<T>({
                       setActivePreset('all');
                       savePreferences(all);
                     }}
-                    className="text-brand-600 hover:text-brand-700 font-normal normal-case cursor-pointer"
+                    className="text-teal-600 hover:text-teal-700 font-normal normal-case cursor-pointer"
                   >
                     Hiện tất cả
                   </button>
@@ -396,16 +510,16 @@ export function HierarchicalDataGrid<T>({
                         onClick={() => toggleGroupVisibility(group.id)}
                         className={cn(
                           'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer',
-                          isVisible ? 'bg-brand-50/60 text-brand-900 font-bold' : 'text-ink-500 hover:bg-ink-50'
+                          isVisible ? 'bg-teal-50/60 text-teal-900 font-bold' : 'text-slate-500 hover:bg-slate-50'
                         )}
                       >
                         <div className="flex items-center gap-2">
-                          <span className={cn('w-4 h-4 rounded flex items-center justify-center text-[10px] border', isVisible ? 'bg-brand-600 border-brand-600 text-white' : 'border-ink-300')}>
+                          <span className={cn('w-4 h-4 rounded flex items-center justify-center text-[10px] border', isVisible ? 'bg-teal-600 border-teal-600 text-white' : 'border-slate-300')}>
                             {isVisible && <Check size={11} />}
                           </span>
                           <span>{group.title}</span>
                         </div>
-                        <span className="text-[10px] text-ink-400 font-mono">({group.columns.length} cột)</span>
+                        <span className="text-[10px] text-slate-400 font-mono">({group.columns.length} cột)</span>
                       </button>
                     );
                   })}
@@ -418,12 +532,12 @@ export function HierarchicalDataGrid<T>({
           {renderExpandedRow && (
             <button
               onClick={toggleExpandAll}
-              className="btn btn-secondary text-xs py-1.5 px-2 text-ink-600 hover:text-ink-900 hidden sm:flex items-center gap-1"
-              title={expandedRowIds.size === sortedData.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả dòng'}
+              className="btn btn-secondary text-xs py-1.5 px-2 text-slate-600 hover:text-slate-900 hidden sm:flex items-center gap-1 border-slate-200"
+              title={expandedRowIds.size === paginatedData.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả dòng'}
             >
-              {expandedRowIds.size === sortedData.length ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              {expandedRowIds.size === paginatedData.length ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
               <span className="hidden md:inline">
-                {expandedRowIds.size === sortedData.length ? 'Thu gọn' : 'Mở tất cả'}
+                {expandedRowIds.size === paginatedData.length ? 'Thu gọn' : 'Mở tất cả'}
               </span>
             </button>
           )}
@@ -437,9 +551,26 @@ export function HierarchicalDataGrid<T>({
         <table className="w-full text-xs text-left border-collapse">
           {/* Level 1: Grouped Column Headers */}
           <thead>
-            <tr className="border-b border-ink-200 bg-ink-100/70 text-ink-600 font-mono text-[10px] uppercase tracking-wider">
+            <tr className="border-b border-slate-200 bg-slate-100/80 text-slate-600 font-mono text-[10px] uppercase tracking-wider">
+              {/* Select All Checkbox Header */}
+              {isSelectionEnabled && (
+                <th className="w-10 py-2 px-2.5 text-center sticky left-0 bg-slate-100 z-30 border-r border-slate-200">
+                  <input
+                    ref={headerCheckboxRef}
+                    type="checkbox"
+                    checked={paginatedData.length > 0 && paginatedData.every(item => selectedIds.has(rowKey(item)))}
+                    onChange={handleToggleSelectAll}
+                    className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                    title="Chọn tất cả trên trang hiện tại"
+                  />
+                </th>
+              )}
+
               {renderExpandedRow && (
-                <th className="w-9 py-2 px-2 text-center sticky left-0 bg-ink-100/90 z-20 border-r border-ink-200" />
+                <th className={cn(
+                  'w-9 py-2 px-2 text-center z-20 border-r border-slate-200 bg-slate-100',
+                  isSelectionEnabled ? 'sticky left-10' : 'sticky left-0'
+                )} />
               )}
 
               {activeGroups.map((group, gIdx) => (
@@ -447,14 +578,14 @@ export function HierarchicalDataGrid<T>({
                   key={group.id}
                   colSpan={group.columns.length}
                   className={cn(
-                    'py-2 px-3.5 font-extrabold text-ink-800 text-center border-r border-ink-200 last:border-r-0',
-                    gIdx % 2 === 0 ? 'bg-ink-100/90' : 'bg-brand-50/50 text-brand-900'
+                    'py-2 px-3.5 font-extrabold text-slate-800 text-center border-r border-slate-200 last:border-r-0',
+                    gIdx % 2 === 0 ? 'bg-slate-100' : 'bg-teal-50/60 text-teal-900'
                   )}
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     <span>{group.title}</span>
                     {group.badge && (
-                      <span className={cn('badge text-[9px] px-1 py-0 rounded', group.badgeColor || 'bg-brand-100 text-brand-800 border-brand-200')}>
+                      <span className={cn('badge text-[9px] px-1 py-0 rounded', group.badgeColor || 'bg-teal-100 text-teal-800 border-teal-200')}>
                         {group.badge}
                       </span>
                     )}
@@ -464,14 +595,24 @@ export function HierarchicalDataGrid<T>({
             </tr>
 
             {/* Level 2: Individual Sub-Column Headers */}
-            <tr className="border-b border-ink-200/80 bg-ink-50/90 text-ink-600 font-sans font-bold text-[11px]">
-              {renderExpandedRow && (
-                <th className="w-9 py-2.5 px-2 text-center sticky left-0 bg-ink-50/90 z-20 border-r border-ink-200" />
+            <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-sans font-bold text-[11px]">
+              {isSelectionEnabled && (
+                <th className="w-10 py-2.5 px-2.5 text-center sticky left-0 bg-slate-50 z-30 border-r border-slate-200" />
               )}
 
-              {activeColumns.map((col, cIdx) => {
+              {renderExpandedRow && (
+                <th className={cn(
+                  'w-9 py-2.5 px-2 text-center z-20 border-r border-slate-200 bg-slate-50',
+                  isSelectionEnabled ? 'sticky left-10' : 'sticky left-0'
+                )} />
+              )}
+
+              {activeColumns.map((col) => {
                 const isSorted = sortState?.columnId === col.id;
                 const isStickyLeft = col.sticky === 'left';
+                const stickyLeftPos = isStickyLeft
+                  ? (isSelectionEnabled ? (renderExpandedRow ? 'left-[76px]' : 'left-10') : (renderExpandedRow ? 'left-9' : 'left-0'))
+                  : undefined;
 
                 return (
                   <th
@@ -480,22 +621,22 @@ export function HierarchicalDataGrid<T>({
                     onClick={() => handleSortClick(col)}
                     className={cn(
                       'py-2.5 px-3.5 transition-colors select-none font-bold',
-                      col.sortable && 'cursor-pointer hover:bg-ink-100/90 hover:text-ink-900',
+                      col.sortable && 'cursor-pointer hover:bg-slate-100 hover:text-slate-900',
                       col.align === 'right' && 'text-right',
                       col.align === 'center' && 'text-center',
-                      isStickyLeft && 'sticky left-9 z-20 bg-ink-50/90 border-r border-ink-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]',
+                      isStickyLeft && cn('sticky z-20 bg-slate-50 border-r border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]', stickyLeftPos),
                       col.className
                     )}
                   >
                     <div className={cn('inline-flex items-center gap-1.5', col.align === 'right' && 'justify-end')}>
                       <span>{col.header}</span>
                       {col.sortable && (
-                        <span className="text-ink-400">
+                        <span className="text-slate-400">
                           {isSorted ? (
                             sortState.direction === 'asc' ? (
-                              <ArrowUp size={11} className="text-brand-600 font-bold" />
+                              <ArrowUp size={11} className="text-teal-600 font-bold" />
                             ) : (
-                              <ArrowDown size={11} className="text-brand-600 font-bold" />
+                              <ArrowDown size={11} className="text-teal-600 font-bold" />
                             )
                           ) : (
                             <ArrowUpDown size={10} className="opacity-40 group-hover:opacity-100" />
@@ -510,22 +651,26 @@ export function HierarchicalDataGrid<T>({
           </thead>
 
           {/* Table Body */}
-          <tbody className="divide-y divide-ink-100 font-sans text-ink-800">
-            {sortedData.length === 0 ? (
+          <tbody className="divide-y divide-slate-100 font-sans text-slate-800">
+            {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={activeColumns.length + (renderExpandedRow ? 1 : 0)} className="py-12 text-center text-ink-400">
+                <td
+                  colSpan={activeColumns.length + (renderExpandedRow ? 1 : 0) + (isSelectionEnabled ? 1 : 0)}
+                  className="py-12 text-center text-slate-400"
+                >
                   {emptyState || (
                     <div className="space-y-1">
-                      <p className="font-semibold text-sm text-ink-700">Không tìm thấy bản ghi phù hợp</p>
-                      <p className="text-xs text-ink-400">Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
+                      <p className="font-semibold text-sm text-slate-700">Không tìm thấy bản ghi phù hợp</p>
+                      <p className="text-xs text-slate-400">Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
                     </div>
                   )}
                 </td>
               </tr>
             ) : (
-              sortedData.map((item, rowIdx) => {
+              paginatedData.map((item, rowIdx) => {
                 const id = rowKey(item);
                 const isExpanded = expandedRowIds.has(id);
+                const isSelected = selectedIds.has(id);
 
                 return (
                   <React.Fragment key={id}>
@@ -533,22 +678,40 @@ export function HierarchicalDataGrid<T>({
                     <tr
                       onClick={() => onRowClick ? onRowClick(item) : toggleRowExpand(id)}
                       className={cn(
-                        'transition-colors group hover:bg-ink-50/70',
-                        isExpanded ? 'bg-brand-50/30 font-medium' : rowIdx % 2 === 0 ? 'bg-white' : 'bg-ink-50/20',
+                        'transition-colors group hover:bg-teal-50/30',
+                        isSelected ? 'bg-teal-50/50' : isExpanded ? 'bg-teal-50/20 font-medium' : rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30',
                         onRowClick && 'cursor-pointer'
                       )}
                     >
+                      {/* Selection Checkbox Cell */}
+                      {isSelectionEnabled && (
+                        <td
+                          className="w-10 py-3 px-2.5 text-center sticky left-0 z-10 bg-inherit border-r border-slate-100"
+                          onClick={(e) => handleToggleSelectRow(id, e)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(id)}
+                            className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                          />
+                        </td>
+                      )}
+
                       {/* Expand Toggle Chevron Column */}
                       {renderExpandedRow && (
                         <td
-                          className="w-9 py-3 px-2 text-center sticky left-0 z-10 bg-inherit border-r border-ink-100"
+                          className={cn(
+                            'w-9 py-3 px-2 text-center z-10 bg-inherit border-r border-slate-100',
+                            isSelectionEnabled ? 'sticky left-10' : 'sticky left-0'
+                          )}
                           onClick={(e) => toggleRowExpand(id, e)}
                         >
                           <button
                             type="button"
                             className={cn(
-                              'w-6 h-6 rounded-md flex items-center justify-center text-ink-400 hover:text-brand-600 hover:bg-brand-100/50 transition-all mx-auto',
-                              isExpanded && 'bg-brand-100 text-brand-700 rotate-90'
+                              'w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-teal-600 hover:bg-teal-100/50 transition-all mx-auto cursor-pointer',
+                              isExpanded && 'bg-teal-100 text-teal-700 rotate-90'
                             )}
                             title={isExpanded ? 'Thu gọn dòng' : 'Mở rộng chi tiết dòng'}
                           >
@@ -560,6 +723,9 @@ export function HierarchicalDataGrid<T>({
                       {/* Data Columns */}
                       {activeColumns.map((col) => {
                         const isStickyLeft = col.sticky === 'left';
+                        const stickyLeftPos = isStickyLeft
+                          ? (isSelectionEnabled ? (renderExpandedRow ? 'left-[76px]' : 'left-10') : (renderExpandedRow ? 'left-9' : 'left-0'))
+                          : undefined;
 
                         return (
                           <td
@@ -568,7 +734,7 @@ export function HierarchicalDataGrid<T>({
                               'py-3 px-3.5 align-middle',
                               col.align === 'right' && 'text-right font-mono',
                               col.align === 'center' && 'text-center',
-                              isStickyLeft && 'sticky left-9 z-10 bg-inherit border-r border-ink-100 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] font-bold',
+                              isStickyLeft && cn('sticky z-10 bg-inherit border-r border-slate-100 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] font-bold', stickyLeftPos),
                               col.className
                             )}
                           >
@@ -580,9 +746,9 @@ export function HierarchicalDataGrid<T>({
 
                     {/* Nested Expandable Row Container */}
                     {renderExpandedRow && isExpanded && (
-                      <tr className="bg-ink-50/80 border-b border-brand-200/80">
-                        <td colSpan={activeColumns.length + 1} className="p-0">
-                          <div className="p-4 sm:p-5 border-l-4 border-brand-500 bg-white/80 space-y-3 animate-fade-in-up">
+                      <tr className="bg-slate-50/80 border-b border-teal-200/80">
+                        <td colSpan={activeColumns.length + 1 + (isSelectionEnabled ? 1 : 0)} className="p-0">
+                          <div className="p-4 sm:p-5 border-l-4 border-teal-500 bg-white space-y-3 animate-fade-in-up">
                             {renderExpandedRow(item)}
                           </div>
                         </td>
@@ -597,22 +763,29 @@ export function HierarchicalDataGrid<T>({
       </div>
 
       {/* Mobile Card Layout (< 768px) */}
-      <div className="md:hidden divide-y divide-ink-100">
-        {sortedData.length === 0 ? (
-          <div className="p-8 text-center text-ink-400">
+      <div className="md:hidden divide-y divide-slate-100">
+        {paginatedData.length === 0 ? (
+          <div className="p-8 text-center text-slate-400">
             {emptyState || 'Không có dữ liệu phù hợp'}
           </div>
         ) : (
-          sortedData.map((item) => {
+          paginatedData.map((item) => {
             const id = rowKey(item);
             const isExpanded = expandedRowIds.has(id);
+            const isSelected = selectedIds.has(id);
 
             if (renderMobileCard) {
               return (
-                <div key={id} className="p-3.5 space-y-2.5">
-                  {renderMobileCard(item, isExpanded, () => toggleRowExpand(id))}
+                <div key={id} className={cn('p-3.5 space-y-2.5', isSelected && 'bg-teal-50/40')}>
+                  {renderMobileCard(
+                    item,
+                    isExpanded,
+                    () => toggleRowExpand(id),
+                    isSelected,
+                    () => handleToggleSelectRow(id)
+                  )}
                   {renderExpandedRow && isExpanded && (
-                    <div className="pt-2 border-t border-ink-200/80 mt-2 space-y-2">
+                    <div className="pt-2 border-t border-slate-200 mt-2 space-y-2">
                       {renderExpandedRow(item)}
                     </div>
                   )}
@@ -620,15 +793,24 @@ export function HierarchicalDataGrid<T>({
               );
             }
 
-            // Fallback default mobile card
             return (
-              <div key={id} className="p-3.5 space-y-2">
+              <div key={id} className={cn('p-3.5 space-y-2', isSelected && 'bg-teal-50/40')}>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-ink-900 text-xs">{id}</span>
+                  <div className="flex items-center gap-2">
+                    {isSelectionEnabled && (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelectRow(id)}
+                        className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      />
+                    )}
+                    <span className="font-mono font-bold text-slate-900 text-xs">{id}</span>
+                  </div>
                   {renderExpandedRow && (
                     <button
                       onClick={() => toggleRowExpand(id)}
-                      className="text-xs text-brand-600 font-semibold flex items-center gap-1"
+                      className="text-xs text-teal-600 font-semibold flex items-center gap-1"
                     >
                       <span>{isExpanded ? 'Đóng' : 'Chi tiết'}</span>
                       <ChevronRight size={12} className={cn('transition-transform', isExpanded && 'rotate-90')} />
@@ -639,14 +821,14 @@ export function HierarchicalDataGrid<T>({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {activeColumns.slice(0, 4).map((col) => (
                     <div key={col.id}>
-                      <span className="text-[10px] text-ink-400 block">{col.header}:</span>
-                      <div className="font-medium text-ink-800">{col.accessor(item)}</div>
+                      <span className="text-[10px] text-slate-400 block">{col.header}:</span>
+                      <div className="font-medium text-slate-800">{col.accessor(item)}</div>
                     </div>
                   ))}
                 </div>
 
                 {renderExpandedRow && isExpanded && (
-                  <div className="pt-2 border-t border-ink-100 mt-2 space-y-2">
+                  <div className="pt-2 border-t border-slate-100 mt-2 space-y-2">
                     {renderExpandedRow(item)}
                   </div>
                 )}
@@ -656,17 +838,85 @@ export function HierarchicalDataGrid<T>({
         )}
       </div>
 
-      {/* Footer / Total Counter Strip */}
-      <div className="p-2.5 sm:p-3 bg-ink-50/80 border-t border-ink-100 text-[11px] text-ink-500 font-mono flex items-center justify-between flex-wrap gap-2">
-        <div>
-          Hiển thị <strong className="text-ink-900">{sortedData.length}</strong> bản ghi
-          {searchQuery && ` (lọc từ ${data.length})`}
-        </div>
-        <div className="flex items-center gap-2 text-[10px]">
-          <span className="badge bg-ink-200 text-ink-700 border-ink-300">
-            {activeGroups.length} Nhóm Cột Đang Bật
+      {/* Footer & Interactive Pagination Bar */}
+      <div className="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-600 font-sans flex items-center justify-between flex-wrap gap-3">
+        {/* Record count info */}
+        <div className="flex items-center gap-2 font-mono">
+          <span>
+            Hiển thị <strong className="text-slate-900">{startRecord} - {endRecord}</strong> trong số <strong className="text-slate-900">{sortedData.length}</strong> bản ghi
           </span>
-          <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300">
+          {searchQuery && <span className="text-slate-400 font-sans">(đã lọc từ {data.length})</span>}
+        </div>
+
+        {/* Pagination controls & Page Size Selector */}
+        {enablePagination && totalPages > 1 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Page Size Selector */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-slate-500 text-[11px]">Dòng:</span>
+              <select
+                value={actualPageSize}
+                onChange={e => {
+                  setActualPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="py-1 px-2 border border-slate-200 rounded-md bg-white text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
+              >
+                {pageSizeOptions.map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={clampedPage === 1}
+                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Trang đầu"
+              >
+                <ChevronsLeft size={14} />
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={clampedPage === 1}
+                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Trang trước"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              <span className="px-2 py-0.5 text-xs font-mono font-medium text-slate-700 bg-white border border-slate-200 rounded">
+                {clampedPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={clampedPage === totalPages}
+                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Trang sau"
+              >
+                <ChevronRight size={14} />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={clampedPage === totalPages}
+                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Trang cuối"
+              >
+                <ChevronsRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Column group status badges */}
+        <div className="hidden sm:flex items-center gap-2 text-[10px]">
+          <span className="badge bg-slate-200 text-slate-700 border-slate-300">
+            {activeGroups.length} Nhóm Cột
+          </span>
+          <span className="badge bg-teal-50 text-teal-800 border-teal-200">
             {activeColumns.length} Cột Dữ Liệu
           </span>
         </div>
