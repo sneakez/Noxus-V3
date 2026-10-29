@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -33,7 +33,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/providers/AuthProvider';
-import type { UserRole, TenantRole } from '@/types';
+import { getAllowedPagesForRole } from '@/lib/permissions';
+import type { TenantRole } from '@/types';
 
 export type PageId =
   // 1. Command Center
@@ -91,7 +92,6 @@ interface NavItem {
   id: PageId;
   label: string;
   icon: typeof LayoutDashboard;
-  roles?: UserRole[];
   badge?: string;
   isMockOnly?: boolean;
 }
@@ -206,6 +206,7 @@ const ALL_ROLES: Array<{ id: TenantRole; label: string; desc: string }> = [
 
 export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose }: SidebarProps) {
   const { profile, signOut, switchRole, activeRole } = useAuth();
+  const currentRole: TenantRole = activeRole ?? 'owner';
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const roleSwitcherRef = useRef<HTMLDivElement>(null);
 
@@ -219,26 +220,25 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredGroups = navGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => {
-        if (!item.roles) return true;
-        if (activeRole === 'owner' || activeRole === 'admin') return true;
-        if (activeRole === 'viewer') return true;
-        if (activeRole === 'finance') {
-          return ['dashboard', 'orders', 'orderEconomics', 'skuEconomics', 'channelEconomics', 'pricingCalculator', 'cashWorkingCapital', 'founderExecution'].includes(item.id);
-        }
-        if (activeRole === 'warehouse') {
-          return ['dashboard', 'orders', 'inventory', 'fulfillment', 'transfers', 'returns', 'operationsAnalytics'].includes(item.id);
-        }
-        if (activeRole === 'growth') {
-          return ['dashboard', 'orders', 'products', 'inventory', 'marketingAnalytics', 'customerAnalytics', 'salesAnalytics', 'skuEconomics', 'channelEconomics', 'founderExecution'].includes(item.id);
-        }
-        return item.roles.includes(activeRole as UserRole);
-      }),
-    }))
-    .filter((group) => group.items.length > 0);
+  const allowedPages = useMemo(
+    () => new Set(getAllowedPagesForRole(currentRole)),
+    [currentRole]
+  );
+
+  const filteredGroups = useMemo(() => {
+    return navGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => allowedPages.has(item.id)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [allowedPages]);
+
+  useEffect(() => {
+    if (!allowedPages.has(current)) {
+      onNavigate('dashboard');
+    }
+  }, [allowedPages, current, onNavigate]);
 
   return (
     <>
@@ -353,7 +353,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
               </div>
               <div className="max-h-60 overflow-y-auto space-y-0.5">
                 {ALL_ROLES.map((r) => {
-                  const isCurrent = activeRole === r.id;
+                  const isCurrent = currentRole === r.id;
                   return (
                     <button
                       key={r.id}
@@ -395,7 +395,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
                 </p>
                 <div className="flex items-center gap-1">
                   <p className="text-[10px] text-[#27B4A0] truncate font-mono">
-                    {ROLE_LABELS[activeRole]}
+                    {ROLE_LABELS[currentRole]}
                   </p>
                   <ChevronDown size={11} className={cn('text-slate-400 transition-transform', showRoleSwitcher && 'rotate-180')} />
                 </div>
