@@ -2,6 +2,7 @@
 
 **Dự án:** Hệ Thống Quản Trị Đơn Hàng & Kho Vận Đa Kênh NexusOMS (Phiên bản V6.2 Digital Commerce Only)  
 **Nhánh Git:** `feature/nexusoms-v6-digital-commerce-only`  
+**Git HEAD Commit:** `189d2d9`  
 **Môi trường thử nghiệm:** Chrome Trình Duyệt Thật (Google Chrome v131+ qua Puppeteer Automation), Local Prototype Mock Mode (`VITE_DATA_MODE=mock`).  
 **Kết quả kiểm tra tự động & tương tác:** **100% PASS** (83/83 unit test, `tsc --noEmit` 0 lỗi, 12 kịch bản tương tác click/toggle/expand/filter đạt chuẩn).
 
