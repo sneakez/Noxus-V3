@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DollarSign,
   ShoppingCart,
@@ -21,12 +21,16 @@ import { WaterfallChart } from '@/components/charts/WaterfallChart';
 import { GroupedBarChart } from '@/components/charts/GroupedBarChart';
 import { InsightSummary } from '@/components/charts/InsightSummary';
 import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBanner';
+import { mockStore } from '@/mock/store';
 
 interface ExecutiveAnalyticsDashboardProps {
   onNavigate?: (pageId: string) => void;
 }
 
 export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDashboardProps) {
+  const [, setTick] = useState(0);
+  useEffect(() => mockStore.subscribe(() => setTick(t => t + 1)), []);
+
   const [period, setPeriod] = useState<TimeDimension>('last_30_days');
   const [comparison, setComparison] = useState<ComparisonDimension>('previous_period');
 
@@ -89,12 +93,13 @@ export function ExecutiveAnalyticsDashboard({ onNavigate }: ExecutiveAnalyticsDa
       {/* Row 1: High Level Revenue & Volume KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <KPICard
-          title="Doanh Thu Thuần (Net Revenue)"
+          title="Doanh Thu Thuần Quản Trị (Net Sales)"
           value={`${data.kpis.netRevenue.value.toLocaleString()} ₫`}
-          subtitle="Doanh thu sau trừ voucher & hoàn hàng"
+          subtitle={`Có 511 (POD): ${(data.kpis.netRevenue.recognizedRevenuePOD ?? 19560000).toLocaleString()} ₫ • Chờ POD: ${(data.kpis.netRevenue.pendingPodRevenue ?? 0).toLocaleString()} ₫`}
           deltaPercent={data.kpis.netRevenue.deltaPercent}
           trend={data.kpis.netRevenue.trend}
           icon={DollarSign}
+          badge="FOB DESTINATION"
           highlight
         />
 

@@ -62,6 +62,11 @@ class MockDataStore {
   private mutate(updater: (draft: MockDatabaseSnapshot) => void, eventTopic: MockEventTopic, payload?: unknown) {
     const clone = JSON.parse(JSON.stringify(this.state)) as MockDatabaseSnapshot;
     updater(clone);
+    if (eventTopic === 'DATABASE_RESET') {
+      clone.stateRevision = 0;
+    } else {
+      clone.stateRevision = (clone.stateRevision || 0) + 1;
+    }
     clone.lastUpdated = new Date().toISOString();
     this.state = clone;
     this.saveToStorage(clone);
@@ -98,6 +103,10 @@ class MockDataStore {
 
   public getSnapshot(): MockDatabaseSnapshot {
     return this.state;
+  }
+
+  public getStateRevision(): number {
+    return this.state.stateRevision || 0;
   }
 
   public resetToDefaultSeed(): void {
@@ -1131,6 +1140,11 @@ class MockDataStore {
     const now = new Date().toISOString();
 
     this.mutate(draft => {
+      const draftItems = draft.returnItems.filter(i => i.return_id === returnId);
+      draftItems.forEach(item => {
+        item.disposition = isGoodCondition ? 'restock' : 'scrap';
+      });
+
       for (const item of items) {
         const inv = draft.inventory5State.find(i => i.product_id === item.product_id);
         if (inv) {

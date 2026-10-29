@@ -478,14 +478,28 @@ class MockQueryBuilder {
     return { data: items, error: null };
   }
 
-  public async update(payload: Record<string, unknown>) {
-    await mockStore.delay(30);
-    return { data: payload, error: null };
+  public update(payload: Record<string, unknown>) {
+    return {
+      eq: async (_col: string, _val: unknown) => {
+        await mockStore.delay(20);
+        return { data: payload, error: null };
+      },
+      then: (resolve: (val: { data: unknown; error: null }) => void) => {
+        resolve({ data: payload, error: null });
+      }
+    };
   }
 
-  public async delete() {
-    await mockStore.delay(30);
-    return { data: null, error: null };
+  public delete() {
+    return {
+      eq: async (_col: string, _val: unknown) => {
+        await mockStore.delay(20);
+        return { data: null, error: null };
+      },
+      then: (resolve: (val: { data: null; error: null }) => void) => {
+        resolve({ data: null, error: null });
+      }
+    };
   }
 }
 

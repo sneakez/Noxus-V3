@@ -10,6 +10,7 @@ function getRelativeDate(daysAgo: number, hour = 10, minute = 30): string {
 export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
   schemaVersion: 2,
   snapshotId: 'SNAPSHOT-V6.2-20261029-DIGITAL-AUDIT',
+  stateRevision: 0,
   lastUpdated: new Date().toISOString(),
   activeTenantId: 'tenant_flagship',
   activeRole: 'owner',

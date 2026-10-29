@@ -330,6 +330,18 @@ class AnalyticsService {
     const netRevenueCurr = orderEconCurrent.reduce((sum, o) => sum + o.netRevenue, 0);
     const netRevenuePrev = orderEconPrev.reduce((sum, o) => sum + o.netRevenue, 0) || Math.round(netRevenueCurr * 0.88);
 
+    // POD Separation: Recognized Revenue under approved FOB Destination policy
+    // Only orders with delivered status / verified POD are recognized in official Có 511.
+    // In-transit or placed orders represent Managerial Net Sales, pending POD delivery confirmation.
+    const recognizedRevPod = orderEconCurrent
+      .filter(e => {
+        const ord = allOrders.find(o => o.id === e.orderId);
+        return ord?.status === 'delivered' || ord?.delivery_status === 'delivered';
+      })
+      .reduce((sum, o) => sum + o.netRevenue, 0);
+
+    const pendingPodRevenue = Math.max(0, netRevenueCurr - recognizedRevPod);
+
     const orderVolCurr = current.length;
     const orderVolPrev = previous.length || Math.round(orderVolCurr * 0.85);
 
@@ -475,7 +487,15 @@ class AnalyticsService {
       timePeriod: period,
       comparison,
       kpis: {
-        netRevenue: { value: netRevenueCurr, previous: netRevenuePrev, delta: revDelta.delta, deltaPercent: revDelta.deltaPercent, trend: revDelta.trend },
+        netRevenue: { 
+          value: netRevenueCurr, 
+          recognizedRevenuePOD: recognizedRevPod,
+          pendingPodRevenue,
+          previous: netRevenuePrev, 
+          delta: revDelta.delta, 
+          deltaPercent: revDelta.deltaPercent, 
+          trend: revDelta.trend 
+        },
         orderVolume: { value: orderVolCurr, previous: orderVolPrev, delta: volDelta.delta, deltaPercent: volDelta.deltaPercent, trend: volDelta.trend },
         aov: { value: aovCurr, previous: aovPrev, delta: aovDelta.delta, deltaPercent: aovDelta.deltaPercent, trend: aovDelta.trend },
         grossProfit: { value: cm1Curr, previous: cm1Prev, delta: cm1Delta.delta, deltaPercent: cm1Delta.deltaPercent, trend: cm1Delta.trend },

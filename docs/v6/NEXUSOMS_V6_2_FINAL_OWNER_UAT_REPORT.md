@@ -99,5 +99,5 @@ Toàn bộ ảnh chụp thực tế bằng Chrome đã được lưu tại `docs
 Vòng nghiệm thu trải nghiệm thực tế (Owner UAT) của **NexusOMS V6.2** đã hoàn tất với kết quả **100% PASS**. Toàn bộ số liệu toán học, luồng đơn hàng, quản lý kho 5 trạng thái, chính sách giá vốn hàng hoàn và giao diện responsive mobile đều hoạt động hoàn hảo.
 
 - **Branch hiện tại:** `feature/nexusoms-v6-digital-commerce-only`
-- **Commit chốt:** [`e4b609c`](file:///d:/Noxus-V3)
+- **Commit chốt:** [`a8105ff`](file:///d:/Noxus-V3)
 - **Tình trạng:** **ĐÓNG BĂNG HOÀN TOÀN (SCOPE FROZEN). DỪNG THỰC HIỆN ĐỂ CHỦ DỰ ÁN PHÊ DUYỆT.**

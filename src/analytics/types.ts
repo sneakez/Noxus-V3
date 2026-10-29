@@ -228,7 +228,15 @@ export interface ExecutiveDashboardData {
   timePeriod: TimeDimension;
   comparison: ComparisonDimension;
   kpis: {
-    netRevenue: { value: number; previous: number; delta: number; deltaPercent: number; trend: 'up' | 'down' | 'flat' };
+    netRevenue: { 
+      value: number; 
+      recognizedRevenuePOD?: number;
+      pendingPodRevenue?: number;
+      previous: number; 
+      delta: number; 
+      deltaPercent: number; 
+      trend: 'up' | 'down' | 'flat' 
+    };
     orderVolume: { value: number; previous: number; delta: number; deltaPercent: number; trend: 'up' | 'down' | 'flat' };
     aov: { value: number; previous: number; delta: number; deltaPercent: number; trend: 'up' | 'down' | 'flat' };
     grossProfit: { value: number; previous: number; delta: number; deltaPercent: number; trend: 'up' | 'down' | 'flat' };

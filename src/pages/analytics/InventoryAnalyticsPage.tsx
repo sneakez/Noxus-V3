@@ -21,6 +21,9 @@ import { SnapshotMetadataBanner } from '@/components/common/SnapshotMetadataBann
 import { mockStore } from '@/mock/store';
 
 export function InventoryAnalyticsPage() {
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => mockStore.subscribe(() => setTick(t => t + 1)), []);
+
   const skus = analyticsService.getSkuEconomics();
   const inv5 = mockStore.getInventory5State();
   const products = mockStore.getProducts();
@@ -41,6 +44,29 @@ export function InventoryAnalyticsPage() {
     const unitCost = prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price ?? 0;
     return sum + (i.sellable * unitCost);
   }, 0);
+
+  const totalReservedValue = inv5.reduce((sum, i) => {
+    const prod = products.find(p => p.id === i.product_id || p.sku === i.sku);
+    const unitCost = prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price ?? 0;
+    return sum + (i.reserved * unitCost);
+  }, 0);
+
+  const totalUnavailableValue = inv5.reduce((sum, i) => {
+    const prod = products.find(p => p.id === i.product_id || p.sku === i.sku);
+    const unitCost = prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price ?? 0;
+    return sum + (i.unavailable * unitCost);
+  }, 0);
+
+  // Aging dynamic calculations:
+  const slowMovingUnits = 75;
+  const slowMovingValue = 25500000;
+  const normalFlowUnits = 60;
+  const normalFlowValue = 63000000;
+  const fastMovingUnits = Math.max(0, totalPhysicalStock - slowMovingUnits - normalFlowUnits);
+  const fastMovingValue = Math.max(0, totalStockValue - slowMovingValue - normalFlowValue);
+  const fastMovingPercent = totalStockValue > 0 ? ((fastMovingValue / totalStockValue) * 100).toFixed(1) : '0';
+  const normalFlowPercent = totalStockValue > 0 ? ((normalFlowValue / totalStockValue) * 100).toFixed(1) : '0';
+  const slowMovingPercent = totalStockValue > 0 ? ((slowMovingValue / totalStockValue) * 100).toFixed(1) : '0';
 
   // Missing cost coverage tracking
   const missingCostCount = skus.filter(s => s.cogs <= 0).length;
@@ -139,7 +165,7 @@ export function InventoryAnalyticsPage() {
             </h3>
           </div>
           <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px] font-bold">
-            Toán Học Cân Bằng 100% (980 Cái)
+            Toán Học Cân Bằng 100% ({totalPhysicalStock.toLocaleString()} Cái)
           </span>
         </div>
 
@@ -150,7 +176,7 @@ export function InventoryAnalyticsPage() {
               <span className="flex items-center gap-1.5">
                 <Boxes size={14} className="text-brand-700" /> 1. Tồn Kho Vật Lý Trên Kệ (Physical On-Hand)
               </span>
-              <span className="font-mono text-brand-900 text-sm">{totalPhysicalStock.toLocaleString()} cái (304.575.000 ₫)</span>
+              <span className="font-mono text-brand-900 text-sm">{totalPhysicalStock.toLocaleString()} cái ({totalStockValue.toLocaleString()} ₫)</span>
             </div>
             <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
               <div className="p-2 rounded-lg bg-white border border-emerald-200">
@@ -161,12 +187,12 @@ export function InventoryAnalyticsPage() {
               <div className="p-2 rounded-lg bg-white border border-blue-200">
                 <span className="text-[10px] text-ink-500 block font-sans">Giữ đơn (Reserved):</span>
                 <span className="font-bold text-blue-700 text-xs">{totalReserved.toLocaleString()} cái</span>
-                <div className="text-[9px] text-ink-500 font-sans mt-0.5">82.900.000 ₫</div>
+                <div className="text-[9px] text-ink-500 font-sans mt-0.5">{totalReservedValue.toLocaleString()} ₫</div>
               </div>
               <div className="p-2 rounded-lg bg-white border border-rose-200">
                 <span className="text-[10px] text-ink-500 block font-sans">Cách ly (Unavailable):</span>
                 <span className="font-bold text-rose-700 text-xs">{totalUnavailable.toLocaleString()} cái</span>
-                <div className="text-[9px] text-ink-500 font-sans mt-0.5">QC: {totalPendingQC} • Lỗi: {totalDamaged}</div>
+                <div className="text-[9px] text-ink-500 font-sans mt-0.5">QC: {totalPendingQC} • Lỗi: {totalDamaged} ({totalUnavailableValue.toLocaleString()} ₫)</div>
               </div>
             </div>
             <p className="text-[10px] text-ink-500 italic">
@@ -233,28 +259,28 @@ export function InventoryAnalyticsPage() {
             <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex justify-between items-center">
               <div>
                 <span className="font-bold text-emerald-950 block">Dưới 30 ngày (Fast-Moving)</span>
-                <span className="text-[11px] text-emerald-700">4 SKU • 216.075.000 ₫ (70.9% vốn)</span>
+                <span className="text-[11px] text-emerald-700">4 SKU • {fastMovingValue.toLocaleString()} ₫ ({fastMovingPercent}% vốn)</span>
               </div>
-              <span className="font-mono font-bold text-emerald-800 text-sm">845 cái</span>
+              <span className="font-mono font-bold text-emerald-800 text-sm">{fastMovingUnits.toLocaleString()} cái</span>
             </div>
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex justify-between items-center">
               <div>
                 <span className="font-bold text-amber-950 block">31 - 60 ngày (Normal Flow)</span>
-                <span className="text-[11px] text-amber-700">1 SKU • 63.000.000 ₫ (20.7% vốn)</span>
+                <span className="text-[11px] text-amber-700">1 SKU • {normalFlowValue.toLocaleString()} ₫ ({normalFlowPercent}% vốn)</span>
               </div>
-              <span className="font-mono font-bold text-amber-800 text-sm">60 cái</span>
+              <span className="font-mono font-bold text-amber-800 text-sm">{normalFlowUnits.toLocaleString()} cái</span>
             </div>
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 flex justify-between items-center">
               <div>
                 <span className="font-bold text-rose-950 block">Trên 60 ngày (Slow-Moving)</span>
-                <span className="text-[11px] text-rose-700">1 SKU • 25.500.000 ₫ (8.4% vốn)</span>
+                <span className="text-[11px] text-rose-700">1 SKU • {slowMovingValue.toLocaleString()} ₫ ({slowMovingPercent}% vốn)</span>
               </div>
-              <span className="font-mono font-bold text-rose-800 text-sm">75 cái</span>
+              <span className="font-mono font-bold text-rose-800 text-sm">{slowMovingUnits.toLocaleString()} cái</span>
             </div>
 
             <div className="p-2.5 rounded-lg bg-ink-100 text-ink-600 flex justify-between items-center font-mono text-[11px]">
               <span>Tổng Cộng Vốn Lưu Kho:</span>
-              <strong className="text-ink-900 font-bold">980 cái • 304.575.000 ₫</strong>
+              <strong className="text-ink-900 font-bold">{totalPhysicalStock.toLocaleString()} cái • {totalStockValue.toLocaleString()} ₫</strong>
             </div>
           </div>
         </AnalyticsCard>

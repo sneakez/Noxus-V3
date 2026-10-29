@@ -15,6 +15,13 @@ export function SnapshotMetadataBanner({
 }: SnapshotMetadataBannerProps) {
   const [isResetting, setIsResetting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [revision, setRevision] = useState(mockStore.getStateRevision());
+
+  React.useEffect(() => {
+    return mockStore.subscribe(() => {
+      setRevision(mockStore.getStateRevision());
+    });
+  }, []);
 
   const handleReset = () => {
     if (window.confirm('Khôi phục toàn bộ dữ liệu mock về trạng thái Snapshot chuẩn (Factory Reset)?')) {
@@ -35,8 +42,8 @@ export function SnapshotMetadataBanner({
             <Database size={12} />
           </span>
 
-          <span className="font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/80 text-[10px] sm:text-[11px] truncate max-w-[200px] sm:max-w-none">
-            SNAPSHOT-V6.2-20261029-DIGITAL-AUDIT
+          <span className="font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/80 text-[10px] sm:text-[11px] truncate max-w-[220px] sm:max-w-none">
+            SNAPSHOT-V6.2-20261029-DIGITAL-AUDIT (rev {revision})
           </span>
 
           <span className="badge bg-purple-950 text-purple-300 border-purple-800 text-[9px] sm:text-[10px] font-bold">
