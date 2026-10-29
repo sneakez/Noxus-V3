@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   PackageCheck,
   Plus,
@@ -119,7 +119,15 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
     return true;
   });
 
-  const activeReturn = returns.find(r => r.id === selectedRmaId) || filtered[0] || returns[0];
+  // Active selected return: strictly from filtered list, or null if filtered is empty
+  const activeReturn = useMemo(() => {
+    if (filtered.length === 0) return null;
+    if (selectedRmaId) {
+      const match = filtered.find(r => r.id === selectedRmaId);
+      if (match) return match;
+    }
+    return filtered[0];
+  }, [filtered, selectedRmaId]);
 
   // 1. Accept Return Request
   async function handleAccept(id: string) {
@@ -225,17 +233,24 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
         </button>
       </div>
 
-      {/* Visual Workflow Stepper - Adaptive by RMA Branch */}
-      <WorkflowStepVisualizer
-        workflowType="rma_lifecycle"
-        currentStatus={activeReturn?.status || 'quality_check'}
-        rmaBranch={activeReturn?.rma_branch || (branchFilter !== 'all' ? branchFilter : 'refund')}
-        title={
-          activeReturn
-            ? `Tiến Trình RMA: #${activeReturn.return_number} — [${RMA_BRANCH_LABELS[(activeReturn.rma_branch || 'refund') as RmaBranch]?.label || 'Hoàn tiền'}] (${RETURN_STATUS_LABELS[activeReturn.status] || activeReturn.status})`
-            : undefined
-        }
-      />
+      {/* Visual Workflow Stepper - Binds strictly to activeReturn record */}
+      {activeReturn ? (
+        <WorkflowStepVisualizer
+          workflowType="rma_lifecycle"
+          currentStatus={activeReturn.status}
+          rmaBranch={activeReturn.rma_branch || 'refund'}
+          title={`Tiến Trình Phiếu RMA: #${activeReturn.return_number} — [${RMA_BRANCH_LABELS[(activeReturn.rma_branch || 'refund') as RmaBranch]?.label || 'Hoàn tiền'}] (${RETURN_STATUS_LABELS[activeReturn.status] || activeReturn.status})`}
+        />
+      ) : (
+        <div className="p-4 sm:p-5 rounded-xl bg-ink-900 text-white border border-ink-800 text-center space-y-1">
+          <p className="font-bold text-sm text-ink-100">
+            Không có yêu cầu đổi trả nào trong phân nhánh đã chọn
+          </p>
+          <p className="text-xs text-ink-400">
+            Hãy chọn một nhánh khác hoặc nhấp "+ Tạo yêu cầu RMA đa nhánh" để khởi tạo quy trình.
+          </p>
+        </div>
+      )}
 
       {/* Branch Quick Filter Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
@@ -252,7 +267,7 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
             onClick={() => {
               setBranchFilter(tab.key);
               const firstMatch = returns.find(r => tab.key === 'all' || (r.rma_branch || 'refund') === tab.key);
-              if (firstMatch) setSelectedRmaId(firstMatch.id);
+              setSelectedRmaId(firstMatch ? firstMatch.id : null);
             }}
             className={cn(
               'px-3 py-1.5 rounded-lg font-medium transition-all shrink-0 border cursor-pointer',
@@ -309,7 +324,7 @@ export function ReturnsPage({ search, onNavigate }: ReturnsPageProps) {
                       onClick={() => setSelectedRmaId(r.id)}
                       className={cn(
                         'hover:bg-brand-50/40 transition-colors cursor-pointer',
-                        activeReturn?.id === r.id && 'bg-brand-50/60 ring-1 ring-inset ring-brand-300'
+                        activeReturn?.id === r.id && 'bg-brand-50/70 border-l-4 border-brand-600 font-medium shadow-xs'
                       )}
                       title="Bấm để xem tiến trình và thao tác nhánh RMA này"
                     >

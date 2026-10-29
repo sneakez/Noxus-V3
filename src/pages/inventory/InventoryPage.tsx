@@ -397,12 +397,12 @@ export function InventoryPage({ search }: InventoryPageProps) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-4 min-w-[150px]">
                         <div className="flex items-center gap-2">
-                          <WarehouseIcon size={14} className="text-ink-400" />
-                          <span className="text-ink-700">{item.warehouses?.name ?? '—'}</span>
+                          <WarehouseIcon size={14} className="text-ink-400 shrink-0" />
+                          <span className="text-ink-700 font-medium whitespace-nowrap">{item.warehouses?.name ?? '—'}</span>
                         </div>
-                        <p className="text-xs text-ink-400 mt-0.5">{item.warehouses?.code}</p>
+                        <p className="text-xs text-ink-400 mt-0.5 font-mono">{item.warehouses?.code}</p>
                       </td>
                       <QtyCell value={item.physical_qty} />
                       <QtyCell

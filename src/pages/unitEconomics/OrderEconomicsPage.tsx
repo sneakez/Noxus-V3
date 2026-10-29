@@ -304,6 +304,7 @@ export function OrderEconomicsPage({ onNavigate }: OrderEconomicsPageProps) {
         data={filteredOrders}
         groups={columnGroups}
         rowKey={o => o.orderId}
+        storageKey="order_economics"
         searchPlaceholder="Tìm kiếm mã đơn..."
         searchFilter={(o, q) =>
           o.orderNumber.toLowerCase().includes(q) ||

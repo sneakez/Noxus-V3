@@ -321,9 +321,9 @@ export function InventoryAnalyticsPage({ onNavigate }: InventoryAnalyticsPagePro
 
                 return (
                   <tr key={i.sku} className="hover:bg-ink-50/50 transition-colors">
-                    <td className="py-2.5 px-3">
-                      <span className="font-bold text-ink-900 block">{i.name}</span>
-                      <span className="font-mono text-[10px] text-ink-500">{i.sku} • {i.warehouse_name}</span>
+                    <td className="py-2.5 px-3 min-w-[200px]">
+                      <span className="font-bold text-ink-900 block truncate max-w-[260px]" title={i.name}>{i.name}</span>
+                      <span className="font-mono text-[11px] text-ink-500 whitespace-nowrap block">{i.sku} • {i.warehouse_name}</span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono font-medium text-ink-800">
                       {unitCost.toLocaleString()} ₫

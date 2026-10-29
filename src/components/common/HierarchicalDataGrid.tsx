@@ -21,6 +21,7 @@ export interface DataGridColumn<T> {
   header: string;
   accessor: (item: T) => React.ReactNode;
   width?: string;
+  minWidth?: string;
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
   sortValue?: (item: T) => number | string;
@@ -39,6 +40,14 @@ export interface DataGridColumnGroup<T> {
   defaultVisible?: boolean;
 }
 
+export type GridPresetType = 'simple' | 'operations' | 'analytics' | 'all';
+
+export interface GridPreset {
+  id: GridPresetType;
+  label: string;
+  groupIds: string[];
+}
+
 export interface HierarchicalDataGridProps<T> {
   data: T[];
   groups: DataGridColumnGroup<T>[];
@@ -55,6 +64,8 @@ export interface HierarchicalDataGridProps<T> {
   emptyState?: React.ReactNode;
   defaultSort?: { columnId: string; direction: 'asc' | 'desc' };
   pageSize?: number;
+  storageKey?: string;
+  customPresets?: GridPreset[];
   className?: string;
 }
 
@@ -74,6 +85,8 @@ export function HierarchicalDataGrid<T>({
   emptyState,
   defaultSort,
   pageSize = 15,
+  storageKey,
+  customPresets,
   className
 }: HierarchicalDataGridProps<T>) {
   // State for search query
@@ -82,8 +95,61 @@ export function HierarchicalDataGrid<T>({
   // State for expanded rows (Set of row IDs)
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
 
-  // State for visible column groups (all default to true or group.defaultVisible)
+  // Default presets based on groups
+  const presets: GridPreset[] = useMemo(() => {
+    if (customPresets && customPresets.length > 0) return customPresets;
+    const allGroupIds = groups.map(g => g.id);
+
+    // Auto-detect groups
+    const infoIds = groups.filter(g => g.id.includes('info') || g.id.includes('sku') || g.id.includes('order')).map(g => g.id);
+    const financeIds = groups.filter(g => g.id.includes('finance') || g.id.includes('revenue')).map(g => g.id);
+    const opIds = groups.filter(g => g.id.includes('operations') || g.id.includes('stock') || g.id.includes('inventory')).map(g => g.id);
+    const econIds = groups.filter(g => g.id.includes('economics') || g.id.includes('margin') || g.id.includes('costs')).map(g => g.id);
+    const actionIds = groups.filter(g => g.id.includes('action')).map(g => g.id);
+
+    return [
+      {
+        id: 'simple',
+        label: 'Đơn giản',
+        groupIds: Array.from(new Set([...infoIds, ...(financeIds.length ? financeIds : opIds), ...actionIds]))
+      },
+      {
+        id: 'operations',
+        label: 'Vận hành',
+        groupIds: Array.from(new Set([...infoIds, ...opIds, ...actionIds]))
+      },
+      {
+        id: 'analytics',
+        label: 'Phân tích',
+        groupIds: Array.from(new Set([...infoIds, ...financeIds, ...econIds, ...actionIds]))
+      },
+      {
+        id: 'all',
+        label: 'Toàn bộ',
+        groupIds: allGroupIds
+      }
+    ];
+  }, [groups, customPresets]);
+
+  // Active preset state
+  const [activePreset, setActivePreset] = useState<GridPresetType | null>(null);
+
+  // State for visible column groups with localStorage initialization
   const [visibleGroupIds, setVisibleGroupIds] = useState<Set<string>>(() => {
+    if (storageKey && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`nexus_grid_cols_${storageKey}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return new Set<string>(parsed);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved grid column preferences', e);
+      }
+    }
+
     const initial = new Set<string>();
     groups.forEach(g => {
       if (g.defaultVisible !== false) {
@@ -92,6 +158,28 @@ export function HierarchicalDataGrid<T>({
     });
     return initial;
   });
+
+  // Save to localStorage when visibleGroupIds changes
+  const savePreferences = (newSet: Set<string>) => {
+    setVisibleGroupIds(newSet);
+    if (storageKey && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`nexus_grid_cols_${storageKey}`, JSON.stringify(Array.from(newSet)));
+      } catch (e) {
+        console.warn('Failed to save grid column preferences', e);
+      }
+    }
+  };
+
+  // Switch to a preset
+  const applyPreset = (presetId: GridPresetType) => {
+    const target = presets.find(p => p.id === presetId);
+    if (target) {
+      const nextSet = new Set(target.groupIds);
+      setActivePreset(presetId);
+      savePreferences(nextSet);
+    }
+  };
 
   // State for column group dropdown menu
   const [showGroupSelector, setShowGroupSelector] = useState(false);
@@ -172,16 +260,16 @@ export function HierarchicalDataGrid<T>({
 
   // Toggle column group visibility
   const toggleGroupVisibility = (groupId: string) => {
-    setVisibleGroupIds(prev => {
-      const next = new Set(prev);
-      if (next.has(groupId)) {
-        // Prevent hiding all groups
-        if (next.size > 1) next.delete(groupId);
-      } else {
-        next.add(groupId);
+    setActivePreset(null);
+    const next = new Set(visibleGroupIds);
+    if (next.has(groupId)) {
+      if (next.size > 1) {
+        next.delete(groupId);
       }
-      return next;
-    });
+    } else {
+      next.add(groupId);
+    }
+    savePreferences(next);
   };
 
   // Handle column header sort click
@@ -199,9 +287,9 @@ export function HierarchicalDataGrid<T>({
   return (
     <div className={cn('rounded-2xl bg-white border border-ink-200/90 shadow-sm overflow-hidden flex flex-col', className)}>
       {/* Top Action & Filter Toolbar */}
-      <div className="p-3.5 sm:p-4 border-b border-ink-100 bg-ink-50/40 flex items-center justify-between gap-3 flex-wrap">
+      <div className="p-3 sm:p-4 border-b border-ink-100 bg-ink-50/40 flex items-center justify-between gap-2.5 flex-wrap">
         {/* Title & Subtitle or Search */}
-        <div className="flex items-center gap-3 flex-1 min-w-[240px]">
+        <div className="flex items-center gap-2.5 flex-1 min-w-[240px] flex-wrap">
           {title && (
             <div className="mr-2">
               <h3 className="text-sm sm:text-base font-extrabold text-ink-900 tracking-tight">{title}</h3>
@@ -210,7 +298,7 @@ export function HierarchicalDataGrid<T>({
           )}
 
           {searchFilter && (
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 max-w-xs min-w-[180px]">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
                 type="text"
@@ -221,6 +309,26 @@ export function HierarchicalDataGrid<T>({
               />
             </div>
           )}
+
+          {/* 4 Standard Presets (Simple, Operations, Analytics, All) */}
+          <div className="hidden lg:flex items-center gap-1 bg-ink-100/70 p-0.5 rounded-xl border border-ink-200/60 shrink-0">
+            <span className="text-[10px] font-bold text-ink-500 uppercase px-1.5">Góc nhìn:</span>
+            {presets.map(p => (
+              <button
+                key={p.id}
+                onClick={() => applyPreset(p.id)}
+                className={cn(
+                  'px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer',
+                  activePreset === p.id
+                    ? 'bg-white text-brand-800 shadow-xs font-bold border border-ink-200'
+                    : 'text-ink-600 hover:text-ink-900 hover:bg-white/60'
+                )}
+                title={`Chuyển sang góc nhìn ${p.label}`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Custom Filters + Column Group Toggle + Actions */}
@@ -232,7 +340,7 @@ export function HierarchicalDataGrid<T>({
             <button
               onClick={() => setShowGroupSelector(!showGroupSelector)}
               className={cn(
-                'btn btn-secondary text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-all',
+                'btn btn-secondary text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-all cursor-pointer',
                 visibleGroupIds.size < groups.length && 'border-brand-500 text-brand-700 bg-brand-50/50'
               )}
               title="Tùy chỉnh nhóm cột hiển thị"
@@ -244,12 +352,37 @@ export function HierarchicalDataGrid<T>({
 
             {/* Dropdown Menu */}
             {showGroupSelector && (
-              <div className="absolute right-0 top-full mt-1.5 w-60 rounded-xl bg-white border border-ink-200 shadow-xl z-50 p-2 space-y-1 animate-fade-in-up text-xs font-sans">
+              <div className="absolute right-0 top-full mt-1.5 w-64 rounded-xl bg-white border border-ink-200 shadow-xl z-50 p-2 space-y-1.5 animate-fade-in-up text-xs font-sans">
+                {/* Presets in Dropdown for Mobile / Tablet */}
+                <div className="lg:hidden pb-1.5 border-b border-ink-100">
+                  <span className="text-[10px] font-bold text-ink-400 uppercase block mb-1">Góc nhìn mẫu:</span>
+                  <div className="grid grid-cols-2 gap-1">
+                    {presets.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => applyPreset(p.id)}
+                        className={cn(
+                          'px-2 py-1 rounded text-[10px] font-bold border text-center transition-all',
+                          activePreset === p.id
+                            ? 'bg-brand-50 border-brand-500 text-brand-800'
+                            : 'bg-ink-50 border-ink-200 text-ink-600'
+                        )}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="px-2 py-1 border-b border-ink-100 flex items-center justify-between text-[11px] font-bold text-ink-500 uppercase tracking-wider">
                   <span>Ẩn / Hiện Nhóm Cột</span>
                   <button
-                    onClick={() => setVisibleGroupIds(new Set(groups.map(g => g.id)))}
-                    className="text-brand-600 hover:text-brand-700 font-normal normal-case"
+                    onClick={() => {
+                      const all = new Set(groups.map(g => g.id));
+                      setActivePreset('all');
+                      savePreferences(all);
+                    }}
+                    className="text-brand-600 hover:text-brand-700 font-normal normal-case cursor-pointer"
                   >
                     Hiện tất cả
                   </button>
@@ -262,7 +395,7 @@ export function HierarchicalDataGrid<T>({
                         key={group.id}
                         onClick={() => toggleGroupVisibility(group.id)}
                         className={cn(
-                          'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors',
+                          'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer',
                           isVisible ? 'bg-brand-50/60 text-brand-900 font-bold' : 'text-ink-500 hover:bg-ink-50'
                         )}
                       >

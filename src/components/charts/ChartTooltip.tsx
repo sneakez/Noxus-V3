@@ -13,6 +13,7 @@ interface CustomTooltipProps {
   label?: string;
   formatter?: (val: number, name?: string) => string;
   currency?: boolean;
+  unit?: string;
 }
 
 export function CustomChartTooltip({
@@ -20,32 +21,42 @@ export function CustomChartTooltip({
   payload,
   label,
   formatter,
-  currency = true
+  currency = true,
+  unit
 }: CustomTooltipProps) {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="bg-ink-950/95 backdrop-blur-md text-white p-3 rounded-xl border border-white/10 shadow-2xl text-xs space-y-1.5 z-50 min-w-[160px]">
-      {label && <p className="font-bold text-ink-300 border-b border-white/10 pb-1">{label}</p>}
-      <div className="space-y-1">
+    <div className="bg-[#0F172A] text-white p-3 sm:p-3.5 rounded-xl border border-slate-700/90 shadow-2xl text-xs space-y-2 z-50 min-w-[180px] max-w-[280px] pointer-events-none">
+      {label && (
+        <div className="border-b border-slate-700/80 pb-1.5 flex items-center justify-between">
+          <p className="font-bold text-slate-100 tracking-tight">{label}</p>
+          <span className="text-[10px] text-slate-400 font-mono">Dữ liệu đối soát</span>
+        </div>
+      )}
+      <div className="space-y-1.5">
         {payload.map((item, idx) => {
           const val = item.value ?? 0;
           const displayVal = formatter
             ? formatter(val, item.name)
             : currency
             ? `${val.toLocaleString()} ₫`
+            : unit
+            ? `${val.toLocaleString()} ${unit}`
             : val.toLocaleString();
 
           return (
-            <div key={idx} className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
                 <span
-                  className="w-2 h-2 rounded-full shrink-0"
+                  className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/30"
                   style={{ backgroundColor: item.color || '#27B4A0' }}
                 />
-                <span className="text-ink-400 truncate">{item.name || item.dataKey}</span>
+                <span className="text-slate-300 font-medium truncate">{item.name || item.dataKey}</span>
               </div>
-              <span className="font-bold font-mono text-white tabular-nums">{displayVal}</span>
+              <span className="font-extrabold font-mono text-white tabular-nums shrink-0">
+                {displayVal}
+              </span>
             </div>
           );
         })}

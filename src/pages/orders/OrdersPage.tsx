@@ -457,6 +457,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
         data={filtered}
         groups={columnGroups}
         rowKey={o => o.id}
+        storageKey="orders"
         searchPlaceholder="Tìm kiếm mã đơn, tên khách hàng, số điện thoại..."
         searchFilter={(o, q) =>
           o.order_number.toLowerCase().includes(q) ||

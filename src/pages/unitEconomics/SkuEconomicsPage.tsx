@@ -41,6 +41,16 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
   const skus = analyticsService.getSkuEconomics();
   const inv5 = mockStore.getInventory5State();
 
+  const rankCounts = useMemo(() => {
+    return {
+      all: skus.length,
+      STAR: skus.filter(s => s.contributionRank === 'STAR').length,
+      CASH_COW: skus.filter(s => s.contributionRank === 'CASH_COW').length,
+      QUESTION_MARK: skus.filter(s => s.contributionRank === 'QUESTION_MARK').length,
+      DOG: skus.filter(s => s.contributionRank === 'DOG').length
+    };
+  }, [skus]);
+
   const filteredSkus = useMemo(() => {
     return skus.filter(s => {
       if (selectedRank !== 'all' && s.contributionRank !== selectedRank) return false;
@@ -295,7 +305,11 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
         subtitle="Xác định sản phẩm chủ lực Bò sữa (Cash Cow), Ngôi sao (Star), Dấu hỏi (Question Mark) hoặc Chậm luân chuyển (Dog) trong Portfolio"
         formulaExplanation="Trục X: CM%, Trục Y: Doanh thu, Kích thước: Giá trị vốn tồn kho. Phân tích danh mục SKU Portfolio Matrix."
       >
-        <ScatterBubbleChart data={filteredSkus} />
+        <ScatterBubbleChart
+          data={filteredSkus}
+          filterName={selectedRank !== 'all' ? (RANK_BADGES[selectedRank]?.label || selectedRank) : undefined}
+          onResetFilter={() => setSelectedRank('all')}
+        />
       </AnalyticsCard>
 
       {/* Main Hierarchical Data Grid */}
@@ -303,6 +317,7 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
         data={filteredSkus}
         groups={columnGroups}
         rowKey={s => s.sku}
+        storageKey="sku_economics"
         searchPlaceholder="Tìm kiếm mã SKU hoặc tên sản phẩm..."
         searchFilter={(s, q) =>
           s.sku.toLowerCase().includes(q) ||
@@ -312,14 +327,29 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
           <select
             value={selectedRank}
             onChange={(e) => setSelectedRank(e.target.value)}
-            className="input text-xs py-1.5 px-2.5 bg-white border border-ink-200"
+            className="input text-xs py-1.5 px-2.5 bg-white border border-ink-200 cursor-pointer"
           >
-            <option value="all">Tất cả phân nhóm ({skus.length})</option>
-            <option value="STAR">🌟 Ngôi sao (Star)</option>
-            <option value="CASH_COW">🐄 Bò sữa (Cash Cow)</option>
-            <option value="QUESTION_MARK">❓ Dấu hỏi (Question Mark)</option>
-            <option value="DOG">⚠️ Chậm bán (Dog)</option>
+            <option value="all">Tất cả phân nhóm ({rankCounts.all})</option>
+            <option value="STAR">🌟 Ngôi sao (Star) ({rankCounts.STAR})</option>
+            <option value="CASH_COW">🐄 Bò sữa (Cash Cow) ({rankCounts.CASH_COW})</option>
+            <option value="QUESTION_MARK">❓ Dấu hỏi (Question Mark) ({rankCounts.QUESTION_MARK})</option>
+            <option value="DOG">⚠️ Chậm luân chuyển (Dog) ({rankCounts.DOG})</option>
           </select>
+        }
+        emptyState={
+          <div className="p-8 text-center space-y-3">
+            <p className="text-xs text-ink-500 font-medium">
+              Không tìm thấy sản phẩm nào thuộc phân nhóm{' '}
+              <strong className="text-ink-900">{RANK_BADGES[selectedRank]?.label || selectedRank}</strong>
+              {selectedRank === 'STAR' && ' (Tiêu chí: Biên CM ≥ 30% và Sản lượng bán ≥ 10 cái)'}.
+            </p>
+            <button
+              onClick={() => setSelectedRank('all')}
+              className="btn btn-secondary text-xs py-1.5 px-3 font-bold text-brand-700 border-brand-300 hover:bg-brand-50 cursor-pointer"
+            >
+              Xem tất cả SKU ({rankCounts.all})
+            </button>
+          </div>
         }
         renderExpandedRow={(sku) => {
           const inv = inv5.find(i => i.sku === sku.sku);

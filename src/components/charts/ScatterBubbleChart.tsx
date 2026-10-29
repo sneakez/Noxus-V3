@@ -10,17 +10,61 @@ import {
   Tooltip,
   Cell
 } from 'recharts';
+import { Info, RotateCcw } from 'lucide-react';
 import type { SkuUnitEconomics } from '@/analytics/types';
 import { cn } from '@/lib/cn';
 
 interface ScatterBubbleChartProps {
   data: SkuUnitEconomics[];
   height?: number;
+  filterName?: string;
+  onResetFilter?: () => void;
+  onSelectSku?: (sku: string) => void;
   className?: string;
 }
 
-export function ScatterBubbleChart({ data, height = 320, className }: ScatterBubbleChartProps) {
-  if (!data || !data.length) return null;
+export function ScatterBubbleChart({
+  data,
+  height = 320,
+  filterName,
+  onResetFilter,
+  onSelectSku,
+  className
+}: ScatterBubbleChartProps) {
+  if (!data || !data.length) {
+    return (
+      <div
+        className={cn(
+          'w-full flex flex-col items-center justify-center p-8 rounded-xl bg-ink-50/70 border border-dashed border-ink-300 text-center space-y-3 animate-fade-in',
+          className
+        )}
+        style={{ minHeight: height }}
+      >
+        <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center border border-amber-300 shadow-xs">
+          <Info size={22} />
+        </div>
+        <div className="max-w-md space-y-1">
+          <h4 className="text-sm font-bold text-ink-900 tracking-tight">
+            {filterName ? `Không có SKU nào thuộc phân nhóm [${filterName}]` : 'Không có dữ liệu SKU phù hợp'}
+          </h4>
+          <p className="text-xs text-ink-600 leading-relaxed">
+            {filterName?.toLowerCase().includes('star') || filterName?.toLowerCase().includes('ngôi sao')
+              ? 'Tiêu chí nhóm Ngôi sao (Star) yêu cầu Biên lợi nhuận CM ≥ 30% và Sản lượng bán ≥ 10 đơn vị trong kỳ. Trong tập dữ liệu hiện tại, chưa có SKU nào đạt ngưỡng sản lượng này.'
+              : 'Bộ lọc hiện tại không tìm thấy sản phẩm nào trong kho dữ liệu.'}
+          </p>
+        </div>
+        {onResetFilter && (
+          <button
+            onClick={onResetFilter}
+            className="btn btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold text-brand-700 border-brand-300 hover:bg-brand-50 cursor-pointer shadow-xs"
+          >
+            <RotateCcw size={13} />
+            <span>Xem tất cả SKU trong Portfolio</span>
+          </button>
+        )}
+      </div>
+    );
+  }
 
   const chartData = data.map(s => ({
     name: s.name,
@@ -48,38 +92,38 @@ export function ScatterBubbleChart({ data, height = 320, className }: ScatterBub
 
   return (
     <div className={cn('w-full space-y-2', className)}>
-      <div className="flex items-center justify-between text-xs text-ink-500">
-        <span>Trục X: Tỷ suất Lợi nhuận CM% • Trục Y: Tổng Doanh thu • Kích thước bong bóng: Giá trị tồn kho (₫)</span>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between text-xs text-ink-500 flex-wrap gap-2">
+        <span>Trục X: Biên CM% • Trục Y: Doanh thu thuần • Bong bóng: Vốn tồn kho (₫)</span>
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Ngôi sao (Star)</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Bò sữa (Cash Cow)</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Dấu hỏi (Question)</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Con chó (Dog)</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Chậm bán (Dog)</span>
         </div>
       </div>
 
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+          <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
             <XAxis
               type="number"
               dataKey="cmPercent"
               name="Biên lợi nhuận CM"
               unit="%"
-              tick={{ fontSize: 11, fill: '#64748B' }}
+              tick={{ fontSize: 11, fill: '#475569' }}
             />
             <YAxis
               type="number"
               dataKey="revenue"
               name="Doanh thu"
               tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
-              tick={{ fontSize: 11, fill: '#64748B' }}
+              tick={{ fontSize: 11, fill: '#475569' }}
             />
             <ZAxis
               type="number"
               dataKey="stockValue"
-              range={[60, 400]}
+              range={[80, 450]}
               name="Giá trị tồn"
             />
             <Tooltip
@@ -88,22 +132,45 @@ export function ScatterBubbleChart({ data, height = 320, className }: ScatterBub
                 if (!active || !payload || !payload.length) return null;
                 const item = payload[0].payload;
                 return (
-                  <div className="bg-ink-950/95 text-white p-3 rounded-xl border border-white/10 shadow-2xl text-xs space-y-1 z-50">
-                    <p className="font-bold text-white">{item.name}</p>
-                    <p className="text-[10px] text-ink-400 font-mono">SKU: {item.sku}</p>
-                    <div className="pt-1 space-y-0.5 border-t border-white/10 text-ink-300">
-                      <p>Biên lợi nhuận CM: <strong className="text-white">{item.cmPercent}%</strong></p>
-                      <p>Doanh thu: <strong className="text-white">{item.revenue.toLocaleString()} ₫</strong></p>
-                      <p>Giá trị tồn kho: <strong className="text-white">{item.stockValue.toLocaleString()} ₫</strong></p>
-                      <p>Phân nhóm: <strong className="text-brand-400">{item.rank}</strong></p>
+                  <div className="bg-[#0F172A] text-white p-3 rounded-xl border border-slate-700 shadow-2xl text-xs space-y-1.5 z-50 min-w-[200px] pointer-events-none">
+                    <div className="border-b border-slate-700/80 pb-1">
+                      <p className="font-bold text-slate-100">{item.name}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</p>
+                    </div>
+                    <div className="space-y-1 text-slate-300">
+                      <div className="flex justify-between gap-2">
+                        <span>Biên lợi nhuận CM:</span>
+                        <strong className="text-white font-mono">{item.cmPercent}%</strong>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span>Doanh thu thuần:</span>
+                        <strong className="text-emerald-400 font-mono">{item.revenue.toLocaleString()} ₫</strong>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span>Giá trị vốn tồn:</span>
+                        <strong className="text-white font-mono">{item.stockValue.toLocaleString()} ₫</strong>
+                      </div>
+                      <div className="flex justify-between gap-2 pt-1 border-t border-slate-800">
+                        <span>Phân nhóm:</span>
+                        <strong className="text-brand-400 font-bold">{item.rank}</strong>
+                      </div>
                     </div>
                   </div>
                 );
               }}
             />
-            <Scatter name="SKUs" data={chartData}>
+            <Scatter
+              name="SKUs"
+              data={chartData}
+              onClick={(node) => {
+                if (node && node.sku && onSelectSku) {
+                  onSelectSku(node.sku);
+                }
+              }}
+              className="cursor-pointer"
+            >
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={getRankColor(entry.rank)} />
+                <Cell key={`cell-${index}`} fill={getRankColor(entry.rank)} className="hover:opacity-80 transition-opacity cursor-pointer" />
               ))}
             </Scatter>
           </ScatterChart>

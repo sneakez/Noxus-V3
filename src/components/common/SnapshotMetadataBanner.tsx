@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Database, RefreshCw, CheckCircle2, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Database, RefreshCw, CheckCircle2, ChevronDown, Info, ShieldCheck, X } from 'lucide-react';
 import { mockStore } from '@/mock/store';
+import { cn } from '@/lib/cn';
 
 interface SnapshotMetadataBannerProps {
   currentModule: string;
@@ -11,91 +12,179 @@ interface SnapshotMetadataBannerProps {
 export function SnapshotMetadataBanner({
   currentModule,
   orderCount = 12,
-  dateFilter = '30 Ngày Qua (Toàn Bộ 12 Đơn Hàng)'
+  dateFilter = '30 Ngày Qua'
 }: SnapshotMetadataBannerProps) {
   const [isResetting, setIsResetting] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [showPopover, setShowPopover] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [revision, setRevision] = useState(mockStore.getStateRevision());
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     return mockStore.subscribe(() => {
       setRevision(mockStore.getStateRevision());
     });
   }, []);
 
-  const handleReset = () => {
-    if (window.confirm('Khôi phục toàn bộ dữ liệu mock về trạng thái Snapshot chuẩn (Factory Reset)?')) {
-      setIsResetting(true);
-      mockStore.resetToBaseline();
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowPopover(false);
+      }
     }
+    if (showPopover) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPopover]);
+
+  const handleConfirmReset = () => {
+    setIsResetting(true);
+    mockStore.resetToBaseline();
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
   };
 
   return (
-    <div className="p-2.5 sm:p-3.5 rounded-2xl bg-ink-900 text-ink-100 border border-ink-800 shadow-sm space-y-2">
-      {/* Top Strip */}
-      <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-          <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-brand-500/20 text-brand-400 shrink-0">
-            <Database size={12} />
-          </span>
-
-          <span className="font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/80 text-[10px] sm:text-[11px] truncate max-w-[220px] sm:max-w-none">
-            SNAPSHOT-V6.2-20261029-DIGITAL-AUDIT (rev {revision})
-          </span>
-
-          <span className="badge bg-purple-950 text-purple-300 border-purple-800 text-[9px] sm:text-[10px] font-bold">
+    <>
+      <div className="py-2 px-3 sm:px-4 rounded-xl bg-ink-900 text-ink-100 border border-ink-800 shadow-xs flex items-center justify-between flex-wrap gap-2 text-xs">
+        {/* Left: Summary Essentials */}
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <span className="badge bg-purple-950 text-purple-300 border-purple-800 text-[10px] font-bold shrink-0">
             SIMULATED PROTOTYPE
           </span>
 
-          <span className="hidden md:inline-flex badge bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px] font-bold items-center gap-1">
-            <CheckCircle2 size={10} /> ĐÃ ĐỐI CHIẾU XUYÊN MODULE
+          <span className="text-ink-400 hidden sm:inline">•</span>
+
+          <span className="text-ink-300 font-medium text-xs">
+            Workspace: <strong className="text-white">tenant_flagship</strong>
+          </span>
+
+          <span className="text-ink-400 hidden sm:inline">•</span>
+
+          <span className="text-ink-300 font-medium text-xs">
+            Chu kỳ: <strong className="text-amber-300">{dateFilter}</strong> ({orderCount} đơn)
+          </span>
+
+          <span className="badge bg-amber-950 text-amber-300 border-amber-800 text-[10px] font-mono font-bold">
+            rev {revision}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* Right: Popover Trigger & Factory Reset */}
+        <div className="flex items-center gap-2 relative" ref={popoverRef}>
+          {/* Data Details Popover Trigger */}
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="sm:hidden p-1 text-ink-400 hover:text-white"
-            title="Xem chi tiết snapshot"
+            onClick={() => setShowPopover(!showPopover)}
+            className="btn btn-secondary text-[11px] py-1 px-2.5 bg-ink-800 hover:bg-ink-700 text-ink-200 border-ink-700 flex items-center gap-1.5 transition-all cursor-pointer font-medium"
+            title="Xem chi tiết snapshot và nguồn dữ liệu kiểm toán"
           >
-            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <Info size={12} className="text-brand-400" />
+            <span className="hidden sm:inline">Chi tiết dữ liệu</span>
+            <ChevronDown size={11} className={cn('transition-transform', showPopover && 'rotate-180')} />
           </button>
 
+          {/* Details Popover */}
+          {showPopover && (
+            <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-xl bg-[#0F172A] border border-slate-700 shadow-2xl z-50 p-3.5 space-y-2.5 animate-fade-in text-xs font-sans text-slate-200">
+              <div className="flex items-center justify-between border-b border-slate-700/80 pb-2">
+                <span className="font-bold text-slate-100 flex items-center gap-1.5">
+                  <Database size={13} className="text-brand-400" />
+                  Thông Tin Snapshot Kiểm Toán
+                </span>
+                <span className="badge bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px] font-mono">
+                  100% MATCH
+                </span>
+              </div>
+
+              <div className="space-y-1.5 font-mono text-[11px]">
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-sans">Snapshot ID:</span>
+                  <strong className="text-amber-300 break-all">SNAPSHOT-V6.2-20261029-DIGITAL-AUDIT</strong>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-sans">Revision:</span>
+                    <strong className="text-white">State rev {revision}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-sans">Seed Version:</span>
+                    <strong className="text-white">v6.2.1-clean</strong>
+                  </div>
+                </div>
+                <div className="pt-1">
+                  <span className="text-slate-400 block text-[10px] font-sans">Phạm vi kênh bán:</span>
+                  <span className="text-cyan-300 font-sans text-xs">Shopee, TikTok Shop, Lazada, D2C Web</span>
+                </div>
+                <div className="pt-1">
+                  <span className="text-slate-400 block text-[10px] font-sans">Mô-đun đang duyệt:</span>
+                  <strong className="text-emerald-400 font-sans text-xs">{currentModule}</strong>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-700/80 text-[10px] text-slate-400 flex items-center gap-1.5 font-sans">
+                <ShieldCheck size={13} className="text-emerald-400 shrink-0" />
+                <span>Toàn bộ 12 đơn số liệu đã đối soát cân bằng giữa P&L, Kho và Đối soát kênh.</span>
+              </div>
+            </div>
+          )}
+
+          {/* Factory Reset Button */}
           <button
-            onClick={handleReset}
+            onClick={() => setShowConfirmModal(true)}
             disabled={isResetting}
-            className="btn btn-secondary text-[10px] sm:text-[11px] py-1 px-2 bg-ink-800 hover:bg-ink-700 text-ink-200 border-ink-700 flex items-center gap-1 transition-all"
-            title="Factory Reset Mock Data về Snapshot gốc"
+            className="btn btn-secondary text-[11px] py-1 px-2.5 bg-ink-800 hover:bg-rose-950/60 hover:text-rose-300 hover:border-rose-800 text-ink-300 border-ink-700 flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Khôi phục trạng thái Mock Data về snapshot gốc"
           >
-            <RefreshCw size={10} className={isResetting ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Factory Reset Mock</span>
+            <RefreshCw size={11} className={isResetting ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Factory Reset</span>
             <span className="sm:hidden">Reset</span>
           </button>
         </div>
       </div>
 
-      {/* Responsive Grid Metadata */}
-      <div className={`grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 pt-1.5 border-t border-ink-800 text-[10px] sm:text-[11px] text-ink-300 font-mono ${isExpanded ? 'block' : 'hidden sm:grid'}`}>
-        <div>
-          <span className="text-ink-500 block text-[9px] sm:text-[10px] font-sans">Tenant / Workspace:</span>
-          <strong className="text-white font-medium">tenant_flagship</strong>
+      {/* Confirmation Modal for Factory Reset */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-white border border-ink-200 p-5 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-start justify-between">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                <RefreshCw size={20} />
+              </div>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="p-1 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-ink-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-ink-900 tracking-tight">Xác nhận Factory Reset Dữ Liệu?</h3>
+              <p className="text-xs text-ink-500 leading-relaxed">
+                Thao tác này sẽ xóa mọi đơn hàng mới tạo, hoàn lại trạng thái kho về mốc Snapshot gốc và khôi phục revision về ban đầu.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-ink-100">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="btn btn-secondary text-xs py-1.5 px-3"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleConfirmReset}
+                disabled={isResetting}
+                className="btn btn-primary text-xs py-1.5 px-3 font-bold bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                {isResetting ? 'Đang khôi phục...' : 'Xác nhận Reset'}
+              </button>
+            </div>
+          </div>
         </div>
-        <div>
-          <span className="text-ink-500 block text-[9px] sm:text-[10px] font-sans">Kênh Digital:</span>
-          <strong className="text-cyan-300 font-medium">Shopee/TikTok/LZD/Web</strong>
-        </div>
-        <div>
-          <span className="text-ink-500 block text-[9px] sm:text-[10px] font-sans">Bộ Lọc & Số Đơn:</span>
-          <strong className="text-amber-300 font-medium">{orderCount} đơn</strong> ({dateFilter})
-        </div>
-        <div>
-          <span className="text-ink-500 block text-[9px] sm:text-[10px] font-sans">Mô-đun Hiện Tại:</span>
-          <strong className="text-emerald-400 font-medium truncate block">{currentModule}</strong>
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
