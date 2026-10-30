@@ -2,7 +2,9 @@
 
 **Thời gian nghiệm thu:** 30/10/2026 (Asia/Ho_Chi_Minh)  
 **Baseline Git Commit:** `b891421eecf1efb6670af93912a04b2a7154a766`  
+**Refactor HEAD Commit:** `d0491f1da9fcdbedf7d70b36d8f4c71f01d2db63`  
 **Refactor Branch:** `refactor/prototype-marketplace-e2e`  
+**GitHub Repository:** `https://github.com/sneakez/Noxus-V3/tree/refactor/prototype-marketplace-e2e`  
 **Đặc tả kiểm toán tham chiếu:** `c:\Users\Admin\Downloads\NOXUS_PROTOTYPE_AUDIT_ANTIGRAVITY.md`
 
 ---
