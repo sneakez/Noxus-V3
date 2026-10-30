@@ -650,7 +650,7 @@ ${(r.history || []).map(h => `  * [${new Date(h.timestamp).toLocaleString('vi-VN
                 <div key={h.id} className="py-2.5 space-y-1 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-ink-900">{h.actor}</span>
-                    <span className="text-ink-400 font-mono text-[10px]">
+                    <span className="text-ink-400 text-[10px]">
                       {new Date(h.timestamp).toLocaleString('vi-VN')}
                     </span>
                   </div>

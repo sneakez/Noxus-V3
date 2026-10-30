@@ -43,12 +43,12 @@ export function SyncMonitorPage({ search }: SyncMonitorPageProps) {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-ink-900">Log dong bo ({filtered.length})</h2>
+        <h2 className="text-lg font-semibold text-ink-900">Nhật ký đồng bộ ({filtered.length})</h2>
         <button onClick={load} className="btn-secondary text-sm"><RefreshCw size={14} /> Lam moi</button>
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={RefreshCw} title="Chua co log dong bo" description="Log dong bo ton kho se xuat hien khi kenh hoat dong" />
+        <EmptyState icon={RefreshCw} title="Chưa có nhật ký đồng bộ" description="Nhật ký đồng bộ tồn kho sẽ xuất hiện khi kênh bán hàng hoạt động" />
       ) : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
@@ -56,10 +56,10 @@ export function SyncMonitorPage({ search }: SyncMonitorPageProps) {
               <tr>
                 <th className="text-left px-4 py-3 font-semibold">Kenh</th>
                 <th className="text-left px-4 py-3 font-semibold">Shop</th>
-                <th className="text-left px-4 py-3 font-semibold">Loai dong bo</th>
-                <th className="text-center px-4 py-3 font-semibold">Trang thai</th>
+                <th className="text-left px-4 py-3 font-semibold">Loại đồng bộ</th>
+                <th className="text-center px-4 py-3 font-semibold">Trạng thái</th>
                 <th className="text-center px-4 py-3 font-semibold">Retry</th>
-                <th className="text-left px-4 py-3 font-semibold">Thoi gian</th>
+                <th className="text-left px-4 py-3 font-semibold">Thời gian</th>
                 <th className="text-left px-4 py-3 font-semibold">Thong diep</th>
               </tr>
             </thead>

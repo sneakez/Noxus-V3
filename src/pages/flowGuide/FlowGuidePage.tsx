@@ -57,276 +57,276 @@ interface OnboardStep {
 const PHASES: Phase[] = [
   {
     id: 'day1',
-    label: 'Ngay 1',
-    sublabel: 'Khoi tao he thong',
+    label: 'Ngày 1',
+    sublabel: 'Khởi tạo hệ thống',
     icon: Rocket,
     color: 'brand',
-    description: 'Dang nhap lan dau, tao kho, them san pham, nhap ton kho dau ky',
-    role: 'Quan tri vien',
+    description: 'Đăng nhập lần đầu, tạo kho, thêm sản phẩm, nhập tồn kho đầu kỳ',
+    role: 'Quản trị viên',
     loginAs: 'admin@nexusoms.vn / Admin@123',
     steps: [
       {
-        num: 1, page: 'Dang nhap', icon: LayoutDashboard,
-        title: 'Dang nhap bang tai khoan admin',
-        what: 'Mo trang dang nhap, nhap admin@nexusoms.vn / Admin@123. Sau khi dang nhap ban thay Dashboard tong quan.',
-        why: 'Day la tai khoan co quyen cao nhat. Chi admin moi tao kho, them nguoi dung, cau hinh webhook.',
-        tips: 'Trang dang nhap hien 3 tai khoan demo. Admin thay tat ca 28 trang, manager thay 22, warehouse thay 10.',
+        num: 1, page: 'Đăng nhập', icon: LayoutDashboard,
+        title: 'Đăng nhập bằng tài khoản admin',
+        what: 'Mở trang đăng nhập, nhập admin@nexusoms.vn / Admin@123. Sau khi đăng nhập bạn thấy Dashboard tổng quan.',
+        why: 'Đây là tài khoản có quyền cao nhất. Chỉ admin mới tạo kho, thêm người dùng, cấu hình webhook.',
+        tips: 'Trang đăng nhập hiện 3 tài khoản demo. Admin thấy tất cả 28 trang, manager thấy 22, warehouse thấy 10.',
       },
       {
-        num: 2, page: 'Kho & Vi tri', icon: Warehouse,
-        title: 'Tao cac kho cua ban',
-        what: 'Vao Kho & Vi tri > nhan "Them kho". Nhap ma kho (VD: WH-HN), ten kho, dia chi, do uu tien. Tao it nhat 1 kho de bat dau.',
-        why: 'Moi don hang can gan vao 1 kho de xu ly. Ton kho dem theo tung kho rieng. Mac dinh da co 3 kho: HN, HCM, DN.',
-        tips: 'Do uu tien (1, 2, 3...) quyet dinh kho nao duoc chon truoc khi dinh tuyen don. Kho P1 duoc uu tien nhat.',
+        num: 2, page: 'Kho & Vị trí', icon: Warehouse,
+        title: 'Tạo các kho của bạn',
+        what: 'Vào Kho & Vị trí > nhấn "Thêm kho". Nhập mã kho (VD: WH-HN), tên kho, địa chỉ, độ ưu tiên. Tạo ít nhất 1 kho để bắt đầu.',
+        why: 'Mỗi đơn hàng cần gán vào 1 kho để xử lý. Tồn kho đếm theo từng kho riêng. Mặc định đã có 3 kho: HN, HCM, ĐN.',
+        tips: 'Độ ưu tiên (1, 2, 3...) quyết định kho nào được chọn trước khi định tuyến đơn. Kho P1 được ưu tiên nhất.',
       },
       {
-        num: 3, page: 'San pham & BOM', icon: Package,
-        title: 'Them danh muc san pham',
-        what: 'Vao San pham > "Them san pham". Nhap SKU, ten, mo ta, danh muc, gia ban, gia von, ton kho ban dau. An Luu.',
-        why: 'Khong co san pham thi khong the tao don hang. Gia von (cost) can thiet de tinh margin. SKU la ma duy nhat khong trung.',
-        tips: 'Neu ban co san pham combo (VD: 3 ao thun), tao san pham cha roi them thanh phan (bundle). Mac dinh da co 10 SP mau.',
+        num: 3, page: 'Sản phẩm & BOM', icon: Package,
+        title: 'Thêm danh mục sản phẩm',
+        what: 'Vào Sản phẩm > "Thêm sản phẩm". Nhập SKU, tên, mô tả, danh mục, giá bán, giá vốn, tồn kho ban đầu. Nhấn Lưu.',
+        why: 'Không có sản phẩm thì không thể tạo đơn hàng. Giá vốn (cost) cần thiết để tính margin. SKU là mã duy nhất không trùng.',
+        tips: 'Nếu bạn có sản phẩm combo (VD: 3 áo thun), tạo sản phẩm cha rồi thêm thành phần (bundle). Mặc định đã có 10 SP mẫu.',
       },
       {
-        num: 4, page: 'Ton kho 5 trang thai', icon: Boxes,
-        title: 'Kiem tra ton kho dau ky',
-        what: 'Vao Ton kho 5 trang thai. He thong tu dong tao ban ghi ton kho khi ban them san pham. 5 trang thai: Physical, Reserved, Available, Unavailable, Incoming.',
-        why: 'Available = Physical - Reserved. Khi tao don, he thong tu Reserved them so luong. Khi giao hang, Physical giam.',
-        tips: 'Badge do tren sidebar hien khi ton kho <= reorder level. Mac dinh da co ton kho cho 3 kho x 10 san pham.',
+        num: 4, page: 'Tồn kho 5 trạng thái', icon: Boxes,
+        title: 'Kiểm tra tồn kho đầu kỳ',
+        what: 'Vào Tồn kho 5 trạng thái. Hệ thống tự động tạo bản ghi tồn kho khi bạn thêm sản phẩm. 5 trạng thái: Physical, Reserved, Available, Unavailable, Incoming.',
+        why: 'Available = Physical - Reserved. Khi tạo đơn, hệ thống tự Reserved thêm số lượng. Khi giao hàng, Physical giảm.',
+        tips: 'Huy hiệu đỏ trên sidebar hiện khi tồn kho <= reorder level. Mặc định đã có tồn kho cho 3 kho x 10 sản phẩm.',
       },
       {
-        num: 5, page: 'Khach hang', icon: Users,
-        title: 'Them danh sach khach hang',
-        what: 'Vao Khach hang > "Them khach hang". Nhap ten, email, dien thoai, dia chi giao hang, cong ty (neu co).',
-        why: 'Can co khach hang truoc khi tao don. He thong tu dong tinh tong chi tieu, ti le doi tra, xep hang VIP/Thuong.',
-        tips: 'Khach VIP co ti le mua cao, duoc uu tien. He thong tu dong de xuat lenh bo hang khi khach mua nhieu. Da co 8 khach mau.',
+        num: 5, page: 'Khách hàng', icon: Users,
+        title: 'Thêm danh sách khách hàng',
+        what: 'Vào Khách hàng > "Thêm khách hàng". Nhập tên, email, điện thoại, địa chỉ giao hàng, công ty (nếu có).',
+        why: 'Cần có khách hàng trước khi tạo đơn. Hệ thống tự động tính tổng chi tiêu, tỉ lệ đổi trả, xếp hạng VIP/Thường.',
+        tips: 'Khách VIP có tỉ lệ mua cao, được ưu tiên. Hệ thống tự động đề xuất lệnh bổ hàng khi khách mua nhiều. Đã có 8 khách mẫu.',
       },
     ],
   },
   {
     id: 'day2',
-    label: 'Ngay 2',
-    sublabel: 'Ban don dau tien',
+    label: 'Ngày 2',
+    sublabel: 'Bán đơn đầu tiên',
     icon: ShoppingCart,
     color: 'brand',
-    description: 'Tao don hang dau tien, gan kho, xuat wave picking, cap nhat trang thai giao hang',
-    role: 'Admin hoac Quan ly',
-    loginAs: 'admin@nexusoms.vn hoac manager@nexusoms.vn',
+    description: 'Tạo đơn hàng đầu tiên, gán kho, xuất wave picking, cập nhật trạng thái giao hàng',
+    role: 'Admin hoặc Quản lý',
+    loginAs: 'admin@nexusoms.vn hoặc manager@nexusoms.vn',
     steps: [
       {
-        num: 1, page: 'Don hang', icon: ShoppingCart,
-        title: 'Tao don hang dau tien',
-        what: 'Vao Don hang > "Tao don". Chon khach hang, chon san pham, nhap so luong. He thong tu tinh subtotal, VAT 10%, phi ship. Chon kho giao, chon kenh (website/shopee/tiktok/lazada). An Luu.',
-        why: 'Khi luu don, he thong tu dong: (1) tru ton kho Reserved, (2) tao log trang thai "pending", (3) gan ma don DH-XXXX.',
-        tips: 'Don COD mac dinh payment_status = unpaid. Don bank_transfer/momo mac dinh = paid. SLA = 3 ngay ke tu khi tao.',
+        num: 1, page: 'Đơn hàng', icon: ShoppingCart,
+        title: 'Tạo đơn hàng đầu tiên',
+        what: 'Vào Đơn hàng > "Tạo đơn". Chọn khách hàng, chọn sản phẩm, nhập số lượng. Hệ thống tự tính subtotal, VAT 10%, phí ship. Chọn kho giao, chọn kênh (website/shopee/tiktok/lazada). Nhấn Lưu.',
+        why: 'Khi lưu đơn, hệ thống tự động: (1) trừ tồn kho Reserved, (2) tạo log trạng thái "pending", (3) gán mã đơn DH-XXXX.',
+        tips: 'Đơn COD mặc định payment_status = unpaid. Đơn bank_transfer/momo mặc định = paid. SLA = 3 ngày kể từ khi tạo.',
       },
       {
         num: 2, page: 'Wave Picking & SLA', icon: Truck,
-        title: 'Tao wave picking va gan don',
-        what: 'Vao Wave Picking > "Tao wave". Chon kho, chon nhieu don can gom. Wave chuyen qua 4 trang thai: Mo > Dang nhat > Dang dong goi > Hoan thanh.',
-        why: 'Wave gom nhieu don thanh 1 lan nhat hang de tiet kiem thoi gian di lai trong kho. SLA countdown dem nguoc cho moi don.',
-        tips: 'Nhan vao wave de xem danh sach don. Khi chuyen sang "Dang dong goi", don tu chuyen sang "processing". Mac dinh da co WAVE-001.',
+        title: 'Tạo wave picking và gán đơn',
+        what: 'Vào Wave Picking > "Tạo wave". Chọn kho, chọn nhiều đơn cần gom. Wave chuyển qua 4 trạng thái: Mở > Đang nhặt > Đang đóng gói > Hoàn thành.',
+        why: 'Wave gom nhiều đơn thành 1 lần nhặt hàng để tiết kiệm thời gian đi lại trong kho. SLA countdown đếm ngược cho mỗi đơn.',
+        tips: 'Nhấn vào wave để xem danh sách đơn. Khi chuyển sang "Đang đóng gói", đơn tự chuyển sang "processing". Mặc định đã có WAVE-001.',
       },
       {
-        num: 3, page: 'Don hang', icon: ShoppingCart,
-        title: 'Cap nhat trang thai don',
-        what: 'Quay lai Don hang, nhan vao 1 don. Trong drawer chi tiet, cap nhat trang thai: pending > processing > shipped > delivered. Moi lan doi trang thai, log tu ghi lai.',
-        why: 'Trang thai shipped danh dau don da giao cho don vi van chuyen. Delivered danh dau khach da nhan. Cancelled = huy, tra lai ton kho.',
-        tips: 'Moi buoc chuyen trang thai ghi vao order_status_log. Ban co the xem lich su trong drawer chi tiet don hang.',
+        num: 3, page: 'Đơn hàng', icon: ShoppingCart,
+        title: 'Cập nhật trạng thái đơn',
+        what: 'Quay lại Đơn hàng, nhấn vào 1 đơn. Trong drawer chi tiết, cập nhật trạng thái: pending > processing > shipped > delivered. Mỗi lần đổi trạng thái, log tự ghi lại.',
+        why: 'Trạng thái shipped đánh dấu đơn đã giao cho đơn vị vận chuyển. Delivered đánh dấu khách đã nhận. Cancelled = hủy, trả lại tồn kho.',
+        tips: 'Mỗi bước chuyển trạng thái ghi vào order_status_log. Bạn có thể xem lịch sử trong drawer chi tiết đơn hàng.',
       },
       {
-        num: 4, page: 'So kep', icon: Banknote,
-        title: 'Kiem tra but toan tu dong',
-        what: 'Vao So kep. Khi don hang chuyen sang "delivered", he thong tu tao but toan: No Phai thu khach / Co Doanh thu ban hang. Moi but toan Debit = Credit.',
-        why: 'Sach kep la bat buoc de bao cao tai chinh chinh xac. 10 tai khoan da cau hinh: Tien mat, Phai thu, Hang ton, Phai tra, Von, Doanh thu, Gia von, Phi van chuyen...',
-        tips: 'Mac dinh da co 2 but toan mau (JE-0001, JE-0002) cho don DH-0001. Moi but toan co nhieu dong, moi dong gan voi 1 tai khoan.',
+        num: 4, page: 'Sổ kép', icon: Banknote,
+        title: 'Kiểm tra bút toán tự động',
+        what: 'Vào Sổ kép. Khi đơn hàng chuyển sang "delivered", hệ thống tự tạo bút toán: Nợ Phải thu khách / Có Doanh thu bán hàng. Mỗi bút toán Debit = Credit.',
+        why: 'Sổ kép là bắt buộc để báo cáo tài chính chính xác. 10 tài khoản đã cấu hình: Tiền mặt, Phải thu, Hàng tồn, Phải trả, Vốn, Doanh thu, Giá vốn, Phí vận chuyển...',
+        tips: 'Mặc định đã có 2 bút toán mẫu (JE-0001, JE-0002) cho đơn DH-0001. Mỗi bút toán có nhiều dòng, mỗi dòng gắn với 1 tài khoản.',
       },
     ],
   },
   {
     id: 'week1',
-    label: 'Tuan 1',
-    sublabel: 'Ket noi da kenh',
+    label: 'Tuần 1',
+    sublabel: 'Kết nối đa kênh',
     icon: Link2,
     color: 'sky',
-    description: 'Ket noi shop Shopee/TikTok, anh xa SKU, cau hinh dinh tuyen kho, dong bo ton kho',
-    role: 'Quan ly',
+    description: 'Kết nối shop Shopee/TikTok, ánh xạ SKU, cấu hình định tuyến kho, đồng bộ tồn kho',
+    role: 'Quản lý',
     loginAs: 'manager@nexusoms.vn / Manager@123',
     steps: [
       {
-        num: 1, page: 'Ket noi kenh', icon: Link2,
-        title: 'Ket noi shop TMĐT',
-        what: 'Vao Ket noi kenh > "Them ket noi". Chon kenh (shopee/tiktok/lazada), nhap ten shop, shop ID, API key. He thong kiem tra ket noi va hien trang thai connected/error.',
-        why: 'Khi ket noi thanh cong, don hang tu shop tu dong dong ve he thong. Ton kho tu dong day len shop khi co thay doi.',
-        tips: 'Mac dinh da co 3 shop: Shopee (connected), TikTok (connected), Lazada (error - token het han). Click vao shop de xem chi tiet sync.',
+        num: 1, page: 'Kết nối kênh', icon: Link2,
+        title: 'Kết nối shop TMĐT',
+        what: 'Vào Kết nối kênh > "Thêm kết nối". Chọn kênh (shopee/tiktok/lazada), nhập tên shop, shop ID, API key. Hệ thống kiểm tra kết nối và hiện trạng thái connected/error.',
+        why: 'Khi kết nối thành công, đơn hàng từ shop tự động đổ về hệ thống. Tồn kho tự động đẩy lên shop khi có thay đổi.',
+        tips: 'Mặc định đã có 3 shop: Shopee (connected), TikTok (connected), Lazada (error - token hết hạn). Click vào shop để xem chi tiết sync.',
       },
       {
-        num: 2, page: 'Anh xa SKU kenh', icon: Layers,
-        title: 'Anh xa SKU noi bo sang SKU kenh',
-        what: 'Vao Anh xa SKU > "Them anh xa". Chon kenh, nhap SKU tren kenh (VD: SHOPEE-AO-001), chon san pham noi bo (SP-AO-001). Luu.',
-        why: 'Khi don tu Shopei ve voi SKU SHOPEE-AO-001, he thong tu map sang SP-AO-001 de tru ton kho dung. Khong anh xa = don khong gan duoc san pham.',
-        tips: 'Mac dinh da co 5 anh xa. 1 san pham co the anh xa nhieu kenh. Anh xa la dieu kien bat buoc truoc khi dong bo ton kho.',
+        num: 2, page: 'Ánh xạ SKU kênh', icon: Layers,
+        title: 'Ánh xạ SKU nội bộ sang SKU kênh',
+        what: 'Vào Ánh xạ SKU > "Thêm ánh xạ". Chọn kênh, nhập SKU trên kênh (VD: SHOPEE-AO-001), chọn sản phẩm nội bộ (SP-AO-001). Lưu.',
+        why: 'Khi đơn từ Shopee về với SKU SHOPEE-AO-001, hệ thống tự map sang SP-AO-001 để trừ tồn kho đúng. Không ánh xạ = đơn không gán được sản phẩm.',
+        tips: 'Mặc định đã có 5 ánh xạ. 1 sản phẩm có thể ánh xạ nhiều kênh. Ánh xạ là điều kiện bắt buộc trước khi đồng bộ tồn kho.',
       },
       {
-        num: 3, page: 'Dinh tuyen kho', icon: Activity,
-        title: 'Cau hinh luat dinh tuyen don',
-        what: 'Vao Dinh tuyen kho > "Them quy tac". Chon kenh (VD: shopee), chon kho uu tien (VD: WH-HCM), chon strategy (priority/nearest/most_stock). Set do uu tien.',
-        why: 'Khi don tu kenh ve, he thong tu gan kho theo routing rule. VD: don Shopee -> WH-HCM. Khong co rule -> gan kho theo do uu tien kho.',
-        tips: 'Strategy nearest = chon kho gan khach nhat. most_stock = chon kho co nhieu ton nhat. priority = chon kho cu the. Da co 5 routing rule mau.',
+        num: 3, page: 'Định tuyến kho', icon: Activity,
+        title: 'Cấu hình luật định tuyến đơn',
+        what: 'Vào Định tuyến kho > "Thêm quy tắc". Chọn kênh (VD: shopee), chọn kho ưu tiên (VD: WH-HCM), chọn strategy (priority/nearest/most_stock). Cài đặt độ ưu tiên.',
+        why: 'Khi đơn từ kênh về, hệ thống tự gán kho theo routing rule. VD: đơn Shopee -> WH-HCM. Không có rule -> gán kho theo độ ưu tiên kho.',
+        tips: 'Strategy nearest = chọn kho gần khách nhất. most_stock = chọn kho có nhiều tồn nhất. priority = chọn kho cụ thể. Đã có 5 routing rule mẫu.',
       },
       {
-        num: 4, page: 'Giam sat dong bo', icon: RefreshCw,
-        title: 'Giam sat dong bo ton kho',
-        what: 'Vao Giam sat dong bo. Moi 15 phut he thong tu dong day ton kho len tat ca shop. Log hien trang thai: success / failed / retrying.',
-        why: 'Neu ton kho tren shop khong dong bo, ban se bi ban ao (ban ma kho khong con) hoac mat don (khong ban du kho con). Log retry cho biet co can canh bao khong.',
-        tips: 'Mac dinh da co 5 sync log. Lazada dang loi token - can lam moi API key. Click vao log de xem chi tiet retry count va message.',
+        num: 4, page: 'Giám sát đồng bộ', icon: RefreshCw,
+        title: 'Giám sát đồng bộ tồn kho',
+        what: 'Vào Giám sát đồng bộ. Mỗi 15 phút hệ thống tự động đẩy tồn kho lên tất cả shop. Log hiện trạng thái: success / failed / retrying.',
+        why: 'Nếu tồn kho trên shop không đồng bộ, bạn sẽ bị bán ảo (bán mà kho không còn) hoặc mất đơn (không bán dù kho còn). Log retry cho biết có cần cảnh báo không.',
+        tips: 'Mặc định đã có 5 sync log. Lazada đang lỗi token - cần làm mới API key. Click vào log để xem chi tiết retry count và message.',
       },
     ],
   },
   {
     id: 'daily',
-    label: 'Hang ngay',
-    sublabel: 'Van hanh moi ngay',
+    label: 'Hằng ngày',
+    sublabel: 'Vận hành mỗi ngày',
     icon: Calendar,
     color: 'emerald',
-    description: 'Cong viec lap lai moi ngay: xu ly don, giao hang, nhap kho, doi tra',
-    role: 'Tat ca vai tro',
-    loginAs: 'warehouse@nexusoms.vn (kho) / manager (van hanh)',
+    description: 'Công việc lặp lại mỗi ngày: xử lý đơn, giao hàng, nhập kho, đổi trả',
+    role: 'Tất cả vai trò',
+    loginAs: 'warehouse@nexusoms.vn (kho) / manager (vận hành)',
     steps: [
       {
         num: 1, page: 'Dashboard', icon: LayoutDashboard,
-        title: 'Sang: Mo Dashboard kiem tra tinh hinh',
-        what: 'Vao Dashboard. Xem: so don pending/processing, don qua SLA, ton kho thap, doanh thu hom nay, margin trung binh.',
-        why: 'Dashboard la diem bat dau moi ngay. Badge do tren sidebar cho biet co bao nhieu don cho xu ly va bao nhieu SP sap het hang.',
-        tips: 'Click vao moi card de di nhanh den trang tuong ung. Dashboard cap nhat moi 30 giay.',
+        title: 'Sáng: Mở Dashboard kiểm tra tình hình',
+        what: 'Vào Dashboard. Xem: số đơn pending/processing, đơn quá SLA, tồn kho thấp, doanh thu hôm nay, margin trung bình.',
+        why: 'Dashboard là điểm bắt đầu mỗi ngày. Huy hiệu đỏ trên sidebar cho biết có bao nhiêu đơn chờ xử lý và bao nhiêu SP sắp hết hàng.',
+        tips: 'Click vào mỗi thẻ để đi nhanh đến trang tương ứng. Dashboard cập nhật mỗi 30 giây.',
       },
       {
-        num: 2, page: 'Don hang', icon: ShoppingCart,
-        title: 'Sang: Xu ly don moi',
-        what: 'Vao Don hang. Loc theo status = pending. Mo tung don, kiem tra thong tin, chuyen sang processing. Tao wave picking cho nhom don cung kho.',
-        why: 'Don pending can duoc chuyen sang processing trong ngay. Don qua SLA (must_ship_by_sla) se bi canh bao do.',
-        tips: 'Nhan "Tao don" o goc tren ben phai. Don COD can xac nhan thanh toan khi giao. Don bank_transfer/momo da thanh toan truoc.',
+        num: 2, page: 'Đơn hàng', icon: ShoppingCart,
+        title: 'Sáng: Xử lý đơn mới',
+        what: 'Vào Đơn hàng. Lọc theo status = pending. Mở từng đơn, kiểm tra thông tin, chuyển sang processing. Tạo wave picking cho nhóm đơn cùng kho.',
+        why: 'Đơn pending cần được chuyển sang processing trong ngày. Đơn quá SLA (must_ship_by_sla) sẽ bị cảnh báo đỏ.',
+        tips: 'Nhấn "Tạo đơn" ở góc trên bên phải. Đơn COD cần xác nhận thanh toán khi giao. Đơn bank_transfer/momo đã thanh toán trước.',
       },
       {
         num: 3, page: 'Wave Picking & SLA', icon: Truck,
-        title: 'Sang-Chieu: Nhat hang va dong goi',
-        what: 'Vao Wave Picking. Wave dang "picking" -> nhan vat nhat xong -> chuyen sang "packing" -> dong goi xong -> "completed". Don tu chuyen sang shipped.',
-        why: 'Wave gom don de nhat 1 lan cho nhieu don. Nhan vien kho chi can lam theo danh sach trong wave, khong can di lai nhieu lan.',
-        tips: 'SLA countdown hien ngay tren moi don trong wave. Don chua ship qua SLA hien do. Co the scan barcode de pack.',
+        title: 'Sáng - Chiều: Nhặt hàng và đóng gói',
+        what: 'Vào Wave Picking. Wave đang "picking" -> nhân viên nhặt xong -> chuyển sang "packing" -> đóng gói xong -> "completed". Đơn tự chuyển sang shipped.',
+        why: 'Wave gom đơn để nhặt 1 lần cho nhiều đơn. Nhân viên kho chỉ cần làm theo danh sách trong wave, không cần đi lại nhiều lần.',
+        tips: 'SLA countdown hiện ngay trên mỗi đơn trong wave. Đơn chưa ship quá SLA hiện đỏ. Có thể quét mã vạch barcode để pack.',
       },
       {
-        num: 4, page: 'Don hang', icon: ShoppingCart,
-        title: 'Chieu: Danh dau giao thanh cong',
-        what: 'Vao Don hang. Don "shipped" -> khi don vi van chuyen xac nhan da giao -> chuyen sang "delivered". He thong tu tao but toan doanh thu.',
-        why: 'Delivered la buoc cuoi cua 1 don happy case. Sau delivered, doanh thu duoc ghi nhan vao so kep, margin duoc tinh.',
-        tips: 'Neu khach tu choi nhan -> chuyen sang "cancelled" + payment_status = refunded. Ton kho tu tra lai.',
+        num: 4, page: 'Đơn hàng', icon: ShoppingCart,
+        title: 'Chiều: Đánh dấu giao thành công',
+        what: 'Vào Đơn hàng. Đơn "shipped" -> khi đơn vị vận chuyển xác nhận đã giao -> chuyển sang "delivered". Hệ thống tự tạo bút toán doanh thu.',
+        why: 'Delivered là bước cuối của 1 đơn happy case. Sau delivered, doanh thu được ghi nhận vào sổ kép, margin được tính.',
+        tips: 'Nếu khách từ chối nhận -> chuyển sang "cancelled" + payment_status = refunded. Tồn kho tự trả lại.',
       },
       {
-        num: 5, page: 'Ton kho 5 trang thai', icon: Boxes,
-        title: 'Chieu: Kiem tra canh bao ton kho',
-        what: 'Vao Ton kho. Kiem tra SP nao co Available <= reorder_point. SP do can duoc nhap them. Chuyen sang Don mua hang de tao PO.',
-        why: 'Ban het hang = mat don. He thong tu canh bao khi ton kho den muc reorder. Buffer rule cho phep dat safety stock rieng tung SP/kho.',
-        tips: 'Badge do tren sidebar dem so SP dang canh bao. Vao Ton kho an toan de xem/cap nhat safety stock va reorder point.',
+        num: 5, page: 'Tồn kho 5 trạng thái', icon: Boxes,
+        title: 'Chiều: Kiểm tra cảnh báo tồn kho',
+        what: 'Vào Tồn kho. Kiểm tra SP nào có Available <= reorder_point. SP đó cần được nhập thêm. Chuyển sang Đơn mua hàng để tạo PO.',
+        why: 'Bán hết hàng = mất đơn. Hệ thống tự cảnh báo khi tồn kho đến mức reorder. Buffer rule cho phép đặt safety stock riêng từng SP/kho.',
+        tips: 'Huy hiệu đỏ trên sidebar đếm số SP đang cảnh báo. Vào Tồn kho an toàn để xem/cập nhật safety stock và reorder point.',
       },
       {
-        num: 6, page: 'Doi tra / RMA', icon: PackageCheck,
-        title: 'Khi co: Xu ly doi tra',
-        what: 'Vao Doi tra / RMA > "Tao yeu cau". Chon don goc, nhap ly do, so tien hoan. RMA chuyen: pending > approved > received > quality_check > refunded > closed.',
-        why: 'Khi khach doi tra, can tao RMA de theo doi. Hang tra nhap lai kho (Physical tang). Hoan tien ghi am doanh thu trong so kep.',
-        tips: 'RMA-0001 (refunded) va RMA-0002 (quality_check) da co san. Nhan vao RMA de xem lich su trang thai.',
+        num: 6, page: 'Đổi trả / RMA', icon: PackageCheck,
+        title: 'Khi có: Xử lý đổi trả',
+        what: 'Vào Đổi trả / RMA > "Tạo yêu cầu". Chọn đơn gốc, nhập lý do, số tiền hoàn. RMA chuyển: pending > approved > received > quality_check > refunded > closed.',
+        why: 'Khi khách đổi trả, cần tạo RMA để theo dõi. Hàng trả nhập lại kho (Physical tăng). Hoàn tiền ghi âm doanh thu trong sổ kép.',
+        tips: 'RMA-0001 (refunded) và RMA-0002 (quality_check) đã có sẵn. Nhấn vào RMA để xem lịch sử trạng thái.',
       },
     ],
   },
   {
     id: 'weekly',
-    label: 'Hang tuan',
-    sublabel: 'Tai chinh & Bao cao',
+    label: 'Hằng tuần',
+    sublabel: 'Tài chính & Báo cáo',
     icon: Banknote,
     color: 'amber',
-    description: 'Cuoi tuan: doi soát phi kenh, bao cao doanh thu, kiem tra margin, phan tich van toc ban',
-    role: 'Quan ly hoac Admin',
+    description: 'Cuối tuần: đối soát phí kênh, báo cáo doanh thu, kiểm tra margin, phân tích vận tốc bán',
+    role: 'Quản lý hoặc Admin',
     loginAs: 'manager@nexusoms.vn / Manager@123',
     steps: [
       {
-        num: 1, page: 'Doi soát phi', icon: Receipt,
-        title: 'Doi soát phi TMĐT',
-        what: 'Vao Doi soát phi. Xem tung don kenh: phi hoa hong, phi giao hang, phi voucher. So sanh phi uoc tinh vs phi thuc te. Danh dau da doi soát.',
-        why: 'Shopee/TikTok tru phi truc tiep. Neu khong doi soát, ban khong biet chenh lech phi. 3 don mau da co fee breakdown, 1 don co chenh lech 5.000 VND.',
-        tips: 'Don co "discrepancy_note" can kiem tra thu cong. Click "Da doi soát" de danh dau da xong.',
+        num: 1, page: 'Đối soát phí', icon: Receipt,
+        title: 'Đối soát phí TMĐT',
+        what: 'Vào Đối soát phí. Xem từng đơn kênh: phí hoa hồng, phí giao hàng, phí voucher. So sánh phí ước tính vs phí thực tế. Đánh dấu đã đối soát.',
+        why: 'Shopee/TikTok trừ phí trực tiếp. Nếu không đối soát, bạn không biết chênh lệch phí. 3 đơn mẫu đã có fee breakdown, 1 đơn có chênh lệch 5.000 VNĐ.',
+        tips: 'Đơn có "discrepancy_note" cần kiểm tra thủ công. Click "Đã đối soát" để đánh dấu đã xong.',
       },
       {
-        num: 2, page: 'Bao cao doanh thu', icon: TrendingUp,
-        title: 'Xem bao cao doanh thu',
-        what: 'Vao Bao cao doanh thu. Bieu do doanh thu theo ngay/thang/nam. Phan tich theo danh muc, theo kenh, theo kho. Co the xuat Excel/PDF.',
-        why: 'Cuoi tuan can bao cao cho sep. Bao cao hien doanh thu, loi nhuan, margin theo nhieu chieu. Tu dong tinh tu du lieu don hang.',
-        tips: 'Click vao bieu do de xem chi tiet. Su dung filter theo ngay de xem 1 tuan/thang cu the.',
+        num: 2, page: 'Báo cáo doanh thu', icon: TrendingUp,
+        title: 'Xem báo cáo doanh thu',
+        what: 'Vào Báo cáo doanh thu. Biểu đồ doanh thu theo ngày/tháng/năm. Phân tích theo danh mục, theo kênh, theo kho. Có thể xuất Excel/PDF.',
+        why: 'Cuối tuần cần báo cáo cho ban quản lý. Báo cáo hiện doanh thu, lợi nhuận, margin theo nhiều chiều. Tự động tính từ dữ liệu đơn hàng.',
+        tips: 'Click vào biểu đồ để xem chi tiết. Sử dụng bộ lọc theo ngày để xem 1 tuần/tháng cụ thể.',
       },
       {
-        num: 3, page: 'Marg Circuit Breaker', icon: BadgePercent,
-        title: 'Kiem tra margin',
-        what: 'Vao Marg Circuit Breaker. Xem don nao co margin am. He thong tu HOLD don margin am va canh bao. Cau hinh nguong that loi toi da.',
-        why: 'Ban don margin am = mat tien. Circuit breaker tu dong ngat ban khi vuot nguong. Tu dong khoa ton kho khi SP co margin am lien tuc.',
-        tips: 'Set min_margin_percent va max_loss_per_order. Khi trigger, don tu dong hold_reason = "negative_margin".',
+        num: 3, page: 'Margin Circuit Breaker', icon: BadgePercent,
+        title: 'Kiểm tra margin',
+        what: 'Vào Margin Circuit Breaker. Xem đơn nào có margin âm. Hệ thống tự HOLD đơn margin âm và cảnh báo. Cấu hình ngưỡng thất thoát tối đa.',
+        why: 'Bán đơn margin âm = mất tiền. Circuit breaker tự động ngắt bán khi vượt ngưỡng. Tự động khóa tồn kho khi SP có margin âm liên tục.',
+        tips: 'Cài đặt min_margin_percent và max_loss_per_order. Khi kích hoạt, đơn tự động gán hold_reason = "negative_margin".',
       },
       {
-        num: 4, page: 'Van toc ban', icon: Gauge,
-        title: 'Phan tich van toc ban',
-        what: 'Vao Van toc ban. Xem doanh thu/gio, ton kho chay/ton. SP nao ban nhanh nhhat, SP nao cham nhat. De xuat bo hang dua van toc.',
-        why: 'Van toc ban giup quyet dinh nhap them SP nao, ngung SP nao. SP ban cham chiem kho = ton von. SP ban nhanh can nhap them de khong het hang.',
-        tips: 'Combobox SP = combo 3 ao thun dang ban tot. Tui tote (SP-TG-001) co ton kho 300 nhung ban cham.',
+        num: 4, page: 'Vận tốc bán', icon: Gauge,
+        title: 'Phân tích vận tốc bán',
+        what: 'Vào Vận tốc bán. Xem doanh thu/giờ, tốc độ xuất kho/tồn. SP nào bán nhanh nhất, SP nào chậm nhất. Đề xuất bổ hàng dựa trên vận tốc.',
+        why: 'Vận tốc bán giúp quyết định nhập thêm SP nào, ngừng SP nào. SP bán chậm chiếm kho = đọng vốn. SP bán nhanh cần nhập thêm để không đứt hàng.',
+        tips: 'Combobox SP = combo 3 áo thun đang bán tốt. Túi tote (SP-TG-001) có tồn kho 300 nhưng bán chậm.',
       },
       {
-        num: 5, page: 'Don mua hang', icon: ClipboardList,
-        title: 'Tao don mua hang (PO) nhap them',
-        what: 'Vao Don mua hang > "Tao PO". Chon kho, nha cung cap, san pham, so luong, ngay du kien nhan. PO chuyen: draft > ordered > partial > received.',
-        why: 'Khi PO nhan hang, ton kho Physical tang, Incoming giam. He thong ghi giao dich vao So giao dich ton. 2 PO mau da co: PO-0001 (ordered), PO-0002 (partial).',
-        tips: 'PO partial = da nhan 1 phan. Click vao PO de xem items va cap nhat received_qty.',
+        num: 5, page: 'Đơn mua hàng', icon: ClipboardList,
+        title: 'Tạo đơn mua hàng (PO) nhập thêm',
+        what: 'Vào Đơn mua hàng > "Tạo PO". Chọn kho, nhà cung cấp, sản phẩm, số lượng, ngày dự kiến nhận. PO chuyển: draft > ordered > partial > received.',
+        why: 'Khi PO nhận hàng, tồn kho Physical tăng, Incoming giảm. Hệ thống ghi giao dịch vào Sổ giao dịch tồn. 2 PO mẫu đã có: PO-0001 (ordered), PO-0002 (partial).',
+        tips: 'PO partial = đã nhận 1 phần. Click vào PO để xem danh mục và cập nhật received_qty.',
       },
     ],
   },
   {
     id: 'advanced',
-    label: 'Nang cao',
-    sublabel: 'Tu dong hoa & Quan tri',
+    label: 'Nâng cao',
+    sublabel: 'Tự động hóa & Quản trị',
     icon: Zap,
     color: 'violet',
-    description: 'Luat IF-THEN, webhook, audit trail, chaos test, tao nguoi dung',
-    role: 'Quan tri vien',
+    description: 'Luật IF-THEN, webhook, audit trail, chaos test, tạo người dùng',
+    role: 'Quản trị viên',
     loginAs: 'admin@nexusoms.vn / Admin@123',
     steps: [
       {
-        num: 1, page: 'Luat tu dong', icon: Zap,
-        title: 'Tao luat tu dong IF-THEN',
-        what: 'Vao Luat tu dong > "Tao luat". Nhap ten luat, dieu kien (IF), hanh dong (THEN), trigger event. VD: IF order_total >= 500K THEN add_free_gift.',
-        why: 'Luat tu dong giam cong viec thu cong. Khi dieu kien IF match, action THEN tu chay khong can nguoi can thiep. 3 luat mau da co.',
-        tips: 'Priority nho = chay truoc. Trigger: order_created, status_changed, payment_received. Co the tao nhieu luat cho 1 trigger.',
+        num: 1, page: 'Luật tự động', icon: Zap,
+        title: 'Tạo luật tự động IF-THEN',
+        what: 'Vào Luật tự động > "Tạo luật". Nhập tên luật, điều kiện (IF), hành động (THEN), trigger event. VD: IF order_total >= 500K THEN add_free_gift.',
+        why: 'Luật tự động giảm công việc thủ công. Khi điều kiện IF thỏa mãn, action THEN tự chạy không cần người can thiệp. 3 luật mẫu đã có.',
+        tips: 'Độ ưu tiên nhỏ = chạy trước. Trigger: order_created, status_changed, payment_received. Có thể tạo nhiều luật cho 1 trigger.',
       },
       {
         num: 2, page: 'Outbound Webhooks', icon: Webhook,
-        title: 'Cau hinh webhook gui ra ngoai',
-        what: 'Vao Outbound Webhooks > "Them webhook". Nhap ten, target URL, event types, secret. He thong gui HTTP POST + HMAC khi co event.',
-        why: 'Webhook dong bo he thong NexusOMS voi ERP ke toan, CRM, Slack. VD: khi don delivered -> gui sang ERP de ghi nhan doanh thu. 3 webhook mau da co.',
-        tips: 'Max retries = so lan gui lai khi loi. HMAC signature dung de xac thuc webhook khong bi gia mao.',
+        title: 'Cấu hình webhook gửi ra ngoài',
+        what: 'Vào Outbound Webhooks > "Thêm webhook". Nhập tên, target URL, event types, secret. Hệ thống gửi HTTP POST + HMAC khi có sự kiện.',
+        why: 'Webhook đồng bộ hệ thống NexusOMS với ERP kế toán, CRM, Slack. VD: khi đơn delivered -> gửi sang ERP để ghi nhận doanh thu. 3 webhook mẫu đã có.',
+        tips: 'Max retries = số lần gửi lại khi lỗi. Chữ ký HMAC dùng để xác thực webhook không bị giả mạo.',
       },
       {
-        num: 3, page: 'Cai dat & Phan quyen', icon: Settings,
-        title: 'Tao nguoi dung va gan vai tro',
-        what: 'Vao Cai dat > tab Phan quyen > "Them nguoi dung". Nhap email, mat khau, ho ten, chon vai tro (admin/manager/warehouse). Luu.',
-        why: 'Moi nguoi dung thay trang khac nhau. Admin thay tat ca, manager khong thay audit/webhook/simulator, warehouse chi thay don hang + ton kho.',
-        tips: 'Co the doi vai tro va kich hoat/vo hieu hoa nguoi dung bat ky luc nao. 3 tai khoan mau: admin, manager, warehouse.',
+        num: 3, page: 'Cài đặt & Phân quyền', icon: Settings,
+        title: 'Tạo người dùng và gán vai trò',
+        what: 'Vào Cài đặt > tab Phân quyền > "Thêm người dùng". Nhập email, mật khẩu, họ tên, chọn vai trò (admin/manager/warehouse). Lưu.',
+        why: 'Mỗi người dùng thấy trang khác nhau. Admin thấy tất cả, manager không thấy audit/webhook/simulator, warehouse chỉ thấy đơn hàng + tồn kho.',
+        tips: 'Có thể đổi vai trò và kích hoạt/vô hiệu hóa người dùng bất kỳ lúc nào. 3 tài khoản mẫu: admin, manager, warehouse.',
       },
       {
-        num: 4, page: 'Nhat ky Audit', icon: ShieldCheck,
-        title: 'Kiem tra nhat ky audit',
-        what: 'Vao Nhat ky Audit. Xem lich su moi thay doi quan trong: tao don, doi trang thai, xoa du lieu, doi gia. Moi entry co hash SHA-256 lien ket.',
-        why: 'Audit trail chong xoa/sua im lang. Neu ai do sua du lieu, hash se khong khop. Day la bat buoc de bao cao kiem toan.',
-        tips: 'Hash lien ket: entry sau chua hash cua entry truoc. Sua 1 entry = pha ca chuoi. Filter theo actor, action, entity.',
+        num: 4, page: 'Nhật ký Audit', icon: ShieldCheck,
+        title: 'Kiểm tra nhật ký audit',
+        what: 'Vào Nhật ký Audit. Xem lịch sử mọi thay đổi quan trọng: tạo đơn, đổi trạng thái, xóa dữ liệu, đổi giá. Mỗi bản ghi có hash SHA-256 liên kết.',
+        why: 'Audit trail chống xóa/sửa dữ liệu âm thầm. Nếu ai đó sửa dữ liệu, chuỗi hash sẽ bị phá vỡ. Đây là bắt buộc cho kiểm toán.',
+        tips: 'Hash liên kết: bản ghi sau chứa hash của bản ghi trước. Sửa 1 bản ghi = phá cả chuỗi. Bộ lọc theo actor, action, entity.',
       },
       {
         num: 5, page: 'Chaos Simulator', icon: FlaskConical,
-        title: 'Test do ben he thong',
-        what: 'Vao Chaos Simulator. Chay cac scenario: Flash Sale Surge (20 don cung luc), Duplicate Webhook, Margin Attack, Tamper Audit, Concurrent Inventory.',
-        why: 'Truoc khi len production, can test he thong co chiu duoc tac dong cao khong. Simulator tao data test va xem he thong phan hoi ra sao.',
-        tips: 'Flash Sale Surge tao 20 don SIM-FLASH de test inventory reservation. Tamper Audit DB phat hien chuoi hash bi gãy.',
+        title: 'Kiểm thử độ bền hệ thống',
+        what: 'Vào Chaos Simulator. Chạy các kịch bản: Flash Sale Surge (20 đơn cùng lúc), Duplicate Webhook, Margin Attack, Tamper Audit, Concurrent Inventory.',
+        why: 'Trước khi lên production, cần kiểm thử hệ thống có chịu được tải cao không. Simulator tạo dữ liệu giả lập và xem hệ thống phản hồi ra sao.',
+        tips: 'Flash Sale Surge tạo 20 đơn SIM-FLASH để kiểm tra khóa tồn kho (inventory reservation). Tamper Audit DB phát hiện chuỗi hash bị phá vỡ.',
       },
     ],
   },
@@ -348,8 +348,8 @@ const ROLE_BADGE: Record<string, { bg: string; text: string }> = {
 
 function getRoleBadge(role: string): { bg: string; text: string } {
   if (role.toLowerCase().includes('admin')) return ROLE_BADGE.admin;
-  if (role.toLowerCase().includes('manager')) return ROLE_BADGE.manager;
-  if (role.toLowerCase().includes('warehouse')) return ROLE_BADGE.warehouse;
+  if (role.toLowerCase().includes('manager') || role.toLowerCase().includes('quản lý')) return ROLE_BADGE.manager;
+  if (role.toLowerCase().includes('warehouse') || role.toLowerCase().includes('kho')) return ROLE_BADGE.warehouse;
   return { bg: 'bg-ink-100', text: 'text-ink-600' };
 }
 
@@ -371,8 +371,8 @@ export function FlowGuidePage() {
           <Rocket size={24} className="text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-ink-900 tracking-tight">Huong dan onboard — Moi mua he thong</h2>
-          <p className="text-sm text-ink-500 mt-0.5">Lam theo tung giai doan tu Ngay 1 den khi van hanh day du</p>
+          <h2 className="text-xl font-bold text-ink-900 tracking-tight">Hướng dẫn Onboarding — Khởi đầu triển khai</h2>
+          <p className="text-sm text-ink-500 mt-0.5">Thực hiện tuần tự theo từng giai đoạn từ Ngày 1 đến khi vận hành toàn diện</p>
         </div>
       </div>
 
@@ -446,7 +446,7 @@ export function FlowGuidePage() {
             </div>
           </div>
           <div className="rounded-lg bg-ink-50 border border-ink-200 px-4 py-2.5">
-            <p className="text-[10px] text-ink-400 font-medium uppercase tracking-wider mb-0.5">Dang nhap bang</p>
+            <p className="text-[10px] text-ink-400 font-medium uppercase tracking-wider mb-0.5">Đăng nhập bằng</p>
             <code className="text-xs text-ink-700 font-mono">{phase.loginAs}</code>
           </div>
         </div>
@@ -490,12 +490,12 @@ export function FlowGuidePage() {
                   <div className="space-y-2.5 ml-12">
                     {/* What */}
                     <div className="flex items-start gap-2">
-                      <span className={cn('text-[10px] font-bold uppercase tracking-wider mt-0.5 shrink-0', colors.text)}>Lam gi:</span>
+                      <span className={cn('text-[10px] font-bold uppercase tracking-wider mt-0.5 shrink-0', colors.text)}>Làm gì:</span>
                       <p className="text-sm text-ink-700 leading-relaxed">{s.what}</p>
                     </div>
                     {/* Why */}
                     <div className="flex items-start gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5 shrink-0 text-ink-400">Tai sao:</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5 shrink-0 text-ink-400">Tại sao:</span>
                       <p className="text-sm text-ink-600 leading-relaxed">{s.why}</p>
                     </div>
                     {/* Tips */}
@@ -523,7 +523,7 @@ export function FlowGuidePage() {
             )}
           >
             <ArrowDown size={14} className="rotate-90" />
-            {isFirst ? 'Bat dau' : PHASES[currentIndex - 1].label}
+            {isFirst ? 'Bắt đầu' : PHASES[currentIndex - 1].label}
           </button>
 
           <div className="flex items-center gap-1.5">
@@ -549,7 +549,7 @@ export function FlowGuidePage() {
                 : cn('text-white shadow-sm hover:shadow-md', colors.activeBg)
             )}
           >
-            {isLast ? 'Hoan thanh' : PHASES[currentIndex + 1].label}
+            {isLast ? 'Hoàn thành' : PHASES[currentIndex + 1].label}
             <ArrowDown size={14} className="-rotate-90" />
           </button>
         </div>
@@ -557,53 +557,53 @@ export function FlowGuidePage() {
 
       {/* Quick reference: roles overview */}
       <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink-900 mb-1">3 tai khoan demo — Dung de train</h3>
-        <p className="text-sm text-ink-500 mb-4">Dang nhap bang tung tai khoan de thay giao dien khac nhau theo quyen</p>
+        <h3 className="text-base font-semibold text-ink-900 mb-1">3 tài khoản demo — Dùng để đào tạo nội bộ</h3>
+        <p className="text-sm text-ink-500 mb-4">Đăng nhập bằng từng tài khoản để xem giao diện phân quyền tương ứng</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4">
             <div className="flex items-center gap-2 mb-3">
               <ShieldCheck size={18} className="text-rose-600" />
-              <h4 className="font-semibold text-rose-800 text-sm">Quan tri vien</h4>
+              <h4 className="font-semibold text-rose-800 text-sm">Quản trị viên</h4>
             </div>
             <code className="text-xs bg-white/80 text-rose-600 px-2 py-1 rounded font-mono block mb-3">admin@nexusoms.vn / Admin@123</code>
             <div className="space-y-1.5 text-xs text-rose-600">
-              <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard, Don hang, Khach hang</div>
-              <div className="flex items-center gap-2"><Package size={13} /> San pham, Ton kho, Chuyen kho, Kho</div>
-              <div className="flex items-center gap-2"><Banknote size={13} /> Tai chinh, So kep, Bao cao</div>
-              <div className="flex items-center gap-2"><Settings size={13} /> Phan quyen, Audit, Webhook, Simulator</div>
+              <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard, Đơn hàng, Khách hàng</div>
+              <div className="flex items-center gap-2"><Package size={13} /> Sản phẩm, Tồn kho, Chuyển kho, Kho</div>
+              <div className="flex items-center gap-2"><Banknote size={13} /> Tài chính, Sổ kép, Báo cáo</div>
+              <div className="flex items-center gap-2"><Settings size={13} /> Phân quyền, Audit, Webhook, Simulator</div>
             </div>
-            <p className="text-[10px] text-rose-400 mt-2 font-medium">Thay tat ca 28 trang</p>
+            <p className="text-[10px] text-rose-400 mt-2 font-medium">Truy cập toàn bộ 28 phân hệ</p>
           </div>
 
           <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Settings size={18} className="text-sky-600" />
-              <h4 className="font-semibold text-sky-800 text-sm">Quan ly</h4>
+              <h4 className="font-semibold text-sky-800 text-sm">Quản lý</h4>
             </div>
             <code className="text-xs bg-white/80 text-sky-600 px-2 py-1 rounded font-mono block mb-3">manager@nexusoms.vn / Manager@123</code>
             <div className="space-y-1.5 text-xs text-sky-600">
-              <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard, Don hang, Khach hang</div>
-              <div className="flex items-center gap-2"><Package size={13} /> San pham, Ton kho, Chuyen kho, Kho</div>
-              <div className="flex items-center gap-2"><Banknote size={13} /> Tai chinh, So kep, Bao cao</div>
-              <div className="flex items-center gap-2"><Zap size={13} /> Luat tu dong, Da kenh, Giao hang</div>
+              <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard, Đơn hàng, Khách hàng</div>
+              <div className="flex items-center gap-2"><Package size={13} /> Sản phẩm, Tồn kho, Chuyển kho, Kho</div>
+              <div className="flex items-center gap-2"><Banknote size={13} /> Tài chính, Sổ kép, Báo cáo</div>
+              <div className="flex items-center gap-2"><Zap size={13} /> Luật tự động, Đa kênh, Giao hàng</div>
             </div>
-            <p className="text-[10px] text-sky-400 mt-2 font-medium">Thay 22 trang (khong thay audit/webhook/simulator/phan quyen)</p>
+            <p className="text-[10px] text-sky-400 mt-2 font-medium">Truy cập 22 trang (không thấy audit, webhook, simulator, phân quyền)</p>
           </div>
 
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Boxes size={18} className="text-emerald-600" />
-              <h4 className="font-semibold text-emerald-800 text-sm">Nhan vien kho</h4>
+              <h4 className="font-semibold text-emerald-800 text-sm">Nhân viên kho</h4>
             </div>
             <code className="text-xs bg-white/80 text-emerald-600 px-2 py-1 rounded font-mono block mb-3">warehouse@nexusoms.vn / Warehouse@123</code>
             <div className="space-y-1.5 text-xs text-emerald-600">
               <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard</div>
-              <div className="flex items-center gap-2"><ShoppingCart size={13} /> Don hang</div>
-              <div className="flex items-center gap-2"><Boxes size={13} /> Ton kho, Chuyen kho, Lo & Serial</div>
+              <div className="flex items-center gap-2"><ShoppingCart size={13} /> Đơn hàng</div>
+              <div className="flex items-center gap-2"><Boxes size={13} /> Tồn kho, Chuyển kho, Lô & Serial</div>
               <div className="flex items-center gap-2"><Truck size={13} /> Wave Picking & SLA</div>
-              <div className="flex items-center gap-2"><PackageCheck size={13} /> Doi tra / RMA</div>
+              <div className="flex items-center gap-2"><PackageCheck size={13} /> Đổi trả / RMA</div>
             </div>
-            <p className="text-[10px] text-emerald-400 mt-2 font-medium">Thay 10 trang (khong thay tai chinh/quan tri/san pham)</p>
+            <p className="text-[10px] text-emerald-400 mt-2 font-medium">Truy cập 10 trang (không thấy tài chính, quản trị, sản phẩm)</p>
           </div>
         </div>
       </div>

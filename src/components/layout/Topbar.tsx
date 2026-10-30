@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Plus, Menu, ChevronDown, Building2, Check, Clock, AlertTriangle, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { Search, Bell, Menu, ChevronDown, Building2, Check, Clock, AlertTriangle, CheckCircle2, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -9,8 +9,6 @@ interface TopbarProps {
   search: string;
   onSearch: (value: string) => void;
   searchPlaceholder?: string;
-  onPrimaryAction?: () => void;
-  primaryActionLabel?: string;
   onMobileMenu?: () => void;
   onNavigate?: (pageId: string) => void;
 }
@@ -57,12 +55,9 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 
 export function Topbar({
   title,
-  subtitle,
   search,
   onSearch,
   searchPlaceholder = 'Tìm kiếm đơn hàng, SKU, khách hàng...',
-  onPrimaryAction,
-  primaryActionLabel = 'Thêm mới',
   onMobileMenu,
   onNavigate,
 }: TopbarProps) {
@@ -198,15 +193,15 @@ export function Topbar({
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className={cn(
-                'relative p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all shrink-0 cursor-pointer',
+                'relative w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all shrink-0 cursor-pointer flex items-center justify-center',
                 showNotifications && 'bg-slate-100 text-slate-900'
               )}
               aria-label="Thông báo hệ thống"
               title="Thông báo hệ thống"
             >
-              <Bell size={17} />
+              <Bell size={18} />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center ring-2 ring-white">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center ring-2 ring-white shadow-xs pointer-events-none">
                   {unreadCount}
                 </span>
               )}
@@ -294,17 +289,6 @@ export function Topbar({
               </div>
             )}
           </div>
-
-          {/* Primary Action Button (if defined) */}
-          {onPrimaryAction && primaryActionLabel && (
-            <button
-              onClick={onPrimaryAction}
-              className="btn-primary shrink-0 text-xs py-1.5 px-3 flex items-center gap-1.5"
-            >
-              <Plus size={14} />
-              <span className="hidden sm:inline">{primaryActionLabel}</span>
-            </button>
-          )}
         </div>
       </div>
 

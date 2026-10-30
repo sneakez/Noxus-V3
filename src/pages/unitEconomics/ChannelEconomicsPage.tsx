@@ -240,38 +240,38 @@ export function ChannelEconomicsPage({ onNavigate }: ChannelEconomicsPageProps) 
               {channels.map((c) => (
                 <tr key={c.channel} className="hover:bg-ink-50/50 transition-colors">
                   <td className="py-2.5 px-3 font-semibold text-ink-900">{c.channelName}</td>
-                  <td className="py-2.5 px-3 text-right font-mono">{c.orderCount}</td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-ink-900">
+                  <td className="py-2.5 px-3 text-right">{c.orderCount}</td>
+                  <td className="py-2.5 px-3 text-right font-bold text-ink-900">
                     {formatCurrency(c.netRevenue)}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-ink-600">
+                  <td className="py-2.5 px-3 text-right text-ink-600">
                     {c.cogs.toLocaleString()} ₫
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-brand-900">
+                  <td className="py-2.5 px-3 text-right font-bold text-brand-900">
                     {c.cm1.toLocaleString()} ₫
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-amber-800 font-semibold">
+                  <td className="py-2.5 px-3 text-right text-amber-800 font-semibold">
                     {c.marketplaceFees.toLocaleString()} ₫ ({c.takeRate}%)
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-amber-800">
+                  <td className="py-2.5 px-3 text-right text-amber-800">
                     {c.paymentFees.toLocaleString()} ₫
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-ink-600">
+                  <td className="py-2.5 px-3 text-right text-ink-600">
                     {c.fulfillmentCosts.toLocaleString()} ₫
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-ink-600">
+                  <td className="py-2.5 px-3 text-right text-ink-600">
                     {(c.shippingSubsidies + c.returnCosts).toLocaleString()} ₫
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-brand-700">
+                  <td className="py-2.5 px-3 text-right font-bold text-brand-700">
                     {c.cm2.toLocaleString()} ₫ ({c.cm2Margin}%)
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-ink-600">
+                  <td className="py-2.5 px-3 text-right text-ink-600">
                     {c.marketingSpend.toLocaleString()} ₫
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
+                  <td className="py-2.5 px-3 text-right font-bold text-emerald-700">
                     {c.cm3.toLocaleString()} ₫ ({c.cm3Margin}%)
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-ink-900">
+                  <td className="py-2.5 px-3 text-right font-bold text-ink-900">
                     {c.blendedRoas}x
                   </td>
                   <td className="py-2.5 px-3 text-right">
@@ -288,18 +288,18 @@ export function ChannelEconomicsPage({ onNavigate }: ChannelEconomicsPageProps) 
               {/* Grand Total Row */}
               <tr className="bg-ink-100/70 font-bold border-t-2 border-ink-300">
                 <td className="py-2.5 px-3 text-ink-900">TỔNG CỘNG HỢP NHẤT</td>
-                <td className="py-2.5 px-3 text-right font-mono">{channels.reduce((s, c) => s + c.orderCount, 0)}</td>
-                <td className="py-2.5 px-3 text-right font-mono text-ink-900">{totalNet.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-ink-700">{totalCogs.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-brand-900">{totalCm1.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-amber-800">{totalMktFees.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-amber-800">{totalPayFees.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-ink-700">{totalFulfillment.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-ink-700">{(totalShipSubsidies + totalReturnCosts).toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-brand-900">{totalCm2.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-ink-700">{totalMarketing.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono text-emerald-800">{totalCm3.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono">{totalMarketing > 0 ? (totalNet / totalMarketing).toFixed(2) : '0'}x</td>
+                <td className="py-2.5 px-3 text-right">{channels.reduce((s, c) => s + c.orderCount, 0)}</td>
+                <td className="py-2.5 px-3 text-right text-ink-900">{totalNet.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-ink-700">{totalCogs.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-brand-900">{totalCm1.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-amber-800">{totalMktFees.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-amber-800">{totalPayFees.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-ink-700">{totalFulfillment.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-ink-700">{(totalShipSubsidies + totalReturnCosts).toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-brand-900">{totalCm2.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-ink-700">{totalMarketing.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right text-emerald-800">{totalCm3.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right">{totalMarketing > 0 ? (totalNet / totalMarketing).toFixed(2) : '0'}x</td>
               </tr>
             </tbody>
           </table>
@@ -326,57 +326,57 @@ export function ChannelEconomicsPage({ onNavigate }: ChannelEconomicsPageProps) 
               <tr>
                 <td className="py-2.5 px-3 font-bold text-ink-900">1. Lãi Gộp Ban Đầu (CM1)</td>
                 <td className="py-2.5 px-3 text-ink-500">Doanh thu thuần trừ Giá vốn hàng bán (Net - COGS)</td>
-                <td className="py-2.5 px-3 text-right font-mono font-bold text-brand-900">{totalCm1.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono">{totalNet > 0 ? ((totalCm1 / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-right font-bold text-brand-900">{totalCm1.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right">{totalNet > 0 ? ((totalCm1 / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center"><span className="badge bg-emerald-100 text-emerald-800 text-[10px]">Ghi nhận sổ kép</span></td>
               </tr>
               <tr className="bg-amber-50/30">
                 <td className="py-2.5 px-3 pl-6 text-amber-900 font-medium">(-) Hoa hồng sàn TMĐT (Marketplace Commission)</td>
                 <td className="py-2.5 px-3 text-amber-700">Shopee 8.5%, TikTok 6.0%, Lazada 7.5%, Web 0%</td>
-                <td className="py-2.5 px-3 text-right font-mono font-semibold text-rose-700">-{totalMktFees.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono">{totalNet > 0 ? ((totalMktFees / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-right font-semibold text-rose-700">-{totalMktFees.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right">{totalNet > 0 ? ((totalMktFees / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center"><span className="badge bg-amber-100 text-amber-800 text-[10px]">ASSUMPTION</span></td>
               </tr>
               <tr className="bg-amber-50/30">
                 <td className="py-2.5 px-3 pl-6 text-amber-900 font-medium">(-) Phí cổng thanh toán (Payment Gateway Fees)</td>
                 <td className="py-2.5 px-3 text-amber-700">Phí giao dịch thẻ/ví/COD bình quân ~1.5% - 2.5%</td>
-                <td className="py-2.5 px-3 text-right font-mono font-semibold text-rose-700">-{totalPayFees.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono">{totalNet > 0 ? ((totalPayFees / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-right font-semibold text-rose-700">-{totalPayFees.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right">{totalNet > 0 ? ((totalPayFees / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center"><span className="badge bg-amber-100 text-amber-800 text-[10px]">ASSUMPTION</span></td>
               </tr>
               <tr>
                 <td className="py-2.5 px-3 pl-6 text-ink-800 font-medium">(-) Chi phí kho vận & đóng gói (WMS Fulfillment)</td>
                 <td className="py-2.5 px-3 text-ink-500">Băng keo, hộp carton, túi thương hiệu & nhân công</td>
-                <td className="py-2.5 px-3 text-right font-mono font-semibold text-rose-700">-{totalFulfillment.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono">{totalNet > 0 ? ((totalFulfillment / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-right font-semibold text-rose-700">-{totalFulfillment.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right">{totalNet > 0 ? ((totalFulfillment / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center"><span className="badge bg-blue-100 text-blue-800 text-[10px]">Định mức nội bộ</span></td>
               </tr>
               <tr>
                 <td className="py-2.5 px-3 pl-6 text-ink-800 font-medium">(-) Trợ giá vận chuyển (Shipping Subsidies)</td>
                 <td className="py-2.5 px-3 text-ink-500">15.000 ₫ / đơn hàng chính sách FreeShip (11 đơn)</td>
-                <td className="py-2.5 px-3 text-right font-mono font-semibold text-rose-700">-{totalShipSubsidies.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono">{totalNet > 0 ? ((totalShipSubsidies / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-right font-semibold text-rose-700">-{totalShipSubsidies.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right">{totalNet > 0 ? ((totalShipSubsidies / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center"><span className="badge bg-ink-100 text-ink-700 text-[10px]">Chính sách bán</span></td>
               </tr>
               <tr>
                 <td className="py-2.5 px-3 pl-6 text-ink-800 font-medium">(-) Chi phí xử lý đổi trả & hoàn tiền (RMA Costs)</td>
                 <td className="py-2.5 px-3 text-ink-500">25.000 ₫ kiểm định QC & nhập lại hàng hủy (ORD-77190)</td>
-                <td className="py-2.5 px-3 text-right font-mono font-semibold text-rose-700">-{totalReturnCosts.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono">{totalNet > 0 ? ((totalReturnCosts / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-right font-semibold text-rose-700">-{totalReturnCosts.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right">{totalNet > 0 ? ((totalReturnCosts / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center"><span className="badge bg-rose-100 text-rose-800 text-[10px]">Phát sinh thực</span></td>
               </tr>
               <tr className="bg-ink-100/70 font-bold border-t border-b border-ink-300">
                 <td className="py-2.5 px-3 text-ink-900">(=) Tổng Biến Phí Khấu Trừ (CM1 → CM2)</td>
-                <td className="py-2.5 px-3 text-ink-600 font-mono">Commission + Payment + WMS + Ship + Returns</td>
-                <td className="py-2.5 px-3 text-right font-mono font-bold text-rose-800">-{totalVariableCosts.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono font-bold">{totalNet > 0 ? ((totalVariableCosts / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-ink-600">Commission + Payment + WMS + Ship + Returns</td>
+                <td className="py-2.5 px-3 text-right font-bold text-rose-800">-{totalVariableCosts.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right font-bold">{totalNet > 0 ? ((totalVariableCosts / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center"><span className="badge bg-emerald-100 text-emerald-800 text-[10px]">Cân bằng 100%</span></td>
               </tr>
               <tr className="bg-brand-50/50 font-bold">
                 <td className="py-2.5 px-3 text-brand-900 font-black">2. Lợi Nhuận Đóng Góp Sau Biến Phí (CM2)</td>
-                <td className="py-2.5 px-3 text-brand-700 font-mono">CM1 - Tổng Biến Phí = {totalCm1.toLocaleString()} ₫ - {totalVariableCosts.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono font-black text-brand-900">{totalCm2.toLocaleString()} ₫</td>
-                <td className="py-2.5 px-3 text-right font-mono font-black text-brand-900">{totalNet > 0 ? ((totalCm2 / totalNet) * 100).toFixed(1) : 0}%</td>
+                <td className="py-2.5 px-3 text-brand-700">CM1 - Tổng Biến Phí = {totalCm1.toLocaleString()} ₫ - {totalVariableCosts.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right font-black text-brand-900">{totalCm2.toLocaleString()} ₫</td>
+                <td className="py-2.5 px-3 text-right font-black text-brand-900">{totalNet > 0 ? ((totalCm2 / totalNet) * 100).toFixed(1) : 0}%</td>
                 <td className="py-2.5 px-3 text-center">
                   <div className="inline-flex items-center gap-1 text-emerald-700 text-[10px] font-bold">
                     <CheckCircle2 size={12} /> Khớp Tuyệt Đối

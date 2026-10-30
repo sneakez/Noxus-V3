@@ -300,7 +300,7 @@ export function OwnerValidationCenterPage() {
               <span className="text-[11px] text-brand-400 font-bold uppercase tracking-wider block">
                 Bất biến Tồn kho Chuẩn (Canonical Invariant)
               </span>
-              <p className="text-xs sm:text-sm font-mono font-bold">
+              <p className="text-xs sm:text-sm font-bold">
                 Physical = Sellable + Reserved + Unavailable (Pending QC + Damaged)
               </p>
               <p className="text-[11px] text-ink-300">

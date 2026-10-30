@@ -44,7 +44,7 @@ export function FinanceFeaturePage({ onNavigate }: FeaturePageProps) {
                 <div className="flex items-center gap-2"><Check size={14} className="text-emerald-400" /> Xuất dữ liệu sẵn sàng nhập vào phần mềm kế toán (MISA, Bravo, SAP)</div>
               </div>
             </div>
-            <div className="bg-[#0C2739] border border-[#1E647F]/40 p-6 rounded-2xl shadow-xl font-mono text-xs text-metal-mist">
+            <div className="bg-[#0C2739] border border-[#1E647F]/40 p-6 rounded-2xl shadow-xl text-xs text-metal-mist">
               <div className="text-wood-aqua pb-2 border-b border-gray-800 font-bold">// Atomic Balanced Journal Entry</div>
               <div className="text-gray-300 mt-3 font-semibold">Đơn ORD-7729 (Shopee - 850.000 ₫)</div>
               <div className="mt-2 text-emerald-400">NỢ TK 131 (Phải thu Shopee): 790.000 ₫</div>

@@ -31,7 +31,7 @@ export function CustomChartTooltip({
       {label && (
         <div className="border-b border-slate-700/80 pb-1.5 flex items-center justify-between">
           <p className="font-bold text-slate-100 tracking-tight">{label}</p>
-          <span className="text-[10px] text-slate-400 font-mono">Dữ liệu đối soát</span>
+          <span className="text-[10px] text-slate-400">Dữ liệu đối soát</span>
         </div>
       )}
       <div className="space-y-1.5">
@@ -54,7 +54,7 @@ export function CustomChartTooltip({
                 />
                 <span className="text-slate-300 font-medium truncate">{item.name || item.dataKey}</span>
               </div>
-              <span className="font-extrabold font-mono text-white tabular-nums shrink-0">
+              <span className="font-extrabold text-white tabular-nums shrink-0">
                 {displayVal}
               </span>
             </div>

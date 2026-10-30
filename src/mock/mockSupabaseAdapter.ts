@@ -213,12 +213,15 @@ class MockQueryBuilder {
 
     // 4. Fulfillment / Picking Waves
     if (this.table === 'fulfillment_waves' || this.table === 'picking_waves') {
-      const wh = snap.warehouses[0] || { id: 'wh_north_01', name: 'Tổng kho Miền Bắc (Bắc Ninh)' };
+      const defaultWh = snap.warehouses[0] || { id: 'wh_north_01', name: 'Tổng kho Miền Bắc (Bắc Ninh)' };
       return snap.pickingWaves.map(w => {
         const matchingOrders = snap.orders
-          .filter(o => o.fulfillment_wave_id === w.id || o.status === 'processing')
+          .filter(o => o.fulfillment_wave_id === w.id || (w.status === 'picking' && o.status === 'processing'))
           .slice(0, 5)
           .map(o => this.normalizeOrder(o as unknown as Record<string, unknown>, snap));
+        const wh = snap.warehouses.find(item => item.id === w.warehouse_id) || defaultWh;
+        const totalItems = w.total_items || (matchingOrders.length ? matchingOrders.length * 2 : 6);
+        const pickedItems = w.picked_items || (w.status === 'completed' ? totalItems : Math.floor(totalItems * 0.85));
         return {
           ...w,
           wave_code: w.wave_code || w.wave_number || 'WAVE-W410',
@@ -227,7 +230,9 @@ class MockQueryBuilder {
           must_ship_by_sla: w.must_ship_by_sla || new Date(Date.now() + 18 * 3600000).toISOString(),
           created_at: w.created_at || new Date().toISOString(),
           orders: matchingOrders,
-          order_count: matchingOrders.length || w.total_orders || 1
+          order_count: matchingOrders.length || w.total_orders || 1,
+          total_items: totalItems,
+          picked_items: pickedItems
         };
       });
     }
@@ -242,9 +247,13 @@ class MockQueryBuilder {
           id: r.id,
           return_number: r.return_number,
           order_id: r.order_id,
-          return_type: r.return_type || 'customer_return',
-          status: r.status || 'quality_check',
-          refund_amount: Number(r.refund_amount || 1250000),
+          rma_branch: r.rma_branch || 'refund',
+          is_refund_without_return: Boolean(r.is_refund_without_return),
+          qc_notes: r.qc_notes || '',
+          maker_checker_rule: r.maker_checker_rule || (Number(r.refund_amount) >= 1000000 ? 'Bắt buộc Checker duyệt (>= 1M)' : 'Maker duyệt trực tiếp (< 1M)'),
+          return_type: r.return_type || 'customer_rma',
+          status: r.status || 'pending',
+          refund_amount: Number(r.refund_amount ?? 1250000),
           reason: r.reason || 'Khách muốn đổi sang sản phẩm khác',
           approval_status: r.approval_status || (r.status === 'refunded' ? 'checker_approved' : 'pending'),
           order: ord,

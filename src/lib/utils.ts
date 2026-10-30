@@ -22,7 +22,7 @@ export function formatCurrency(value: number | string | null | undefined): strin
     currency: 'VND',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(num);
 }
 
 export function formatDate(iso: string | null): string {
@@ -55,7 +55,7 @@ export function timeAgo(iso: string): string {
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days} ngay truoc`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months} thang truoc`;
+  if (months < 12) return `${months} tháng trước`;
   return `${Math.floor(months / 12)} nam truoc`;
 }
 
@@ -69,12 +69,12 @@ export function initials(name: string): string {
 }
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: 'Cho xu ly',
-  processing: 'Dang xu ly',
-  shipped: 'Da giao',
-  delivered: 'Da nhan',
-  cancelled: 'Da huy',
-  refunded: 'Da hoan tien',
+  pending: 'Chờ xử lý',
+  processing: 'Đang xử lý',
+  shipped: 'Đang giao',
+  delivered: 'Đã nhận',
+  cancelled: 'Đã hủy',
+  refunded: 'Đã hoàn tiền',
 };
 
 export const ORDER_STATUS_FLOW: OrderStatus[] = [
@@ -87,22 +87,22 @@ export const ORDER_STATUS_FLOW: OrderStatus[] = [
 ];
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  unpaid: 'Chua thanh toan',
-  paid: 'Da thanh toan',
-  partially_paid: 'Thanh toan mot phan',
-  refunded: 'Da hoan tien',
+  unpaid: 'Chưa thanh toán',
+  paid: 'Đã thanh toán',
+  partially_paid: 'Thanh toán một phần',
+  refunded: 'Đã hoàn tiền',
 };
 
 export const CUSTOMER_STATUS_LABELS: Record<CustomerStatus, string> = {
-  active: 'Hoat dong',
-  inactive: 'Ngung',
-  lead: 'Tiem nang',
+  active: 'Hoạt động',
+  inactive: 'Ngừng hoạt động',
+  lead: 'Tiềm năng',
 };
 
 export const PRODUCT_STATUS_LABELS: Record<ProductStatus, string> = {
-  active: 'Dang ban',
-  discontinued: 'Ngung ban',
-  out_of_stock: 'Het hang',
+  active: 'Đang bán',
+  discontinued: 'Ngừng bán',
+  out_of_stock: 'Hết hàng',
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
@@ -152,10 +152,10 @@ export const CHANNEL_COLORS: Record<Channel, string> = {
 };
 
 export const TRANSFER_STATUS_LABELS: Record<TransferStatus, string> = {
-  requested: 'Yeu cau',
-  in_transit: 'Dang van chuyen',
-  received: 'Da nhan',
-  cancelled: 'Da huy',
+  requested: 'Yêu cầu',
+  in_transit: 'Đang vận chuyển',
+  received: 'Đã nhận',
+  cancelled: 'Đã hủy',
 };
 
 export const TRANSFER_STATUS_COLORS: Record<TransferStatus, string> = {
@@ -166,11 +166,11 @@ export const TRANSFER_STATUS_COLORS: Record<TransferStatus, string> = {
 };
 
 export const PO_STATUS_LABELS: Record<POStatus, string> = {
-  draft: 'Nhap',
-  ordered: 'Da dat',
-  partial: 'Nhan mot phan',
-  received: 'Da nhan',
-  cancelled: 'Da huy',
+  draft: 'Bản nháp',
+  ordered: 'Đã đặt',
+  partial: 'Nhận một phần',
+  received: 'Đã nhận',
+  cancelled: 'Đã hủy',
 };
 
 export const PO_STATUS_COLORS: Record<POStatus, string> = {
@@ -182,11 +182,11 @@ export const PO_STATUS_COLORS: Record<POStatus, string> = {
 };
 
 export const WAVE_STATUS_LABELS: Record<WaveStatus, string> = {
-  open: 'Mo',
-  picking: 'Dang lay',
-  packing: 'Dang dong goi',
-  completed: 'Hoan thanh',
-  cancelled: 'Da huy',
+  open: 'Chờ lấy hàng',
+  picking: 'Đang nhặt hàng',
+  packing: 'Đang đóng gói',
+  completed: 'Hoàn thành',
+  cancelled: 'Đã hủy',
 };
 
 export const WAVE_STATUS_COLORS: Record<WaveStatus, string> = {
@@ -198,11 +198,11 @@ export const WAVE_STATUS_COLORS: Record<WaveStatus, string> = {
 };
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  asset: 'Tai san',
-  liability: 'No phai tra',
-  equity: 'Von chu so huu',
+  asset: 'Tài sản',
+  liability: 'Nợ phải trả',
+  equity: 'Vốn chủ sở hữu',
   revenue: 'Doanh thu',
-  expense: 'Chi phi',
+  expense: 'Chi phí',
 };
 
 export const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
@@ -214,13 +214,13 @@ export const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
 };
 
 export const RETURN_STATUS_LABELS: Record<ReturnStatus, string> = {
-  pending: 'Cho duyet',
-  approved: 'Da duyet',
-  rejected: 'Tu choi',
-  received: 'Da nhan hang',
-  quality_check: 'Kiem tra CL',
-  refunded: 'Da hoan tien',
-  closed: 'Da dong',
+  pending: 'Chờ duyệt',
+  approved: 'Đã duyệt',
+  rejected: 'Từ chối',
+  received: 'Đã nhận hàng',
+  quality_check: 'Kiểm tra CL',
+  refunded: 'Đã hoàn tiền',
+  closed: 'Đã đóng',
 };
 
 export const RETURN_STATUS_COLORS: Record<ReturnStatus, string> = {
@@ -234,10 +234,10 @@ export const RETURN_STATUS_COLORS: Record<ReturnStatus, string> = {
 };
 
 export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, string> = {
-  open: 'Mo',
-  analyzed: 'Da phan tich',
-  responded: 'Da phan hoi',
-  closed: 'Da dong',
+  open: 'Mới mở',
+  analyzed: 'Đã phân tích',
+  responded: 'Đã phản hồi',
+  closed: 'Đã đóng',
 };
 
 export const COMPLAINT_STATUS_COLORS: Record<ComplaintStatus, string> = {
@@ -249,10 +249,10 @@ export const COMPLAINT_STATUS_COLORS: Record<ComplaintStatus, string> = {
 
 export const SERIAL_STATUS_LABELS: Record<SerialStatus, string> = {
   in_stock: 'Trong kho',
-  reserved: 'Da giu',
-  sold: 'Da ban',
-  returned: 'Da tra',
-  defective: 'Loi',
+  reserved: 'Đang giữ',
+  sold: 'Đã bán',
+  returned: 'Đã trả',
+  defective: 'Lỗi',
 };
 
 export const SERIAL_STATUS_COLORS: Record<SerialStatus, string> = {
@@ -264,15 +264,15 @@ export const SERIAL_STATUS_COLORS: Record<SerialStatus, string> = {
 };
 
 export const INVENTORY_TXN_TYPE_LABELS: Record<InventoryTxnType, string> = {
-  inbound: 'Nhap kho',
-  outbound: 'Xuat kho',
-  transfer_out: 'Chuyen ra',
-  transfer_in: 'Chuyen vao',
-  adjustment: 'Dieu chinh',
-  reservation: 'Giu hang',
-  release: 'Giai giu',
-  scrap: 'Hu',
-  return_in: 'Nhap tra',
+  inbound: 'Nhập kho',
+  outbound: 'Xuất kho',
+  transfer_out: 'Chuyển ra',
+  transfer_in: 'Chuyển vào',
+  adjustment: 'Điều chỉnh',
+  reservation: 'Giữ hàng',
+  release: 'Giải tỏa giữ',
+  scrap: 'Hư hỏng',
+  return_in: 'Nhập trả',
 };
 
 export const INVENTORY_TXN_TYPE_COLORS: Record<InventoryTxnType, string> = {
@@ -288,10 +288,10 @@ export const INVENTORY_TXN_TYPE_COLORS: Record<InventoryTxnType, string> = {
 };
 
 export const APPROVAL_STATUS_LABELS: Record<ApprovalStatus, string> = {
-  pending: 'Cho duyet',
-  maker_approved: 'Maker duyet',
-  checker_approved: 'Checker duyet',
-  rejected: 'Tu choi',
+  pending: 'Chờ duyệt',
+  maker_approved: 'Maker duyệt',
+  checker_approved: 'Checker duyệt',
+  rejected: 'Từ chối',
 };
 
 export const APPROVAL_STATUS_COLORS: Record<ApprovalStatus, string> = {

@@ -100,7 +100,7 @@ export function SalesVelocityPage() {
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center"><Package size={20} className="text-amber-600" /></div>
-            <p className="text-sm text-ink-400">San pham da ban</p>
+            <p className="text-sm text-ink-400">Sản phẩm đã bán</p>
           </div>
           <p className="text-2xl font-bold text-ink-900 tabular-nums">{stats.totalItems}</p>
         </Card>
@@ -122,7 +122,7 @@ export function SalesVelocityPage() {
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-base font-semibold text-ink-900 mb-4">Top san pham ban chay</h3>
+        <h3 className="text-base font-semibold text-ink-900 mb-4">Top sản phẩm bán chạy</h3>
         {stats.topProducts.length === 0 ? (
           <p className="text-sm text-ink-400 py-6 text-center">Chua co du lieu ban hang trong ky nay</p>
         ) : (
@@ -130,9 +130,9 @@ export function SalesVelocityPage() {
             <thead className="text-ink-500 text-xs uppercase tracking-wider">
               <tr>
                 <th className="text-left pb-3 font-semibold">#</th>
-                <th className="text-left pb-3 font-semibold">San pham</th>
+                <th className="text-left pb-3 font-semibold">Sản phẩm</th>
                 <th className="text-left pb-3 font-semibold">SKU</th>
-                <th className="text-right pb-3 font-semibold">So luong</th>
+                <th className="text-right pb-3 font-semibold">Số lượng</th>
                 <th className="text-right pb-3 font-semibold">Doanh thu</th>
               </tr>
             </thead>

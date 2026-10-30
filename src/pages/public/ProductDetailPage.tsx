@@ -192,7 +192,7 @@ export function ProductDetailPage({ productId = 'prod_air_pro', onNavigate }: Pr
                 <div className="p-4 rounded-2xl bg-[#081B2C] border border-gray-800 flex flex-wrap items-center justify-between gap-4 text-xs mb-6">
                   <div>
                     <span className="text-gray-400">Số ngày bán còn lại (Stock Runway):</span>
-                    <span className="ml-2 font-bold text-cyan-400 font-mono text-sm">{stock5.runway_days} ngày</span>
+                    <span className="ml-2 font-bold text-cyan-400 text-sm">{stock5.runway_days} ngày</span>
                   </div>
                   <div>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${

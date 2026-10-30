@@ -156,7 +156,7 @@ export function HeatmapChart({ tenantId, className }: HeatmapChartProps) {
                   key={hIdx}
                   title={`[SIMULATED] ${day} lúc ${hours[hIdx]}: Mật độ mô phỏng cấp ${val}/4`}
                   className={cn(
-                    'h-8 rounded-md flex items-center justify-center text-[10px] font-mono transition-transform hover:scale-105 cursor-pointer',
+                    'h-8 rounded-md flex items-center justify-center text-[10px] transition-transform hover:scale-105 cursor-pointer',
                     getCellColor(val, 4)
                   )}
                 >

@@ -87,7 +87,7 @@ export function RevenueReportPage() {
         <div>
           <h1 className="text-xl font-bold text-ink-900 tracking-tight">Bao cao doanh thu</h1>
           <p className="text-sm text-ink-500 mt-0.5">
-            Phan tich doanh thu chi tiet theo ngay, thang va nam
+            Phân tích doanh thu chi tiết theo ngày, tháng và năm
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -144,7 +144,7 @@ export function RevenueReportPage() {
               <BarChart3 size={20} />
             </div>
             <div>
-              <p className="text-xs text-ink-400 font-medium">Tong so don hang</p>
+              <p className="text-xs text-ink-400 font-medium">Tổng số đơn hàng</p>
               <p className="text-xl font-bold text-ink-900 tabular-nums">{totalOrders.toLocaleString('vi-VN')}</p>
             </div>
           </div>
@@ -155,7 +155,7 @@ export function RevenueReportPage() {
               <Calendar size={20} />
             </div>
             <div>
-              <p className="text-xs text-ink-400 font-medium">Gia tri trung binh/don</p>
+              <p className="text-xs text-ink-400 font-medium">Giá trị trung bình/đơn</p>
               <p className="text-xl font-bold text-ink-900 tabular-nums">{formatCurrency(avgOrderValue)}</p>
             </div>
           </div>
@@ -165,7 +165,7 @@ export function RevenueReportPage() {
       {/* Bar chart */}
       {buckets.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-base font-semibold text-ink-900 mb-1">Bieu do doanh thu</h3>
+          <h3 className="text-base font-semibold text-ink-900 mb-1">Biểu đồ doanh thu</h3>
           <p className="text-sm text-ink-400 mb-6">
             {period === 'day' ? 'Doanh thu theo ngay' : period === 'month' ? 'Doanh thu theo thang' : 'Doanh thu theo nam'}
           </p>
@@ -198,10 +198,10 @@ export function RevenueReportPage() {
       {/* Data table */}
       <Card className="overflow-hidden">
         <div className="px-5 py-4 border-b border-ink-100">
-          <h3 className="text-base font-semibold text-ink-900">Bang chi tiet doanh thu</h3>
+          <h3 className="text-base font-semibold text-ink-900">Bảng chi tiết doanh thu</h3>
         </div>
         {buckets.length === 0 ? (
-          <p className="text-sm text-ink-400 py-8 text-center">Chua co du lieu don hang</p>
+          <p className="text-sm text-ink-400 py-8 text-center">Chưa có dữ liệu đơn hàng</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -210,7 +210,7 @@ export function RevenueReportPage() {
                   <th className="text-left px-5 py-3 font-semibold">Ky bao cao</th>
                   <th className="text-right px-5 py-3 font-semibold">So don</th>
                   <th className="text-right px-5 py-3 font-semibold">Doanh thu</th>
-                  <th className="text-right px-5 py-3 font-semibold">Gia tri TB/don</th>
+                  <th className="text-right px-5 py-3 font-semibold">Giá trị TB/đơn</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -240,14 +240,14 @@ export function RevenueReportPage() {
       {recentOrders.length > 0 && (
         <Card className="overflow-hidden">
           <div className="px-5 py-4 border-b border-ink-100">
-            <h3 className="text-base font-semibold text-ink-900">Don hang gan day</h3>
+            <h3 className="text-base font-semibold text-ink-900">Đơn hàng gần đây</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ink-50/80 text-ink-500 text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-5 py-3 font-semibold">Ma don</th>
-                  <th className="text-left px-5 py-3 font-semibold">Khach hang</th>
+                  <th className="text-left px-5 py-3 font-semibold">Mã đơn</th>
+                  <th className="text-left px-5 py-3 font-semibold">Khách hàng</th>
                   <th className="text-left px-5 py-3 font-semibold">Ngay</th>
                   <th className="text-right px-5 py-3 font-semibold">Tong</th>
                 </tr>

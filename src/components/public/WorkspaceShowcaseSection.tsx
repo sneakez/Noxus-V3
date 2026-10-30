@@ -113,7 +113,7 @@ export function WorkspaceShowcaseSection({ onNavigate }: WorkspaceShowcaseSectio
                 </thead>
                 <tbody className="divide-y divide-gray-800/60 font-sans">
                   <tr className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-white">#SPX-90214</td>
+                    <td className="py-3.5 px-4 font-bold text-white">#SPX-90214</td>
                     <td className="py-3.5 px-4">
                       <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">Shopee</span>
                     </td>
@@ -310,7 +310,7 @@ export function WorkspaceShowcaseSection({ onNavigate }: WorkspaceShowcaseSectio
                   <span className="text-xs font-bold text-wood-aqua uppercase tracking-wider flex items-center gap-1.5">
                     <Truck size={14} /> Đợt Nhặt Hàng Đang Chạy: Wave #W-410
                   </span>
-                  <span className="text-xs font-mono text-emerald-400 font-bold">85% Hoàn tất</span>
+                  <span className="text-xs text-emerald-400 font-bold">85% Hoàn tất</span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-gray-800 mb-4 overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-[#1E647F] to-[#27B4A0] rounded-full" style={{ width: '85%' }} />
@@ -344,7 +344,7 @@ export function WorkspaceShowcaseSection({ onNavigate }: WorkspaceShowcaseSectio
                       Bắt buộc quét mã
                     </span>
                   </div>
-                  <div className="p-4 rounded-xl bg-black/40 border border-gray-800/80 mb-3 font-mono text-xs">
+                  <div className="p-4 rounded-xl bg-black/40 border border-gray-800/80 mb-3 text-xs">
                     <div className="text-gray-400 mb-1">Mã vận đơn quét: <span className="text-white font-bold">SPX902148921VN</span></div>
                     <div className="text-gray-400 mb-1">Mã vạch sản phẩm: <span className="text-emerald-400 font-bold">8938501239014</span></div>
                     <div className="text-emerald-400 flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-800 text-[11px]">

@@ -324,7 +324,7 @@ export function FounderExecutionPage() {
             <Target size={16} className="text-teal-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono">
+            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
               {avgOkrProgress}%
             </span>
             <span className="text-xs text-teal-700 font-medium">({okrs.length} mục tiêu trọng yếu)</span>
@@ -361,13 +361,13 @@ export function FounderExecutionPage() {
             <TrendingUp size={16} className="text-teal-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl sm:text-2xl font-extrabold text-emerald-600 font-mono">
+            <span className="text-xl sm:text-2xl font-extrabold text-emerald-600">
               7.909.450 ₫
             </span>
             <span className="text-xs text-slate-400">/ 15M target</span>
           </div>
           <p className="text-[11px] text-slate-500">
-            Biên CM3: <strong className="text-slate-800 font-mono">34.6%</strong> (Trên 22.84M Doanh thu thuần)
+            Biên CM3: <strong className="text-slate-800">34.6%</strong> (Trên 22.84M Doanh thu thuần)
           </p>
         </div>
       </div>
@@ -456,7 +456,7 @@ export function FounderExecutionPage() {
                       style={{ width: `${okr.progress}%` }}
                     />
                   </div>
-                  <div className="text-right text-[11px] font-mono font-bold text-slate-600">
+                  <div className="text-right text-[11px] font-bold text-slate-600">
                     Đã hoàn thành {okr.progress}%
                   </div>
                 </div>

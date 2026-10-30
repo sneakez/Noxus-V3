@@ -137,7 +137,7 @@ export function OperationalBenefitsSection({ onNavigate }: OperationalBenefitsSe
               <div className="pt-2">
                 <div className="flex justify-between items-center text-sm font-semibold text-[#081B2C] mb-2">
                   <span>Sản lượng đơn hàng:</span>
-                  <span className="text-lg font-bold font-mono text-[#1E647F]">
+                  <span className="text-lg font-bold text-[#1E647F]">
                     {dailyOrders.toLocaleString('vi-VN')} đơn / ngày
                   </span>
                 </div>

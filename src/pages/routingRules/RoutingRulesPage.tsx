@@ -11,7 +11,7 @@ interface RoutingRulesPageProps {
 }
 
 const CHANNEL_OPTIONS: { value: Channel | 'all'; label: string }[] = [
-  { value: 'all', label: 'Tat ca kenh' },
+  { value: 'all', label: 'Tất cả kênh' },
   { value: 'website', label: 'Website' },
   { value: 'shopee', label: 'Shopee' },
   { value: 'tiktok', label: 'TikTok Shop' },
@@ -48,14 +48,14 @@ export function RoutingRulesPage({ search }: RoutingRulesPageProps) {
 
   async function toggleActive(r: RoutingRule) {
     const { error } = await supabase.from('routing_rules').update({ is_active: !r.is_active }).eq('id', r.id);
-    if (error) { toast('Cap nhat that bai', 'error'); return; }
+    if (error) { toast('Cập nhật thất bại', 'error'); return; }
     load();
   }
 
   async function handleDelete(id: string) {
     const { error } = await supabase.from('routing_rules').delete().eq('id', id);
-    if (error) { toast('Xoa that bai', 'error'); return; }
-    toast('Da xoa quy tac', 'success');
+    if (error) { toast('Xóa thất bại', 'error'); return; }
+    toast('Đã xóa quy tắc', 'success');
     load();
   }
 
@@ -69,7 +69,7 @@ export function RoutingRulesPage({ search }: RoutingRulesPageProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Activity} title="Chua co quy tac dinh tuyen" description="Cau hinh quy tac tu dong gan kho cho don hang" />
+        <EmptyState icon={Activity} title="Chưa có quy tắc định tuyến" description="Cấu hình quy tắc tự động gán kho xử lý cho đơn hàng" />
       ) : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
@@ -80,7 +80,7 @@ export function RoutingRulesPage({ search }: RoutingRulesPageProps) {
                 <th className="text-left px-4 py-3 font-semibold">Kenh</th>
                 <th className="text-left px-4 py-3 font-semibold">Kho uu tien</th>
                 <th className="text-left px-4 py-3 font-semibold">Chien luoc</th>
-                <th className="text-center px-4 py-3 font-semibold">Trang thai</th>
+                <th className="text-center px-4 py-3 font-semibold">Trạng thái</th>
                 <th className="w-10" />
               </tr>
             </thead>
@@ -89,7 +89,7 @@ export function RoutingRulesPage({ search }: RoutingRulesPageProps) {
                 <tr key={r.id} className="hover:bg-ink-50/50">
                   <td className="px-4 py-3 text-center"><span className="w-6 h-6 rounded-full bg-ink-100 text-ink-600 text-xs font-bold flex items-center justify-center mx-auto">{r.priority}</span></td>
                   <td className="px-4 py-3 font-medium text-ink-800">{r.name}</td>
-                  <td className="px-4 py-3 text-ink-600 text-xs uppercase">{r.channel ?? 'tat ca'}</td>
+                  <td className="px-4 py-3 text-ink-600 text-xs uppercase">{r.channel ?? 'Tất cả'}</td>
                   <td className="px-4 py-3 text-ink-700">{r.warehouse?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-600 text-xs">{STRATEGY_LABELS[r.strategy] ?? r.strategy}</td>
                   <td className="px-4 py-3 text-center"><button onClick={() => toggleActive(r)} className={`badge ${r.is_active ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-ink-100 text-ink-500 border-ink-200'}`}>{r.is_active ? 'Bat' : 'Tat'}</button></td>
@@ -139,11 +139,11 @@ export function RoutingRulesPage({ search }: RoutingRulesPageProps) {
               <div><label className="label">Chien luoc</label><select value={strategy} onChange={(e) => setStrategy(e.target.value)} className="input"><option value="priority">Uu tien</option><option value="nearest">Gan nhat</option><option value="most_stock">Nhieu ton nhat</option></select></div>
             </div>
             <div><label className="label">Kenh</label><select value={channel} onChange={(e) => setChannel(e.target.value)} className="input">{CHANNEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-            <div><label className="label">Kho uu tien</label><select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} className="input"><option value="">Tu dong</option>{warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></div>
+            <div><label className="label">Kho ưu tiên</label><select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} className="input"><option value="">Tự động</option>{warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></div>
           </div>
           <div className="modal-footer">
-            <button onClick={onClose} className="btn-secondary">Huy</button>
-            <button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? <Spinner size={16} /> : null}<Save size={14} /> Luu</button>
+            <button onClick={onClose} className="btn-secondary">Hủy</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? <Spinner size={16} /> : null}<Save size={14} /> Lưu</button>
           </div>
         </div>
       </div>

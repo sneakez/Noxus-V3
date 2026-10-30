@@ -79,7 +79,7 @@ export function WaterfallChart({ data, currency = true, className }: WaterfallCh
               <div className="col-span-3 text-right">
                 <span
                   className={cn(
-                    'font-mono tabular-nums font-bold block',
+                    'tabular-nums font-bold block',
                     isPositive
                       ? 'text-emerald-700'
                       : isNegative
@@ -90,7 +90,7 @@ export function WaterfallChart({ data, currency = true, className }: WaterfallCh
                   {isNegative ? '-' : isPositive && !isSubtotal ? '+' : ''}
                   {Math.abs(item.amount).toLocaleString()} ₫
                 </span>
-                <span className="text-[10px] text-ink-400 font-mono">
+                <span className="text-[10px] text-ink-400">
                   {Math.abs(item.percentageOfRevenue).toFixed(1)}%
                 </span>
               </div>

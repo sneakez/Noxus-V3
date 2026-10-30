@@ -93,7 +93,7 @@ export function SnapshotMetadataBanner({
                   <Database size={13} className="text-brand-400" />
                   Thông Tin Snapshot Kiểm Toán
                 </span>
-                <span className="badge bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px] font-mono">
+                <span className="badge bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px]">
                   100% MATCH
                 </span>
               </div>

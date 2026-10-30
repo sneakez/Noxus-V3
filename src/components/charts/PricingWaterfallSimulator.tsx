@@ -51,7 +51,7 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
           <div>
             <label className="font-semibold text-ink-800 flex justify-between">
               <span>Giá niêm yết (₫):</span>
-              <span className="font-mono font-bold text-brand-900">{input.basePrice.toLocaleString()} ₫</span>
+              <span className="font-bold text-brand-900">{input.basePrice.toLocaleString()} ₫</span>
             </label>
             <input
               type="range"
@@ -67,7 +67,7 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
           <div>
             <label className="font-semibold text-ink-800 flex justify-between">
               <span>Giá vốn hàng bán (COGS):</span>
-              <span className="font-mono font-bold text-rose-700">{input.cogs.toLocaleString()} ₫</span>
+              <span className="font-bold text-rose-700">{input.cogs.toLocaleString()} ₫</span>
             </label>
             <input
               type="range"
@@ -91,7 +91,7 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
                 step={0.5}
                 value={input.marketplaceFeePercent}
                 onChange={(e) => setInput({ ...input, marketplaceFeePercent: Number(e.target.value) || 0 })}
-                className="input text-xs py-1 px-2.5 mt-1 font-mono font-bold"
+                className="input text-xs py-1 px-2.5 mt-1 font-bold"
               />
             </div>
             <div>
@@ -104,7 +104,7 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
                 step={0.5}
                 value={input.paymentFeePercent}
                 onChange={(e) => setInput({ ...input, paymentFeePercent: Number(e.target.value) || 0 })}
-                className="input text-xs py-1 px-2.5 mt-1 font-mono font-bold"
+                className="input text-xs py-1 px-2.5 mt-1 font-bold"
               />
             </div>
           </div>
@@ -117,7 +117,7 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
                 step={1000}
                 value={input.packagingFulfillmentCost}
                 onChange={(e) => setInput({ ...input, packagingFulfillmentCost: Number(e.target.value) || 0 })}
-                className="input text-xs py-1 px-2.5 mt-1 font-mono font-bold"
+                className="input text-xs py-1 px-2.5 mt-1 font-bold"
               />
             </div>
             <div>
@@ -127,7 +127,7 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
                 step={5000}
                 value={input.voucherDiscountAmount}
                 onChange={(e) => setInput({ ...input, voucherDiscountAmount: Number(e.target.value) || 0 })}
-                className="input text-xs py-1 px-2.5 mt-1 font-mono font-bold"
+                className="input text-xs py-1 px-2.5 mt-1 font-bold"
               />
             </div>
           </div>
@@ -135,7 +135,7 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
           <div className="pt-1">
             <label className="font-semibold text-ink-800 flex justify-between text-[11px]">
               <span>Mục tiêu biên lợi nhuận CM2 (%):</span>
-              <span className="font-mono font-bold text-emerald-700">{input.targetCm2Percent}%</span>
+              <span className="font-bold text-emerald-700">{input.targetCm2Percent}%</span>
             </label>
             <input
               type="range"
@@ -153,15 +153,15 @@ export function PricingWaterfallSimulator({ initialValues, className }: PricingW
         <div className="p-3 bg-white rounded-lg border border-ink-200 space-y-2 mt-3">
           <div className="flex items-center justify-between text-xs">
             <span className="font-medium text-ink-600">Giá hòa vốn (Break-even):</span>
-            <span className="font-mono font-bold text-rose-700">{result.breakEvenPrice.toLocaleString()} ₫</span>
+            <span className="font-bold text-rose-700">{result.breakEvenPrice.toLocaleString()} ₫</span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="font-medium text-ink-600">Giá bán đề xuất (Target {input.targetCm2Percent}%):</span>
-            <span className="font-mono font-bold text-emerald-700">{result.recommendedPrice.toLocaleString()} ₫</span>
+            <span className="font-bold text-emerald-700">{result.recommendedPrice.toLocaleString()} ₫</span>
           </div>
           <div className="flex items-center justify-between text-xs pt-1 border-t border-ink-100">
             <span className="font-medium text-ink-600">Mức giảm giá tối đa cho phép:</span>
-            <span className="font-mono font-bold text-brand-900">{result.maxAllowedDiscount.toLocaleString()} ₫</span>
+            <span className="font-bold text-brand-900">{result.maxAllowedDiscount.toLocaleString()} ₫</span>
           </div>
         </div>
       </div>

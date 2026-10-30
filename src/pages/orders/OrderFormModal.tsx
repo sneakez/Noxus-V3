@@ -136,21 +136,21 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
 
   async function handleSave() {
     if (!customerId) {
-      toast('Vui long chon khach hang', 'error');
+      toast('Vui lòng chọn khách hàng', 'error');
       return;
     }
     if (items.length === 0) {
-      toast('Them it nhat mot san pham vao don hang', 'error');
+      toast('Thêm ít nhất một sản phẩm vào đơn hàng', 'error');
       return;
     }
     const invalidQty = items.find((i) => i.quantity <= 0);
     if (invalidQty) {
-      toast('So luong san pham phai lon hon 0', 'error');
+      toast('Số lượng sản phẩm phải lớn hơn 0', 'error');
       return;
     }
     const invalidPrice = items.find((i) => i.unit_price < 0);
     if (invalidPrice) {
-      toast('Gia san pham khong duoc am', 'error');
+      toast('Giá sản phẩm không được âm', 'error');
       return;
     }
 
@@ -194,9 +194,9 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
 
     if (atomicError) {
       if (atomicError.code === '42883') {
-        toast('Loi he thong: RPC place_order_atomic chua duoc cau hinh tren database. Thao tac ghi bi chan de bao ve an toan ton kho.', 'error');
+        toast('Lỗi hệ thống: RPC place_order_atomic chưa được cấu hình trên database. Thao tác ghi bị chặn để bảo vệ an toàn tồn kho.', 'error');
       } else {
-        toast('Tao don that bai: ' + atomicError.message, 'error');
+        toast('Tạo đơn thất bại: ' + atomicError.message, 'error');
       }
       setSaving(false);
       return;
@@ -212,17 +212,15 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
     <Modal
       open={open}
       onClose={onClose}
-      title="Tao don hang moi"
-      subtitle="Chon khach hang va them san pham de tao don"
+      title="Tạo đơn hàng mới"
+      subtitle="Chọn khách hàng và thêm sản phẩm để tạo đơn"
       size="lg"
       footer={
         <>
-          <button onClick={onClose} className="btn-secondary">
-            Huy
-          </button>
+          <button onClick={onClose} className="btn-secondary">Hủy</button>
           <button onClick={handleSave} disabled={saving} className="btn-primary">
             {saving ? <Spinner size={16} /> : null}
-            Tao don
+            Tạo đơn
           </button>
         </>
       }
@@ -236,13 +234,13 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
           {/* Customer + status */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">Khach hang *</label>
+              <label className="label">Khách hàng *</label>
               <select
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
                 className="input"
               >
-                <option value="">Chon khach hang...</option>
+                <option value="">Chọn khách hàng...</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} {c.company ? `· ${c.company}` : ''}
@@ -251,22 +249,22 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
               </select>
             </div>
             <div>
-              <label className="label">Trang thai don</label>
+              <label className="label">Trạng thái đơn</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as OrderStatus)}
                 className="input"
               >
-                <option value="pending">Cho xu ly</option>
-                <option value="processing">Dang xu ly</option>
-                <option value="shipped">Da giao</option>
-                <option value="delivered">Da nhan</option>
-                <option value="cancelled">Da huy</option>
-                <option value="refunded">Da hoan tien</option>
+                <option value="pending">Chờ xử lý</option>
+                <option value="processing">Đang xử lý</option>
+                <option value="shipped">Đã giao</option>
+                <option value="delivered">Đã nhận</option>
+                <option value="cancelled">Đã hủy</option>
+                <option value="refunded">Đã hoàn tiền</option>
               </select>
             </div>
             <div>
-              <label className="label">Trang thai thanh toan</label>
+              <label className="label">Trạng thái thanh toán</label>
               <select
                 value={paymentStatus}
                 onChange={(e) =>
@@ -274,32 +272,32 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
                 }
                 className="input"
               >
-                <option value="unpaid">Chua thanh toan</option>
-                <option value="paid">Da thanh toan</option>
-                <option value="partially_paid">Thanh toan mot phan</option>
-                <option value="refunded">Da hoan tien</option>
+                <option value="unpaid">Chưa thanh toán</option>
+                <option value="paid">Đã thanh toán</option>
+                <option value="partially_paid">Thanh toán một phần</option>
+                <option value="refunded">Đã hoàn tiền</option>
               </select>
             </div>
             <div>
-              <label className="label">Phuong thuc thanh toan</label>
+              <label className="label">Phương thức thanh toán</label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="input"
               >
-                <option value="credit_card">The tin dung</option>
-                <option value="debit_card">The ghi no</option>
+                <option value="credit_card">Thẻ tín dụng</option>
+                <option value="debit_card">Thẻ ghi nợ</option>
                 <option value="paypal">PayPal</option>
-                <option value="bank_transfer">Chuyen khoan</option>
-                <option value="cash">Tien mat</option>
-                <option value="check">Sec</option>
+                <option value="bank_transfer">Chuyển khoản</option>
+                <option value="cash">Tiền mặt</option>
+                <option value="check">Séc</option>
               </select>
             </div>
           </div>
 
           {/* Product picker */}
           <div>
-            <label className="label">Them san pham</label>
+            <label className="label">Thêm sản phẩm</label>
             <div className="relative mb-3">
               <Search
                 size={16}
@@ -308,7 +306,7 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
               <input
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
-                placeholder="Tim san pham theo ten hoac SKU..."
+                placeholder="Tìm sản phẩm theo tên hoặc SKU..."
                 className="input pl-9"
               />
             </div>
@@ -316,7 +314,7 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
               <div className="border border-ink-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-ink-100">
                 {filteredProducts.length === 0 ? (
                   <p className="text-sm text-ink-400 p-4 text-center">
-                    Khong tim thay san pham
+                    Không tìm thấy sản phẩm
                   </p>
                 ) : (
                   filteredProducts.map((p) => (
@@ -426,7 +424,7 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-4">
               <div>
-                <label className="label">Dia chi giao hang</label>
+                <label className="label">Địa chỉ giao hàng</label>
                 <textarea
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
@@ -448,7 +446,7 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
             </div>
             <div className="bg-ink-50 rounded-lg p-4 space-y-2.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-500">Tam tinh</span>
+                <span className="text-ink-500">Tạm tính</span>
                 <span className="font-medium text-ink-800 tabular-nums">
                   {formatCurrency(subtotal)}
                 </span>
@@ -474,7 +472,7 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-500">Giam gia</span>
+                <span className="text-ink-500">Giảm giá</span>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"

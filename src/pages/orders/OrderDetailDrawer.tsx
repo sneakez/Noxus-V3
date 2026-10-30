@@ -258,7 +258,7 @@ export function OrderDetailDrawer({
       .eq('id', order.id);
 
     if (error) {
-      toast('Cap nhat thanh toan that bai', 'error');
+      toast('Cập nhật thanh toán thất bại', 'error');
     } else {
       toast(`Trang thai thanh toan: ${PAYMENT_STATUS_LABELS[newPayment]}`, 'success');
       handleUpdated();
@@ -274,13 +274,13 @@ export function OrderDetailDrawer({
     });
     if (delErr) {
       if (delErr.code === '42883') {
-        toast('Loi he thong: RPC delete_order_atomic chua duoc cau hinh tren database. Thao tac bi chan de bao ve du lieu.', 'error');
+        toast('Lỗi hệ thống: RPC delete_order_atomic chưa được cấu hình trên database. Thao tác bị chặn để bảo vệ dữ liệu.', 'error');
       } else {
-        toast('Xoa don hang that bai: ' + delErr.message, 'error');
+        toast('Xóa đơn hàng thất bại: ' + delErr.message, 'error');
       }
       return;
     }
-    toast('Da xoa don hang', 'success');
+    toast('Đã xóa đơn hàng', 'success');
     handleDeleted();
     onClose();
   }
@@ -293,7 +293,7 @@ export function OrderDetailDrawer({
         open={isDrawerOpen}
         onClose={onClose}
         title={order.order_number}
-        subtitle={`Dat hang ${formatDateTime(order.placed_at)}`}
+        subtitle={`Đặt hàng ${formatDateTime(order.placed_at)}`}
         footer={
           <>
             <button
@@ -301,11 +301,11 @@ export function OrderDetailDrawer({
               className="btn-ghost text-rose-600 hover:bg-rose-50"
             >
               <Trash2 size={16} />
-              Xoa
+              Xóa
             </button>
             <div className="flex-1" />
             <button onClick={onClose} className="btn-secondary">
-              Dong
+              Đóng
             </button>
           </>
         }
@@ -601,7 +601,7 @@ export function OrderDetailDrawer({
                 <div className="grid grid-cols-2 gap-3 text-xs pt-1">
                   <div className="p-2.5 rounded-lg bg-white/90 border border-emerald-100">
                     <span className="text-[10px] text-ink-400 block font-medium uppercase">Mã vận đơn đối soát</span>
-                    <span className="font-mono font-bold text-ink-900 mt-0.5 block">
+                    <span className="font-bold text-ink-900 mt-0.5 block">
                       {order.pod_evidence?.tracking_code || 'SPX-VN-88201'}
                     </span>
                   </div>
@@ -734,7 +734,7 @@ export function OrderDetailDrawer({
                 {/* Customer info */}
             <div className="card p-5">
               <p className="text-sm font-semibold text-ink-700 mb-3">
-                Khach hang
+                Khách hàng
               </p>
               {order.customer ? (
                 <div className="flex items-start gap-3">
@@ -829,7 +829,7 @@ export function OrderDetailDrawer({
                 {/* Items */}
             <div className="card p-5">
               <p className="text-sm font-semibold text-ink-700 mb-3">
-                San pham ({items.length})
+                Sản phẩm ({items.length})
               </p>
               <div className="space-y-1">
                 {items.map((item) => (
@@ -875,7 +875,7 @@ export function OrderDetailDrawer({
                 </div>
                 {Number(order.discount) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-ink-500">Giam gia</span>
+                    <span className="text-ink-500">Giảm giá</span>
                     <span className="font-medium text-rose-600 tabular-nums">
                       −{formatCurrency(Number(order.discount))}
                     </span>
@@ -883,7 +883,7 @@ export function OrderDetailDrawer({
                 )}
                 <div className="flex justify-between pt-2 border-t border-ink-100">
                   <span className="text-base font-semibold text-ink-900">
-                    Tong cong
+                    Tổng cộng
                   </span>
                   <span className="text-lg font-bold text-ink-900 tabular-nums">
                     {formatCurrency(Number(order.total))}
@@ -949,7 +949,7 @@ export function OrderDetailDrawer({
                       <span className="badge bg-amber-50 text-amber-700 border-amber-200 text-[9px]">ASSUMPTION</span>
                     </div>
                     <p className="text-[11px] text-ink-600 mt-0.5">
-                      Hạch toán: <code className="font-mono text-ink-800">Nợ 632 / Có 156</code> theo giá vốn bình quân di động (MAC) ngay khi bàn giao đơn vị vận chuyển.
+                      Hạch toán: <code className="text-ink-800">Nợ 632 / Có 156</code> theo giá vốn bình quân di động (MAC) ngay khi bàn giao đơn vị vận chuyển.
                     </p>
                   </div>
                 </div>
@@ -972,7 +972,7 @@ export function OrderDetailDrawer({
                       </span>
                     </div>
                     <p className="text-[11px] text-ink-600 mt-0.5">
-                      Hạch toán: <code className="font-mono text-ink-800">Nợ 131 / Có 511</code> ({formatCurrency(order.total)}).
+                      Hạch toán: <code className="text-ink-800">Nợ 131 / Có 511</code> ({formatCurrency(order.total)}).
                       <span className="text-amber-700 block mt-0.5 font-medium">
                         ⚠️ [ASSUMPTION]: Doanh thu chỉ được ghi nhận khi có Bằng chứng giao hàng POD xác nhận theo nguyên tắc FOB Điểm đến.
                       </span>
@@ -1020,7 +1020,7 @@ export function OrderDetailDrawer({
               <div className="card p-5">
                 <p className="text-sm font-semibold text-ink-700 mb-3 flex items-center gap-2">
                   <Clock size={16} className="text-ink-400" />
-                  Lich su trang thai
+                  Lịch sử trạng thái
                 </p>
                 <div className="space-y-3">
                   {logs.map((log) => (
@@ -1093,7 +1093,7 @@ export function OrderDetailDrawer({
                 value={podTracking}
                 onChange={(e) => setPodTracking(e.target.value)}
                 placeholder="VD: SPX-VN-88201 hoặc VTP-992144"
-                className="input text-sm w-full font-mono"
+                className="input text-sm w-full"
               />
             </div>
 
@@ -1181,9 +1181,9 @@ export function OrderDetailDrawer({
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={handleDelete}
-        title="Xoa don hang?"
-        message={`Se xoa vinh vien don hang ${order.order_number} va hoan lai ton kho san pham. Khong the hoan tac.`}
-        confirmLabel="Xoa don hang"
+        title="Xóa đơn hàng?"
+        message={`Sẽ xóa vĩnh viễn đơn hàng ${order.order_number} và hoàn lại tồn kho sản phẩm. Không thể hoàn tác.`}
+        confirmLabel="Xóa đơn hàng"
       />
     </>
   );

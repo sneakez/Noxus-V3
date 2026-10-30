@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ShoppingCart,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Filter,
   Download,
   FileText,
@@ -20,7 +22,6 @@ import {
   Eye
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { onPrimaryAction } from '@/lib/events';
 import { analyticsService } from '@/analytics/analyticsService';
 import { mockStore } from '@/mock/store';
 import {
@@ -34,7 +35,6 @@ import {
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card } from '@/components/ui/card';
-import { KPICard } from '@/components/charts/KPICard';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/lib/cn';
@@ -42,7 +42,6 @@ import { exportOrdersToExcel, exportOrdersToPDF } from '@/lib/export';
 import { OrderFormModal } from './OrderFormModal';
 import { OrderDetailDrawer } from './OrderDetailDrawer';
 import { HierarchicalDataGrid, type DataGridColumnGroup } from '@/components/common/HierarchicalDataGrid';
-import { WorkflowStepVisualizer } from '@/components/common/WorkflowStepVisualizer';
 import type { Order, OrderStatus } from '@/types';
 
 interface OrdersPageProps {
@@ -77,6 +76,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
   const [showForm, setShowForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showActionCenter, setShowActionCenter] = useState(false);
 
   // Subscribe to mock store to keep UI reactive
   const [, setStoreRevision] = useState(0);
@@ -103,7 +103,6 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
 
   useEffect(() => {
     loadOrders();
-    return onPrimaryAction('orders', () => setShowForm(true));
   }, [activeTenant?.id]);
 
   // Merge Order Unit Economics from Analytics Service
@@ -117,7 +116,13 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
   // Filtered orders
   const filtered = useMemo(() => {
     return orders.filter(o => {
-      if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'cancelled') {
+          if (o.status !== 'cancelled' && o.status !== 'refunded') return false;
+        } else if (o.status !== statusFilter) {
+          return false;
+        }
+      }
       if (channelFilter !== 'all' && (o.channel || 'shopee') !== channelFilter) return false;
       return true;
     });
@@ -126,9 +131,11 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
   // Level 1 KPI Counters
   const kpis = useMemo(() => {
     const totalOrders = orders.length;
-    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+    const pendingOrders = orders.filter(o => o.status === 'pending').length;
+    const processingOrders = orders.filter(o => o.status === 'processing').length;
     const inTransitOrders = orders.filter(o => o.status === 'shipped' || o.delivery_status === 'in_transit').length;
     const deliveredOrders = orders.filter(o => o.status === 'delivered' || o.delivery_status === 'delivered').length;
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled' || o.status === 'refunded').length;
     const totalManagerialSales = orders.reduce((sum, o) => sum + (o.total || 0), 0);
     const podRecognizedRev = orders
       .filter(o => o.status === 'delivered' || o.delivery_status === 'delivered')
@@ -137,8 +144,10 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
     return {
       totalOrders,
       pendingOrders,
+      processingOrders,
       inTransitOrders,
       deliveredOrders,
+      cancelledOrders,
       totalManagerialSales,
       podRecognizedRev
     };
@@ -149,64 +158,64 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
     setShowDrawer(true);
   }
 
-  // Cross module navigation to SKU Economics / Inventory
-  const handleSkuClick = (sku: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (onNavigate) {
-      onNavigate('skuEconomics');
-    }
-  };
-
   // Grouped Column Headers Architecture for HierarchicalDataGrid
   const columnGroups: DataGridColumnGroup<Order>[] = useMemo(() => [
     {
-      id: 'grp_info',
-      title: 'THÔNG TIN ĐƠN HÀNG',
+      id: 'grp_order',
+      title: 'MÃ ĐƠN HÀNG',
       badge: 'CỐ ĐỊNH',
-      badgeColor: 'bg-ink-100 text-ink-700 border-ink-300',
+      badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
       columns: [
         {
           id: 'order_number',
           header: 'Mã Đơn',
           sticky: 'left',
-          width: '180px',
+          width: '165px',
           sortable: true,
           sortValue: o => o.order_number,
           accessor: o => {
             const ch = CHANNEL_BADGES[o.channel || 'shopee'] || CHANNEL_BADGES.shopee;
             return (
               <div className="space-y-1">
-                <span className="font-mono font-bold text-ink-900 group-hover:text-brand-600 transition-colors block">
+                <span className="font-mono font-bold text-sm text-ink-900 group-hover:text-brand-600 transition-colors block whitespace-nowrap">
                   #{o.order_number}
                 </span>
-                <span className={cn('badge text-[9px] px-1.5 py-0 font-bold border', ch.bg, ch.color)}>
+                <span className={cn('badge text-xs px-2 py-0.5 font-bold border rounded whitespace-nowrap inline-flex items-center', ch.bg, ch.color)}>
                   {ch.label}
                 </span>
               </div>
             );
           }
-        },
+        }
+      ]
+    },
+    {
+      id: 'grp_info',
+      title: 'THÔNG TIN KHÁCH HÀNG',
+      badge: 'ĐỐI TÁC',
+      badgeColor: 'bg-ink-100 text-ink-700 border-ink-300',
+      columns: [
         {
           id: 'customer',
           header: 'Khách Hàng',
-          width: '160px',
+          width: '190px',
           sortable: true,
           sortValue: o => o.customer?.name || 'Khách vãng lai',
           accessor: o => (
             <div>
-              <p className="font-semibold text-ink-900 truncate max-w-[150px]">{o.customer?.name || 'Khách vãng lai'}</p>
-              <p className="text-[10px] text-ink-400 font-mono truncate">{o.customer?.phone || o.customer?.email || 'Kênh TMĐT'}</p>
+              <p className="font-bold text-sm text-ink-900 whitespace-nowrap truncate">{o.customer?.name || 'Khách vãng lai'}</p>
+              <p className="text-xs text-ink-500 whitespace-nowrap truncate">{o.customer?.phone || o.customer?.email || 'Kênh TMĐT'}</p>
             </div>
           )
         },
         {
           id: 'placed_at',
           header: 'Ngày Đặt',
-          width: '110px',
+          width: '120px',
           sortable: true,
           sortValue: o => new Date(o.placed_at || o.created_at || '').getTime(),
           accessor: o => (
-            <span className="font-mono text-[11px] text-ink-500 block">
+            <span className="text-xs sm:text-sm text-ink-600 block whitespace-nowrap">
               {formatDate(o.placed_at || o.created_at)}
             </span>
           )
@@ -223,23 +232,23 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
           id: 'net_sales',
           header: 'Doanh Thu Thuần',
           align: 'right',
-          width: '125px',
+          width: '140px',
           sortable: true,
           sortValue: o => (orderEconsMap.get(o.id)?.netRevenue ?? o.total ?? 0),
           accessor: o => {
             const net = orderEconsMap.get(o.id)?.netRevenue ?? o.total ?? 0;
-            return <strong className="font-mono font-bold text-ink-900">{formatCurrency(net)}</strong>;
+            return <span className="font-bold text-sm text-ink-900 whitespace-nowrap">{formatCurrency(net)}</span>;
           }
         },
         {
           id: 'discount',
           header: 'Voucher / Giảm',
           align: 'right',
-          width: '105px',
+          width: '120px',
           sortable: true,
           sortValue: o => o.discount || 0,
           accessor: o => (
-            <span className={cn('font-mono text-[11px]', o.discount ? 'text-rose-600' : 'text-ink-400')}>
+            <span className={cn('text-xs sm:text-sm font-semibold whitespace-nowrap', o.discount ? 'text-rose-600' : 'text-ink-400')}>
               {o.discount ? `-${formatCurrency(o.discount)}` : '0 ₫'}
             </span>
           )
@@ -257,26 +266,26 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
           id: 'cogs',
           header: 'Giá Vốn (COGS)',
           align: 'right',
-          width: '110px',
+          width: '125px',
           sortable: true,
           sortValue: o => orderEconsMap.get(o.id)?.cogs || 0,
           accessor: o => {
             const econ = orderEconsMap.get(o.id);
-            return <span className="font-mono text-ink-600">{formatCurrency(econ?.cogs || 0)}</span>;
+            return <span className="text-xs sm:text-sm font-medium text-ink-600 whitespace-nowrap">{formatCurrency(econ?.cogs || 0)}</span>;
           }
         },
         {
           id: 'cm2',
           header: 'Lãi CM2',
           align: 'right',
-          width: '110px',
+          width: '125px',
           sortable: true,
           sortValue: o => orderEconsMap.get(o.id)?.cm2 || 0,
           accessor: o => {
             const econ = orderEconsMap.get(o.id);
             const cm2 = econ?.cm2 || 0;
             return (
-              <span className={cn('font-mono font-bold', cm2 >= 0 ? 'text-brand-900' : 'text-rose-600')}>
+              <span className={cn('text-xs sm:text-sm font-bold whitespace-nowrap', cm2 >= 0 ? 'text-brand-900' : 'text-rose-600')}>
                 {formatCurrency(cm2)}
               </span>
             );
@@ -286,14 +295,14 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
           id: 'cm3',
           header: 'Lãi CM3 Sau Ads',
           align: 'right',
-          width: '120px',
+          width: '140px',
           sortable: true,
           sortValue: o => orderEconsMap.get(o.id)?.cm3 || 0,
           accessor: o => {
             const econ = orderEconsMap.get(o.id);
             const cm3 = econ?.cm3 || 0;
             return (
-              <span className={cn('badge font-mono text-[11px] font-bold', cm3 >= 0 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300')}>
+              <span className={cn('badge text-xs font-bold px-2 py-0.5 whitespace-nowrap inline-flex items-center', cm3 >= 0 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300')}>
                 {formatCurrency(cm3)}
               </span>
             );
@@ -310,9 +319,9 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
         {
           id: 'status',
           header: 'Trạng Thái Đơn',
-          width: '110px',
+          width: '135px',
           accessor: o => (
-            <span className={cn('badge text-[10px] font-semibold', ORDER_STATUS_COLORS[o.status])}>
+            <span className={cn('badge text-xs font-semibold px-2.5 py-1 whitespace-nowrap inline-flex items-center', ORDER_STATUS_COLORS[o.status])}>
               {ORDER_STATUS_LABELS[o.status] || o.status}
             </span>
           )
@@ -320,23 +329,23 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
         {
           id: 'delivery_status',
           header: 'Giao Hàng (POD)',
-          width: '130px',
+          width: '150px',
           accessor: o => {
             const isDelivered = o.status === 'delivered' || o.delivery_status === 'delivered';
             const isShipped = o.status === 'shipped' || o.delivery_status === 'in_transit';
             return (
               <div className="flex items-center gap-1">
                 {isDelivered ? (
-                  <span className="badge bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] flex items-center gap-1 font-bold">
-                    <CheckCircle2 size={10} /> Đã Ký POD
+                  <span className="badge bg-emerald-50 text-emerald-800 border-emerald-200 text-xs px-2.5 py-1 flex items-center gap-1.5 font-bold whitespace-nowrap">
+                    <CheckCircle2 size={12} /> Đã Ký POD
                   </span>
                 ) : isShipped ? (
-                  <span className="badge bg-cyan-50 text-cyan-800 border-cyan-200 text-[10px] flex items-center gap-1 font-medium">
-                    <Truck size={10} /> In-Transit
+                  <span className="badge bg-cyan-50 text-cyan-800 border-cyan-200 text-xs px-2.5 py-1 flex items-center gap-1.5 font-semibold whitespace-nowrap">
+                    <Truck size={12} /> In-Transit
                   </span>
                 ) : (
-                  <span className="badge bg-ink-100 text-ink-600 border-ink-200 text-[10px] flex items-center gap-1 font-medium">
-                    <Clock size={10} /> Chờ Xuất Kho
+                  <span className="badge bg-ink-100 text-ink-700 border-ink-200 text-xs px-2.5 py-1 flex items-center gap-1.5 font-medium whitespace-nowrap">
+                    <Clock size={12} /> Chờ Xuất Kho
                   </span>
                 )}
               </div>
@@ -346,36 +355,11 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
         {
           id: 'payment_status',
           header: 'Thanh Toán',
-          width: '110px',
+          width: '135px',
           accessor: o => (
-            <span className={cn('badge text-[10px]', PAYMENT_STATUS_COLORS[o.payment_status])}>
+            <span className={cn('badge text-xs font-semibold px-2.5 py-1 whitespace-nowrap inline-flex items-center', PAYMENT_STATUS_COLORS[o.payment_status])}>
               {PAYMENT_STATUS_LABELS[o.payment_status] || o.payment_status}
             </span>
-          )
-        }
-      ]
-    },
-    {
-      id: 'grp_actions',
-      title: 'THAO TÁC',
-      columns: [
-        {
-          id: 'actions',
-          header: 'Hành Động',
-          align: 'right',
-          width: '90px',
-          accessor: o => (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openOrder(o);
-              }}
-              className="btn btn-secondary text-xs py-1 px-2 text-ink-600 hover:text-brand-600 flex items-center gap-1"
-              title="Xem drawer chi tiết đầy đủ"
-            >
-              <Eye size={12} />
-              <span>Xem</span>
-            </button>
           )
         }
       ]
@@ -395,157 +379,311 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
               Hierarchical Data Grid & POD Gate
             </span>
           </div>
-          <p className="text-xs text-ink-500 mt-1">
+          <p className="text-sm text-ink-500 mt-1">
             Theo dõi toàn trình từ Đặt hàng, Khóa tồn giữ đơn, Pick/Pack, Bàn giao bưu tá đến Biên bản POD và Lợi nhuận CM3.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => exportOrdersToExcel(filtered)} className="btn-secondary text-xs py-1.5 px-2.5">
-            <Download size={13} /> Excel
+          <button onClick={() => exportOrdersToExcel(filtered)} className="btn-secondary text-sm py-2 px-3 font-semibold">
+            <Download size={14} /> Excel
           </button>
-          <button onClick={() => exportOrdersToPDF(filtered)} className="btn-secondary text-xs py-1.5 px-2.5">
-            <FileText size={13} /> PDF
+          <button onClick={() => exportOrdersToPDF(filtered)} className="btn-secondary text-sm py-2 px-3 font-semibold">
+            <FileText size={14} /> PDF
           </button>
-          <button onClick={() => setShowForm(true)} className="btn-primary text-xs py-1.5 px-3">
+          <button onClick={() => setShowForm(true)} className="btn-primary text-sm py-2 px-3.5 font-bold shadow-xs">
             + Tạo Đơn Hàng Mới
           </button>
         </div>
       </div>
 
-      {/* LEVEL 1: PROGRESSIVE DISCLOSURE — HERO OVERVIEW KPI STRIP */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
-          title="Tổng Doanh Thu Quản Trị (Net Sales)"
-          value={`${kpis.totalManagerialSales.toLocaleString()} ₫`}
-          subtitle={`Có 511 (POD): ${kpis.podRecognizedRev.toLocaleString()} ₫ • Chờ POD: ${(kpis.totalManagerialSales - kpis.podRecognizedRev).toLocaleString()} ₫`}
-          icon={DollarSign}
-          badge="FOB DESTINATION"
-          highlight
-        />
-        <KPICard
-          title="Đơn Hàng Chờ Xử Lý & Đóng Gói"
-          value={`${kpis.pendingOrders} đơn`}
-          subtitle="Cần xuất kho trong SLA cam kết"
-          icon={Clock}
-          badge={kpis.pendingOrders > 0 ? 'CẦN XỬ LÝ' : 'ĐÃ XỬ LÝ'}
-        />
-        <KPICard
-          title="Đơn Đang Giao In-Transit"
-          value={`${kpis.inTransitOrders} đơn`}
-          subtitle="Đã bàn giao bưu tá, chờ xác nhận POD"
-          icon={Truck}
-        />
-        <KPICard
-          title="Đơn Đã Giao Ký POD Thành Công"
-          value={`${kpis.deliveredOrders} / ${kpis.totalOrders} đơn`}
-          subtitle="Đủ điều kiện ghi nhận Có 511 & đối soát"
-          icon={CheckCircle2}
-        />
-      </div>
+      {/* LEVEL 1: OPERATIONAL PIPELINE STRIP (COMPACT SMART CONTROLS) */}
+      <div className="rounded-xl border border-ink-200 bg-white shadow-xs overflow-hidden">
+        {/* Main Operational Strip Container */}
+        <div className="p-3 sm:p-4 space-y-3">
+          {/* Row 1: Revenue Snapshot on Left, Action Guide Toggle on Right */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            {/* Group A: Revenue Snapshot */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center shrink-0 shadow-2xs">
+                <DollarSign size={20} />
+              </div>
+              <div className="leading-tight">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">Doanh Thu Quản Trị</span>
+                  <span className="badge text-xs font-bold px-2 py-0.5 bg-teal-50 text-teal-700 border-teal-200">FOB</span>
+                </div>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-lg sm:text-xl font-black text-ink-900 tracking-tight">
+                    {formatCurrency(kpis.totalManagerialSales)}
+                  </span>
+                  <span className="text-xs sm:text-sm text-ink-500">
+                    (Có 511 POD: <strong className="text-emerald-700 font-bold">{formatCurrency(kpis.podRecognizedRev)}</strong>)
+                  </span>
+                </div>
+              </div>
+            </div>
 
-      {/* LEVEL 2: ACTION CENTER — VIỆC CẦN XỬ LÝ (TASK-FIRST ARCHITECTURE) */}
-      <div className="rounded-xl border border-ink-200 bg-white p-4 space-y-3 shadow-xs">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-            <h3 className="text-sm font-bold text-ink-900 tracking-tight">
-              Trung Tâm Tác Vụ Cần Xử Lý (Action Center)
-            </h3>
-            <span className="badge bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold">
-              {kpis.pendingOrders + orders.filter(o => o.status === 'processing').length + kpis.inTransitOrders} việc cần theo dõi
-            </span>
+            {/* Group C: Action Center Accordion Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowActionCenter(!showActionCenter)}
+              className={cn(
+                'btn btn-secondary text-xs sm:text-sm py-2 px-3.5 flex items-center gap-2 cursor-pointer transition-all border rounded-lg shadow-2xs',
+                showActionCenter
+                  ? 'bg-ink-100 text-ink-900 border-ink-300 font-bold'
+                  : 'bg-white text-ink-700 border-ink-200 hover:bg-ink-50 font-semibold'
+              )}
+              title="Xem chi tiết hướng dẫn và thao tác quy trình 3 bước"
+            >
+              <Sparkles size={15} className="text-amber-500 shrink-0" />
+              <span>Hướng dẫn tác vụ</span>
+              <span className="badge bg-amber-100 text-amber-900 border-amber-300 text-xs px-2 py-0.5 font-bold">
+                {kpis.pendingOrders + kpis.processingOrders + kpis.inTransitOrders} việc
+              </span>
+              {showActionCenter ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+            </button>
           </div>
-          <span className="text-xs text-ink-500 hidden sm:inline">
-            Ưu tiên theo thứ tự luồng: Khóa tồn giữ đơn → Xuất kho đóng gói → Ký nhận POD
-          </span>
+
+          {/* Row 2: Interactive Pipeline Stage Filter Chips (Horizontal Track) */}
+          <div className="pt-2.5 border-t border-ink-100 flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+            {/* Pill: Tất cả */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={cn(
+                'px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer select-none shrink-0',
+                statusFilter === 'all'
+                  ? 'bg-ink-900 text-white border-ink-900 shadow-xs ring-2 ring-ink-900/20'
+                  : 'bg-ink-50 text-ink-700 border-ink-200 hover:bg-ink-100 hover:text-ink-900'
+              )}
+            >
+              <span>Tất cả</span>
+              <span className={cn(
+                'text-xs px-2 py-0.5 rounded-full font-bold',
+                statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-ink-200 text-ink-800'
+              )}>
+                {kpis.totalOrders}
+              </span>
+            </button>
+
+            {/* Stage 1: Chờ Duyệt & Khóa Tồn */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter(prev => prev === 'pending' ? 'all' : 'pending')}
+              className={cn(
+                'px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer select-none shrink-0',
+                statusFilter === 'pending'
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs ring-2 ring-amber-500/30'
+                  : 'bg-amber-50/90 text-amber-900 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
+              )}
+              title="Click để lọc đơn chờ duyệt và khóa tồn (Click lại để bỏ lọc)"
+            >
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full shrink-0",
+                kpis.pendingOrders > 0 ? (statusFilter === 'pending' ? "bg-white" : "bg-amber-500 animate-pulse") : "bg-ink-300"
+              )} />
+              <span>Chờ duyệt & khóa tồn</span>
+              <span className={cn(
+                'text-xs px-2 py-0.5 rounded-full font-bold',
+                statusFilter === 'pending' ? 'bg-white/25 text-white' : 'bg-amber-200 text-amber-900'
+              )}>
+                {kpis.pendingOrders}
+              </span>
+            </button>
+
+            {/* Stage 2: Chờ đóng gói */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter(prev => prev === 'processing' ? 'all' : 'processing')}
+              className={cn(
+                'px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer select-none shrink-0',
+                statusFilter === 'processing'
+                  ? 'bg-blue-600 text-white border-blue-700 shadow-xs ring-2 ring-blue-600/30'
+                  : 'bg-blue-50/90 text-blue-900 border-blue-200 hover:bg-blue-100 hover:border-blue-300'
+              )}
+              title="Click để lọc đơn đang nhặt hàng wave picking và đóng gói (Click lại để bỏ lọc)"
+            >
+              <Boxes size={15} className={statusFilter === 'processing' ? 'text-white' : 'text-blue-600'} />
+              <span>Chờ đóng gói</span>
+              <span className={cn(
+                'text-xs px-2 py-0.5 rounded-full font-bold',
+                statusFilter === 'processing' ? 'bg-white/25 text-white' : 'bg-blue-200 text-blue-900'
+              )}>
+                {kpis.processingOrders}
+              </span>
+            </button>
+
+            {/* Stage 3: Đang giao In-Transit */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter(prev => prev === 'shipped' ? 'all' : 'shipped')}
+              className={cn(
+                'px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer select-none shrink-0',
+                statusFilter === 'shipped'
+                  ? 'bg-sky-600 text-white border-sky-700 shadow-xs ring-2 ring-sky-600/30'
+                  : 'bg-sky-50/90 text-sky-900 border-sky-200 hover:bg-sky-100 hover:border-sky-300'
+              )}
+              title="Click để lọc đơn đã bàn giao bưu tá đang giao (Click lại để bỏ lọc)"
+            >
+              <Truck size={15} className={statusFilter === 'shipped' ? 'text-white' : 'text-sky-600'} />
+              <span>Đang giao (In-Transit)</span>
+              <span className={cn(
+                'text-xs px-2 py-0.5 rounded-full font-bold',
+                statusFilter === 'shipped' ? 'bg-white/25 text-white' : 'bg-sky-200 text-sky-900'
+              )}>
+                {kpis.inTransitOrders}
+              </span>
+            </button>
+
+            {/* Stage 4: Đã giao & Ký POD */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter(prev => prev === 'delivered' ? 'all' : 'delivered')}
+              className={cn(
+                'px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer select-none shrink-0',
+                statusFilter === 'delivered'
+                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-600/30'
+                  : 'bg-emerald-50/90 text-emerald-900 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+              )}
+              title="Click để lọc đơn đã giao ký nhận POD thành công (Click lại để bỏ lọc)"
+            >
+              <CheckCircle2 size={15} className={statusFilter === 'delivered' ? 'text-white' : 'text-emerald-600'} />
+              <span>Đã ký POD</span>
+              <span className={cn(
+                'text-xs px-2 py-0.5 rounded-full font-bold',
+                statusFilter === 'delivered' ? 'bg-white/25 text-white' : 'bg-emerald-200 text-emerald-900'
+              )}>
+                {kpis.deliveredOrders}
+              </span>
+            </button>
+
+            {/* Stage 5: Đã hủy */}
+            {kpis.cancelledOrders > 0 && (
+              <button
+                type="button"
+                onClick={() => setStatusFilter(prev => prev === 'cancelled' ? 'all' : 'cancelled')}
+                className={cn(
+                  'px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer select-none shrink-0',
+                  statusFilter === 'cancelled'
+                    ? 'bg-rose-600 text-white border-rose-700 shadow-xs ring-2 ring-rose-600/30'
+                    : 'bg-rose-50/90 text-rose-900 border-rose-200 hover:bg-rose-100 hover:border-rose-300'
+                )}
+                title="Click để lọc đơn đã hủy (Click lại để bỏ lọc)"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+                <span>Đã hủy</span>
+                <span className={cn(
+                  'text-xs px-2 py-0.5 rounded-full font-bold',
+                  statusFilter === 'cancelled' ? 'bg-white/25 text-white' : 'bg-rose-200 text-rose-900'
+                )}>
+                  {kpis.cancelledOrders}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Card 1: Đơn chờ xác nhận & giữ tồn */}
-          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 flex flex-col justify-between space-y-2">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
-                  1. Chờ Khóa Tồn & Duyệt Đơn
-                </span>
-                <span className="badge bg-amber-200 text-amber-900 border-amber-300 text-[10px] font-mono font-bold">
-                  {kpis.pendingOrders} đơn
-                </span>
-              </div>
-              <p className="text-xs text-ink-600">
-                Đơn hàng mới từ sàn TMĐT, cần giữ tồn Có Thể Bán (Sellable) sang Đã Giữ Cho Đơn (Reserved) trước khi nhặt hàng.
-              </p>
+        {/* Expandable Action Center Details (Progressive Disclosure) */}
+        {showActionCenter && (
+          <div className="border-t border-ink-100 bg-ink-50/50 p-4 sm:p-5 space-y-3.5">
+            <div className="flex items-center justify-between text-sm text-ink-600">
+              <span className="font-semibold flex items-center gap-1.5 text-ink-800">
+                <AlertTriangle size={15} className="text-amber-500" />
+                Trung tâm điều phối tác vụ (Ưu tiên: Khóa tồn giữ đơn → Xuất kho đóng gói → Ký nhận POD)
+              </span>
+              <span className="hidden sm:inline text-xs text-ink-500">
+                Nhấn nút tác vụ để mở nhanh chi tiết hoặc xử lý đơn hàng
+              </span>
             </div>
-            <button
-              onClick={() => {
-                const pendingOrder = orders.find(o => o.status === 'pending');
-                if (pendingOrder) openOrder(pendingOrder);
-                else setStatusFilter('pending');
-              }}
-              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-amber-900 border-amber-300 hover:bg-amber-100 cursor-pointer"
-            >
-              <span>{kpis.pendingOrders > 0 ? 'Xử lý đơn chờ duyệt ngay' : 'Xem danh sách đơn chờ'}</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
 
-          {/* Card 2: Đơn đang xử lý / đóng gói */}
-          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 flex flex-col justify-between space-y-2">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
-                  2. Đang Chuẩn Bị & Đóng Gói
-                </span>
-                <span className="badge bg-blue-200 text-blue-900 border-blue-300 text-[10px] font-mono font-bold">
-                  {orders.filter(o => o.status === 'processing').length} đơn
-                </span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {/* Action 1 */}
+              <div className="rounded-xl border border-amber-200 bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-3 shadow-2xs">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-900">
+                      1. Chờ Khóa Tồn & Duyệt Đơn
+                    </span>
+                    <span className="badge bg-amber-100 text-amber-900 border-amber-300 text-xs px-2 py-0.5 font-bold">
+                      {kpis.pendingOrders} đơn
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-ink-700 leading-relaxed">
+                    Đơn hàng mới từ sàn TMĐT, cần giữ tồn Có Thể Bán (Sellable) sang Đã Giữ Cho Đơn (Reserved) trước khi nhặt hàng.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    const pendingOrder = orders.find(o => o.status === 'pending');
+                    if (pendingOrder) openOrder(pendingOrder);
+                    else setStatusFilter('pending');
+                  }}
+                  className="btn btn-secondary text-xs sm:text-sm py-2 px-3 w-full flex items-center justify-center gap-1.5 font-bold text-amber-900 border-amber-300 hover:bg-amber-50 cursor-pointer"
+                >
+                  <span>{kpis.pendingOrders > 0 ? 'Xử lý đơn chờ duyệt ngay' : 'Xem danh sách đơn chờ'}</span>
+                  <ArrowRight size={14} />
+                </button>
               </div>
-              <p className="text-xs text-ink-600">
-                Đã khóa tồn, đang gom sóng nhặt hàng (Wave Picking) và in phiếu đóng gói theo SLA.
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                const procOrder = orders.find(o => o.status === 'processing');
-                if (procOrder) openOrder(procOrder);
-                else setStatusFilter('processing');
-              }}
-              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-blue-900 border-blue-300 hover:bg-blue-100 cursor-pointer"
-            >
-              <span>Kiểm tra tiến độ đóng gói</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
 
-          {/* Card 3: Đơn đang giao / chờ POD */}
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 flex flex-col justify-between space-y-2">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
-                  3. Đang Vận Chuyển & Ký POD
-                </span>
-                <span className="badge bg-emerald-200 text-emerald-900 border-emerald-300 text-[10px] font-mono font-bold">
-                  {kpis.inTransitOrders} đơn
-                </span>
+              {/* Action 2 */}
+              <div className="rounded-xl border border-blue-200 bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-3 shadow-2xs">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-blue-900">
+                      2. Đang Chuẩn Bị & Đóng Gói
+                    </span>
+                    <span className="badge bg-blue-100 text-blue-900 border-blue-300 text-xs px-2 py-0.5 font-bold">
+                      {orders.filter(o => o.status === 'processing').length} đơn
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-ink-700 leading-relaxed">
+                    Đã khóa tồn, đang gom sóng nhặt hàng (Wave Picking) và in phiếu đóng gói theo SLA cam kết.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    const procOrder = orders.find(o => o.status === 'processing');
+                    if (procOrder) openOrder(procOrder);
+                    else setStatusFilter('processing');
+                  }}
+                  className="btn btn-secondary text-xs sm:text-sm py-2 px-3 w-full flex items-center justify-center gap-1.5 font-bold text-blue-900 border-blue-300 hover:bg-blue-50 cursor-pointer"
+                >
+                  <span>Kiểm tra tiến độ đóng gói</span>
+                  <ArrowRight size={14} />
+                </button>
               </div>
-              <p className="text-xs text-ink-600">
-                Đã bàn giao bưu tá, theo dõi hành trình và thu thập biên bản POD để ghi nhận Doanh thu Có 511.
-              </p>
+
+              {/* Action 3 */}
+              <div className="rounded-xl border border-emerald-200 bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-3 shadow-2xs">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-900">
+                      3. Đang Vận Chuyển & Ký POD
+                    </span>
+                    <span className="badge bg-emerald-100 text-emerald-900 border-emerald-300 text-xs px-2 py-0.5 font-bold">
+                      {kpis.inTransitOrders} đơn
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-ink-700 leading-relaxed">
+                    Đã bàn giao bưu tá, theo dõi hành trình và thu thập biên bản POD để ghi nhận Doanh thu Có 511.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    const shipOrder = orders.find(o => o.status === 'shipped');
+                    if (shipOrder) openOrder(shipOrder);
+                    else setStatusFilter('shipped');
+                  }}
+                  className="btn btn-secondary text-xs sm:text-sm py-2 px-3 w-full flex items-center justify-center gap-1.5 font-bold text-emerald-900 border-emerald-300 hover:bg-emerald-50 cursor-pointer"
+                >
+                  <span>Xem đơn chờ biên bản POD</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => {
-                const shipOrder = orders.find(o => o.status === 'shipped');
-                if (shipOrder) openOrder(shipOrder);
-                else setStatusFilter('shipped');
-              }}
-              className="btn btn-secondary text-xs py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 font-bold text-emerald-900 border-emerald-300 hover:bg-emerald-100 cursor-pointer"
-            >
-              <span>Xem đơn chờ biên bản POD</span>
-              <ArrowRight size={13} />
-            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* LEVEL 2 & 3: HIERARCHICAL REUSABLE DATA GRID */}
@@ -567,9 +705,9 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
                 clearSelection();
                 toast(`Đã duyệt và khóa tồn thành công cho ${selectedIds.length} đơn hàng!`, 'success');
               }}
-              className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold flex items-center gap-1 cursor-pointer transition-colors text-xs"
+              className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold flex items-center gap-1.5 cursor-pointer transition-colors text-xs sm:text-sm shadow-2xs"
             >
-              <CheckCircle2 size={13} />
+              <CheckCircle2 size={14} />
               <span>Duyệt Hàng Loạt</span>
             </button>
             <button
@@ -578,42 +716,29 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
                 exportOrdersToExcel(targetOrders);
                 toast(`Đã xuất Excel cho ${selectedIds.length} đơn hàng!`, 'success');
               }}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1 cursor-pointer transition-colors text-xs"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1.5 cursor-pointer transition-colors text-xs sm:text-sm shadow-2xs"
             >
-              <Download size={13} />
+              <Download size={14} />
               <span>Xuất Excel</span>
             </button>
           </div>
         )}
-        searchPlaceholder="Tìm kiếm mã đơn, tên khách hàng, số điện thoại..."
+        searchPlaceholder="Tìm kiếm mã đơn, khách hàng..."
         searchFilter={(o, q) =>
           o.order_number.toLowerCase().includes(q) ||
           (o.customer?.name || '').toLowerCase().includes(q) ||
           (o.customer?.phone || '').includes(q)
         }
         filterControls={
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value as any)}
-              className="input text-xs py-1.5 px-2 bg-white border border-ink-200"
-            >
-              <option value="all">Tất cả trạng thái đơn ({orders.length})</option>
-              {STATUS_FILTERS.filter(s => s !== 'all').map(s => (
-                <option key={s} value={s}>
-                  {ORDER_STATUS_LABELS[s as OrderStatus]} ({orders.filter(o => o.status === s).length})
-                </option>
-              ))}
-            </select>
-
-            {/* Channel Filter */}
+          <div className="flex items-center gap-2">
+            {/* Channel Filter Dropdown */}
             <select
               value={channelFilter}
               onChange={e => setChannelFilter(e.target.value)}
-              className="input text-xs py-1.5 px-2 bg-white border border-ink-200"
+              className="text-sm py-2 px-3 bg-white border border-[#D9E3E8] rounded-lg font-medium text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E647F]/20 focus:border-[#1E647F] cursor-pointer transition-all shadow-2xs shrink-0"
+              title="Lọc theo kênh bán hàng"
             >
-              <option value="all">Tất cả kênh số</option>
+              <option value="all">Tất cả kênh bán</option>
               <option value="shopee">Shopee Mall</option>
               <option value="tiktok">TikTok Shop</option>
               <option value="lazada">Lazada Mall</option>
@@ -621,149 +746,6 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
             </select>
           </div>
         }
-        renderExpandedRow={(order) => {
-          const items = order.order_items || [];
-          const econ = orderEconsMap.get(order.id);
-
-          return (
-            <div className="space-y-4">
-              {/* Stepper Visualizer for Order Lifecycle */}
-              <WorkflowStepVisualizer
-                workflowType="order_lifecycle"
-                currentStatus={order.status}
-                actionButton={{
-                  label: 'Mở Drawer Đầy Đủ',
-                  actionId: 'open_drawer'
-                }}
-                onActionClick={() => openOrder(order)}
-              />
-
-              {/* Grid 2 Columns: Order Items & P&L Waterfall */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                {/* Order Line Items */}
-                <div className="lg:col-span-7 rounded-xl border border-ink-200 bg-ink-50/40 p-3.5 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-ink-900 text-xs flex items-center gap-1.5">
-                      <Boxes size={14} className="text-brand-600" />
-                      Chi Tiết Dòng Hàng & Giá Vốn Snapshot MAC ({items.length} SKU)
-                    </span>
-                    <span className="text-[10px] text-ink-500 font-mono">Bấm SKU để xem Unit Economics</span>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs min-w-[500px]">
-                      <thead>
-                        <tr className="border-b border-ink-200 text-[10px] uppercase font-mono text-ink-500 text-left">
-                          <th className="py-1.5">Sản Phẩm & SKU</th>
-                          <th className="py-1.5 text-center">SL</th>
-                          <th className="py-1.5 text-right">Đơn Giá</th>
-                          <th className="py-1.5 text-right">Giá Vốn MAC</th>
-                          <th className="py-1.5 text-right">Lãi Gộp SKU</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-ink-100 font-mono">
-                        {items.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="py-4 text-center text-ink-400 font-sans text-xs">
-                              Chưa có dòng sản phẩm chi tiết
-                            </td>
-                          </tr>
-                        ) : (
-                          items.map((it: any, i: number) => {
-                            const unitPrice = it.unit_price || 0;
-                            const unitCost = it.unit_cost_mac_snapshot ?? (it.product?.cost || Math.round(unitPrice * 0.48));
-                            const qty = it.quantity || 1;
-                            const profit = (unitPrice - unitCost) * qty;
-
-                            return (
-                              <tr key={i} className="hover:bg-white/80 transition-colors">
-                                <td className="py-2 font-sans">
-                                  <span className="font-bold text-ink-900 block truncate max-w-[180px]">
-                                    {it.product?.name || `Sản phẩm #${i + 1}`}
-                                  </span>
-                                  <button
-                                    onClick={(e) => handleSkuClick(it.sku || it.product?.sku || '', e)}
-                                    className="badge bg-brand-50 text-brand-700 hover:bg-brand-100 border-brand-200 text-[10px] font-mono cursor-pointer flex items-center gap-1 w-fit mt-0.5"
-                                    title="Chuyển đến SKU Economics của sản phẩm này"
-                                  >
-                                    <span>{it.sku || it.product?.sku || 'NX-SKU'}</span>
-                                    <ExternalLink size={9} />
-                                  </button>
-                                </td>
-                                <td className="py-2 text-center font-bold text-ink-900">{qty}</td>
-                                <td className="py-2 text-right">{formatCurrency(unitPrice)}</td>
-                                <td className="py-2 text-right text-ink-500">{formatCurrency(unitCost)}</td>
-                                <td className="py-2 text-right font-bold text-emerald-700">
-                                  {formatCurrency(profit)}
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Individual Order Economics Breakdown */}
-                <div className="lg:col-span-5 rounded-xl border border-ink-200 bg-white p-3.5 space-y-2">
-                  <div className="flex items-center justify-between pb-1 border-b border-ink-100">
-                    <span className="font-bold text-ink-900 text-xs flex items-center gap-1.5">
-                      <DollarSign size={14} className="text-emerald-600" />
-                      Phân Rã P&L Đơn Hàng #{order.order_number}
-                    </span>
-                    <span className="badge bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]">
-                      CM3: {econ ? `${formatCurrency(econ.cm3)}` : 'N/A'}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs font-mono">
-                    <div className="flex justify-between text-ink-700">
-                      <span className="font-sans text-[11px]">1. Doanh thu gộp (Gross):</span>
-                      <span>{formatCurrency(econ?.grossSales || order.total || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-rose-600">
-                      <span className="font-sans text-[11px]">2. Giảm giá & Voucher:</span>
-                      <span>-{formatCurrency(econ?.discounts || order.discount || 0)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-ink-900 border-t border-ink-100 pt-1">
-                      <span className="font-sans text-[11px]">3. Doanh thu thuần (Net Sales):</span>
-                      <span>{formatCurrency(econ?.netRevenue || order.total || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-ink-600">
-                      <span className="font-sans text-[11px]">4. Giá vốn hàng bán (COGS):</span>
-                      <span>-{formatCurrency(econ?.cogs || 0)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-brand-800 bg-brand-50/50 px-1.5 py-0.5 rounded">
-                      <span className="font-sans text-[11px]">5. Lãi gộp CM1:</span>
-                      <span>{formatCurrency(econ?.cm1 || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-ink-600">
-                      <span className="font-sans text-[11px]">6. Phí sàn TMĐT (Take Rate):</span>
-                      <span>-{formatCurrency(econ?.marketplaceFees || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-ink-600">
-                      <span className="font-sans text-[11px]">7. Chi phí đóng gói (WMS):</span>
-                      <span>-{formatCurrency(econ?.fulfillmentCosts || 0)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-blue-900 bg-blue-50/50 px-1.5 py-0.5 rounded">
-                      <span className="font-sans text-[11px]">8. Lợi nhuận đóng góp CM2:</span>
-                      <span>{formatCurrency(econ?.cm2 || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-ink-600">
-                      <span className="font-sans text-[11px]">9. Chi phí Marketing phân bổ:</span>
-                      <span>-{formatCurrency(econ?.attributedMarketingCosts || 0)}</span>
-                    </div>
-                    <div className="flex justify-between font-extrabold text-emerald-900 bg-emerald-100/70 px-2 py-1 rounded border border-emerald-200">
-                      <span className="font-sans text-[11px]">10. Lợi nhuận ròng CM3 sau Ads:</span>
-                      <span>{formatCurrency(econ?.cm3 || 0)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }}
         renderMobileCard={(order, isExpanded, onToggleExpand) => {
           const ch = CHANNEL_BADGES[order.channel || 'shopee'] || CHANNEL_BADGES.shopee;
           const econ = orderEconsMap.get(order.id);
@@ -789,7 +771,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
                 </div>
                 <div>
                   <span className="text-[10px] text-ink-400 block font-sans">Doanh thu thuần:</span>
-                  <strong className="font-mono text-ink-900">{formatCurrency(order.total || 0)}</strong>
+                  <strong className="text-ink-900">{formatCurrency(order.total || 0)}</strong>
                 </div>
                 <div>
                   <span className="text-[10px] text-ink-400 block font-sans">Giao hàng (POD):</span>
@@ -799,7 +781,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
                 </div>
                 <div>
                   <span className="text-[10px] text-ink-400 block font-sans">Lợi nhuận CM3:</span>
-                  <span className="font-mono font-bold text-emerald-700">
+                  <span className="font-bold text-emerald-700">
                     {econ ? formatCurrency(econ.cm3) : 'N/A'}
                   </span>
                 </div>

@@ -44,8 +44,8 @@ export function BufferRulesPage({ search }: BufferRulesPageProps) {
     if (!deleteId) return;
     const { error } = await supabase.from('buffer_rules').delete().eq('id', deleteId);
     setDeleteId(null);
-    if (error) { toast('Xoa that bai', 'error'); return; }
-    toast('Da xoa quy tac', 'success');
+    if (error) { toast('Xóa thất bại', 'error'); return; }
+    toast('Đã xóa quy tắc', 'success');
     load();
   }
 
@@ -54,19 +54,19 @@ export function BufferRulesPage({ search }: BufferRulesPageProps) {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-lg font-semibold text-ink-900">Ton kho an toan ({filtered.length})</h2>
+        <h2 className="text-lg font-semibold text-ink-900">Tồn kho an toàn ({filtered.length})</h2>
         <button onClick={() => setShowForm(true)} className="btn-primary shrink-0"><Plus size={16} /> Them quy tac</button>
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={ShieldAlert} title="Chua co quy tac ton kho an toan" description="Cau hinh safety stock va reorder point cho tung SKU" />
+        <EmptyState icon={ShieldAlert} title="Chưa có quy tắc tồn kho an toàn" description="Cấu hình mức safety stock và reorder point cho từng SKU" />
       ) : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wider">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold">Kho</th>
-                <th className="text-left px-4 py-3 font-semibold">San pham</th>
+                <th className="text-left px-4 py-3 font-semibold">Sản phẩm</th>
                 <th className="text-center px-4 py-3 font-semibold">Safety Stock</th>
                 <th className="text-center px-4 py-3 font-semibold">Reorder Point</th>
                 <th className="text-center px-4 py-3 font-semibold">Push Ratio</th>
@@ -92,7 +92,7 @@ export function BufferRulesPage({ search }: BufferRulesPageProps) {
       {showForm && <NewBufferModal warehouses={warehouses} products={products} onClose={() => setShowForm(false)} onSaved={() => { load(); setShowForm(false); }} />}
 
       <ConfirmDialog open={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete}
-        title="Xoa quy tac?" message="Quy tac ton kho an toan nay se bi xoa vinh vien." confirmLabel="Xoa" />
+        title="Xóa quy tắc?" message="Quy tắc tồn kho an toàn này sẽ bị xóa vĩnh viễn." confirmLabel="Xóa" />
     </div>
   );
 
@@ -105,8 +105,8 @@ export function BufferRulesPage({ search }: BufferRulesPageProps) {
     const [saving, setSaving] = useState(false);
 
     async function handleSave() {
-      if (!warehouseId || !productId) { toast('Chon kho va san pham', 'error'); return; }
-      if (safetyStock < 0 || reorderPoint < 0 || pushRatio < 0 || pushRatio > 100) { toast('Gia tri khong hop le', 'error'); return; }
+      if (!warehouseId || !productId) { toast('Vui lòng chọn kho và sản phẩm', 'error'); return; }
+      if (safetyStock < 0 || reorderPoint < 0 || pushRatio < 0 || pushRatio > 100) { toast('Giá trị không hợp lệ', 'error'); return; }
       setSaving(true);
       const { error } = await supabase.from('buffer_rules').insert({
         warehouse_id: warehouseId, product_id: productId,
@@ -121,10 +121,10 @@ export function BufferRulesPage({ search }: BufferRulesPageProps) {
     return (
       <div className="modal-backdrop" onClick={onClose}>
         <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header"><h3 className="font-semibold text-ink-900">Them quy tac ton kho an toan</h3></div>
+          <div className="modal-header"><h3 className="font-semibold text-ink-900">Thêm quy tắc tồn kho an toàn</h3></div>
           <div className="modal-body space-y-4">
             <div><label className="label">Kho *</label><select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} className="input"><option value="">Chon kho...</option>{warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></div>
-            <div><label className="label">San pham *</label><select value={productId} onChange={(e) => setProductId(e.target.value)} className="input"><option value="">Chon san pham...</option>{products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}</select></div>
+            <div><label className="label">Sản phẩm *</label><select value={productId} onChange={(e) => setProductId(e.target.value)} className="input"><option value="">Chọn sản phẩm...</option>{products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}</select></div>
             <div className="grid grid-cols-3 gap-3">
               <div><label className="label">Safety Stock</label><input type="number" min={0} value={safetyStock} onChange={(e) => setSafetyStock(parseInt(e.target.value) || 0)} className="input" /></div>
               <div><label className="label">Reorder Point</label><input type="number" min={0} value={reorderPoint} onChange={(e) => setReorderPoint(parseInt(e.target.value) || 0)} className="input" /></div>
@@ -132,8 +132,8 @@ export function BufferRulesPage({ search }: BufferRulesPageProps) {
             </div>
           </div>
           <div className="modal-footer">
-            <button onClick={onClose} className="btn-secondary">Huy</button>
-            <button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? <Spinner size={16} /> : null}<Save size={14} /> Luu</button>
+            <button onClick={onClose} className="btn-secondary">Hủy</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? <Spinner size={16} /> : null}<Save size={14} /> Lưu</button>
           </div>
         </div>
       </div>

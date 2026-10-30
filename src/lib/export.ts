@@ -230,3 +230,50 @@ export function exportProductsToPDF(products: Product[]): void {
   win.document.write(html);
   win.document.close();
 }
+
+
+export function exportMarketingCampaignsToExcel(campaigns: import('@/analytics/types').MarketingCampaignPerformance[]): void {
+  const headers = [
+    'Ma chien dich',
+    'Ten chien dich',
+    'Nen tang',
+    'Kenh',
+    'Ngan sach Ads (VND)',
+    'Luot hien thi',
+    'Luot click',
+    'CPC (VND)',
+    'So don hang',
+    'CPA (VND)',
+    'Doanh thu gan thuoc (VND)',
+    'ROAS',
+    'Gia von COGS (VND)',
+    'Loi nhuan sau Ads CM3 (VND)',
+    'Danh gia',
+    'Loai gan thuoc',
+  ];
+
+  const rows = campaigns.map((c) => [
+    c.campaignId,
+    c.name,
+    c.platform,
+    c.channel,
+    String(c.adSpend),
+    String(c.impressions),
+    String(c.clicks),
+    String(c.cpc),
+    String(c.conversions),
+    String(Math.round(c.cpa)),
+    String(c.attributedRevenue),
+    String(c.roas),
+    String(c.cogs),
+    String(c.cmAfterAds),
+    c.status,
+    c.attributionType,
+  ]);
+
+  const csv = BOM + [headers, ...rows]
+    .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `bao_cao_ads_roas_${timestamp()}.csv`);
+}

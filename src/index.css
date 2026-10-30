@@ -11,9 +11,10 @@
   --ocean-silver: #D9E3E8;
   --ocean-pearl: #F4F8FA;
 
-  --app-background: #F4F8FA;
+  /* Sleek Modern Linear Gradients for System Backgrounds */
+  --app-background: linear-gradient(145deg, #F9FBFC 0%, #EEF4F8 45%, #E2ECF3 100%);
+  --sidebar-gradient: linear-gradient(135deg, #173B59 0%, #102A41 50%, #0A1D2E 100%);
   --panel-background: #FFFFFF;
-  --sidebar-background: #081B2C;
 
   --text-primary: #123A52;
   --text-secondary: #475569;
@@ -72,11 +73,18 @@
   }
 
   body {
-    background-color: var(--app-background);
+    background: var(--app-background);
+    background-attachment: fixed;
+    min-height: 100vh;
     color: var(--text-primary);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Reset tabular-nums and allow natural proportional typography */
+  .tabular-nums {
+    font-variant-numeric: normal !important;
   }
 
   h1, h2, h3, h4, h5 {
@@ -111,6 +119,12 @@
   }
   .shadow-2xs {
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+  .bg-app-gradient {
+    background: linear-gradient(145deg, #F9FBFC 0%, #EEF4F8 45%, #E2ECF3 100%);
+  }
+  .bg-sidebar-gradient {
+    background: linear-gradient(135deg, #173B59 0%, #102A41 50%, #0A1D2E 100%);
   }
 }
 
@@ -163,8 +177,9 @@
   }
 
   .badge {
-    @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5
+    @apply inline-flex items-center justify-center text-center gap-1 rounded-full border px-2 py-0.5
            text-[11px] font-semibold transition-colors;
+    text-align: center;
   }
 
   .glass {

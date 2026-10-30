@@ -69,10 +69,10 @@ export function ScatterBubbleChart({
   const chartData = data.map(s => ({
     name: s.name,
     sku: s.sku,
-    cmPercent: s.cmPercent,
-    revenue: s.totalRevenue,
-    stockValue: s.stockValue,
-    rank: s.contributionRank
+    cmPercent: s.cmPercent ?? 0,
+    revenue: s.totalRevenue ?? s.revenue ?? 0,
+    stockValue: s.stockValue ?? 100,
+    rank: s.contributionRank ?? s.rank ?? 'STAR'
   }));
 
   const getRankColor = (rank: string) => {
@@ -140,15 +140,15 @@ export function ScatterBubbleChart({
                     <div className="space-y-1 text-slate-300">
                       <div className="flex justify-between gap-2">
                         <span>Biên lợi nhuận CM:</span>
-                        <strong className="text-white font-mono">{item.cmPercent}%</strong>
+                        <strong className="text-white">{item.cmPercent}%</strong>
                       </div>
                       <div className="flex justify-between gap-2">
                         <span>Doanh thu thuần:</span>
-                        <strong className="text-emerald-400 font-mono">{item.revenue.toLocaleString()} ₫</strong>
+                        <strong className="text-emerald-400">{item.revenue.toLocaleString()} ₫</strong>
                       </div>
                       <div className="flex justify-between gap-2">
                         <span>Giá trị vốn tồn:</span>
-                        <strong className="text-white font-mono">{item.stockValue.toLocaleString()} ₫</strong>
+                        <strong className="text-white">{item.stockValue.toLocaleString()} ₫</strong>
                       </div>
                       <div className="flex justify-between gap-2 pt-1 border-t border-slate-800">
                         <span>Phân nhóm:</span>

@@ -1,36 +1,36 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
-  LayoutDashboard,
-  Package,
-  Users,
-  ShoppingCart,
-  Boxes,
-  ArrowLeftRight,
-  ScrollText,
-  ClipboardList,
-  Layers,
+  SquaresFour,
+  Pulse,
+  ShoppingBag,
   Truck,
+  ArrowUUpLeft,
+  Users,
+  Package,
+  Warehouse,
+  ClipboardText,
+  ArrowsLeftRight,
+  BookOpenText,
   Receipt,
-  ShieldCheck,
-  PackageCheck,
-  BadgePercent,
-  Link2,
-  TrendingUp,
-  Settings,
-  LogOut,
-  CheckCircle2,
+  Percent,
+  ChartBar,
+  Wallet,
   Calculator,
   Target,
-  HeartHandshake,
-  Wallet,
-  Activity,
+  Heart,
+  ChartLineUp,
   CheckSquare,
-  Building2,
-  ChevronRight,
-  ChevronDown,
+  PlugsConnected,
+  Gear,
+  ShieldCheck,
+  CheckCircle,
+  SignOut,
+  CaretDown,
+  CaretLeft,
+  CaretRight,
   Check,
-  Sparkles
-} from 'lucide-react';
+  type Icon as PhosphorIcon
+} from '@phosphor-icons/react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/providers/AuthProvider';
 import { getAllowedPagesForRole } from '@/lib/permissions';
@@ -91,7 +91,7 @@ export type PageId =
 interface NavItem {
   id: PageId;
   label: string;
-  icon: typeof LayoutDashboard;
+  icon: PhosphorIcon;
   badge?: string;
   isMockOnly?: boolean;
 }
@@ -101,84 +101,70 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const isMockMode = typeof import.meta !== 'undefined' && (import.meta.env?.VITE_DATA_MODE === 'mock' || true);
-
-export const navGroups: NavGroup[] = [
-  // 1. Command Center
+const navGroups: NavGroup[] = [
   {
-    label: '01 — Bảng Điều Hành',
+    label: 'TỔNG QUAN',
     items: [
-      { id: 'dashboard', label: 'Bảng điều hành kinh doanh', icon: LayoutDashboard },
-      { id: 'operationsAnalytics', label: 'Vận hành & SLA kho', icon: Activity },
+      { id: 'dashboard', label: 'Tổng quan', icon: SquaresFour },
+      { id: 'operationsAnalytics', label: 'Vận hành kho', icon: Pulse },
     ],
   },
-  // 2. Commerce Operations
   {
-    label: '02 — Vận Hành Đơn Hàng',
+    label: 'VẬN HÀNH ĐƠN',
     items: [
-      { id: 'orders', label: 'Đơn hàng đa kênh', icon: ShoppingCart },
-      { id: 'fulfillment', label: 'Xử lý đơn & Đóng gói', icon: Truck },
-      { id: 'returns', label: 'Đổi trả & Xử lý RMA', icon: PackageCheck },
-      { id: 'customers', label: 'Khách hàng (CRM)', icon: Users },
+      { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+      { id: 'fulfillment', label: 'Xử lý đơn', icon: Truck },
+      { id: 'returns', label: 'Đổi trả hàng', icon: ArrowUUpLeft },
+      { id: 'customers', label: 'Khách hàng', icon: Users },
     ],
   },
-  // 3. Kho Vận & Sản Phẩm
   {
-    label: '03 — Kho Vận & Sản Phẩm',
+    label: 'KHO & HÀNG HÓA',
     items: [
-      { id: 'products', label: 'Sản phẩm & SKU', icon: Package },
-      { id: 'inventory', label: 'Tồn kho 5 trạng thái', icon: Boxes },
-      { id: 'purchaseOrders', label: 'Đơn mua hàng (PO)', icon: ClipboardList },
-      { id: 'transfers', label: 'Chuyển kho chi nhánh', icon: ArrowLeftRight },
-      { id: 'stockLedger', label: 'Sổ cái thẻ kho', icon: ScrollText },
+      { id: 'products', label: 'Sản phẩm', icon: Package },
+      { id: 'inventory', label: 'Quản lý kho', icon: Warehouse },
+      { id: 'purchaseOrders', label: 'Nhập hàng', icon: ClipboardText },
+      { id: 'transfers', label: 'Chuyển kho', icon: ArrowsLeftRight },
+      { id: 'stockLedger', label: 'Sổ thẻ kho', icon: BookOpenText },
     ],
   },
-  // 4. Finance & Economics
   {
-    label: '04 — Tài Chính & P&L',
+    label: 'TÀI CHÍNH & P&L',
     items: [
-      { id: 'orderEconomics', label: 'Kinh tế đơn hàng (P&L)', icon: Receipt },
-      { id: 'skuEconomics', label: 'Biên lợi nhuận SKU', icon: BadgePercent },
-      { id: 'channelEconomics', label: 'Hiệu quả kênh & Phí sàn', icon: Layers },
-      { id: 'cashWorkingCapital', label: 'Dòng tiền & Vốn lưu động', icon: Wallet },
-      { id: 'pricingCalculator', label: 'Định giá & Hòa vốn', icon: Calculator },
+      { id: 'orderEconomics', label: 'Lợi nhuận đơn', icon: Receipt },
+      { id: 'skuEconomics', label: 'Lợi nhuận SKU', icon: Percent },
+      { id: 'channelEconomics', label: 'Hiệu quả kênh', icon: ChartBar },
+      { id: 'cashWorkingCapital', label: 'Dòng tiền', icon: Wallet },
+      { id: 'pricingCalculator', label: 'Định giá bán', icon: Calculator },
     ],
   },
-  // 5. Growth & Marketing
   {
-    label: '05 — Tăng Trưởng & Tiếp Thị',
+    label: 'TĂNG TRƯỞNG & ADS',
     items: [
-      { id: 'marketingAnalytics', label: 'Hiệu quả Ads & ROAS', icon: Target },
-      { id: 'customerAnalytics', label: 'Khách hàng & Cohorts', icon: HeartHandshake },
-      { id: 'salesAnalytics', label: 'Phân tích bán hàng', icon: TrendingUp },
+      { id: 'marketingAnalytics', label: 'Hiệu quả Ads', icon: Target },
+      { id: 'customerAnalytics', label: 'Phân tích khách', icon: Heart },
+      { id: 'salesAnalytics', label: 'Doanh số bán', icon: ChartLineUp },
     ],
   },
-  // 6. Founder Execution
   {
-    label: '06 — Điều Hành Chiến Lược',
+    label: 'DÀNH CHO FOUNDER',
     items: [
-      { id: 'founderExecution', label: 'Kế hoạch OKRs & Quyết định', icon: CheckSquare },
+      { id: 'founderExecution', label: 'Nhật ký Founder', icon: CheckSquare },
     ],
   },
-  // System Settings & Utilities
   {
-    label: '07 — Hệ Thống & Cấu Hình',
+    label: 'CẤU HÌNH & KẾT NỐI',
     items: [
-      { id: 'channelConnections', label: 'Kênh bán & Kết nối API', icon: Link2 },
-      { id: 'settings', label: 'Cài đặt & Phân quyền', icon: Settings },
-      { id: 'auditTrail', label: 'Nhật ký hệ thống (Audit)', icon: ShieldCheck },
-      ...(isMockMode
-        ? [
-            { id: 'ownerValidation' as PageId, label: 'Nghiệm thu nghiệp vụ', icon: CheckCircle2, badge: 'Demo' },
-          ]
-        : []),
+      { id: 'channelConnections', label: 'Kết nối sàn', icon: PlugsConnected },
+      { id: 'settings', label: 'Cấu hình', icon: Gear },
+      { id: 'auditTrail', label: 'Nhật ký duyệt', icon: ShieldCheck },
     ],
   },
 ];
 
 interface SidebarProps {
   current: PageId;
-  onNavigate: (page: PageId) => void;
+  onNavigate: (pageId: PageId) => void;
   stats: { pendingOrders: number; lowStock: number };
   mobileOpen: boolean;
   onMobileClose: () => void;
@@ -209,6 +195,29 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
   const currentRole: TenantRole = activeRole ?? 'owner';
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const roleSwitcherRef = useRef<HTMLDivElement>(null);
+
+  // Persistent sidebar collapse state (True: icon-only mini sidebar, False: full expanded sidebar)
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('nexus_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('nexus_sidebar_collapsed', String(next));
+      } catch {}
+      // Fire window resize so all responsive charts immediately adapt to the expanded canvas
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 310);
+      return next;
+    });
+  };
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -245,46 +254,79 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={onMobileClose}
         />
       )}
 
       <aside
         className={cn(
-          'w-64 shrink-0 bg-[#081B2C] text-slate-100 flex flex-col h-screen overflow-y-auto overflow-x-hidden fixed lg:sticky top-0 z-50 transition-transform duration-300 font-sans border-r border-slate-800',
+          'shrink-0 bg-sidebar-gradient text-slate-100 flex flex-col h-screen overflow-y-auto overflow-x-hidden fixed lg:sticky top-0 z-50 transition-all duration-300 font-sans border-r border-white/5 shadow-2xl',
+          isCollapsed ? 'w-[68px]' : 'w-56',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Brand Header */}
-        <div className="relative px-5 py-4 border-b border-white/5 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#1E647F] flex items-center justify-center shadow-xs">
-              <Boxes size={20} className="text-white" />
+        <div className="relative px-3 py-3.5 border-b border-white/5 shrink-0">
+          {!isCollapsed ? (
+            <div className="flex items-center justify-between gap-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] border border-white/10 flex items-center justify-center shadow-md shrink-0">
+                  <Warehouse size={18} weight="duotone" className="text-white" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[15px] font-black text-white tracking-tight truncate block">Dream Terus</span>
+                  <p className="text-[10.5px] text-[#38BDF8] font-semibold flex items-center gap-1 truncate">
+                    Commerce OS
+                  </p>
+                </div>
+              </div>
+
+              {/* Collapse Button (Chevron Left - Matching Image 1) */}
+              <button
+                type="button"
+                onClick={toggleCollapse}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+                title="Thu gọn menu"
+              >
+                <CaretLeft size={16} weight="bold" />
+              </button>
             </div>
-            <div>
-              <span className="text-base font-black text-white tracking-tight">Dream Terus</span>
-              <p className="text-[11px] text-[#27B4A0] font-semibold flex items-center gap-1">
-                Terus Tech • Commerce OS
-              </p>
+          ) : (
+            /* Collapsed Header: Centered Expand Button (Chevron Right - Matching Image 2) */
+            <div className="flex flex-col items-center justify-center">
+              <button
+                type="button"
+                onClick={toggleCollapse}
+                className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all shadow-xs cursor-pointer"
+                title="Mở rộng menu"
+              >
+                <CaretRight size={17} weight="bold" />
+              </button>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Navigation Groups */}
-        <nav className="relative flex-1 px-3 py-3 space-y-4">
-          {filteredGroups.map((group) => (
+        <nav className="relative flex-1 px-2 py-3 space-y-2.5">
+          {filteredGroups.map((group, groupIdx) => (
             <div key={group.label}>
-              <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">
-                {group.label}
-              </p>
+              {/* Group Label / Separator */}
+              {!isCollapsed ? (
+                <p className="px-2 text-[11px] font-bold text-slate-400/90 uppercase tracking-wider mb-1 font-mono">
+                  {group.label}
+                </p>
+              ) : (
+                groupIdx > 0 && <div className="my-2 border-t border-white/10 mx-1.5" />
+              )}
+
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const active = current === item.id;
                   const Icon = item.icon;
                   const badge =
                     item.id === 'orders'
-                      ? stats.pendingOrders > 0
+                       ? stats.pendingOrders > 0
                         ? `${stats.pendingOrders}`
                         : undefined
                       : item.id === 'inventory'
@@ -293,48 +335,93 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
                         : undefined
                       : item.badge;
 
+                  // 1. Expanded Menu Item View
+                  if (!isCollapsed) {
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          onNavigate(item.id);
+                          onMobileClose();
+                        }}
+                        className={cn(
+                          'w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[13.5px] transition-all duration-150 cursor-pointer group',
+                          active
+                            ? 'bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white shadow-md shadow-sky-950/40 font-bold'
+                            : 'text-slate-300 hover:text-white hover:bg-white/[0.08] font-medium'
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <Icon
+                            size={19}
+                            weight={active ? 'bold' : 'regular'}
+                            className={cn(
+                              'shrink-0 transition-colors',
+                              active ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+                            )}
+                          />
+                          <span className="truncate">{item.label}</span>
+                        </div>
+
+                        {badge && (
+                          <span
+                            className={cn(
+                              'text-xs px-1.5 py-0.5 rounded-full font-bold font-mono shrink-0',
+                              active
+                                ? 'bg-white/20 text-white'
+                                : item.id === 'orders'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : item.id === 'inventory'
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                : 'bg-[#1E647F]/30 text-teal-300 border border-[#1E647F]/40'
+                            )}
+                          >
+                            {badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+
+                  // 2. Collapsed Mini Menu Item View (Centered Icon with Hover Tooltip)
                   return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        onNavigate(item.id);
-                        onMobileClose();
-                      }}
-                      className={cn(
-                        'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer group',
-                        active
-                          ? 'bg-[#1E647F] text-white shadow-xs font-bold'
-                          : 'text-slate-300 hover:text-white hover:bg-white/5'
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5 truncate">
+                    <div key={item.id} className="relative group flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onNavigate(item.id);
+                          onMobileClose();
+                        }}
+                        className={cn(
+                          'w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-150 cursor-pointer relative',
+                          active
+                            ? 'bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white shadow-md shadow-sky-950/40'
+                            : 'text-slate-300 hover:text-white hover:bg-white/[0.08]'
+                        )}
+                        title={item.label}
+                      >
                         <Icon
-                          size={16}
+                          size={20}
+                          weight={active ? 'bold' : 'regular'}
                           className={cn(
                             'shrink-0 transition-colors',
-                            active ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+                            active ? 'text-white' : 'text-slate-300 group-hover:text-white'
                           )}
                         />
-                        <span className="truncate">{item.label}</span>
-                      </div>
 
-                      {badge && (
-                        <span
-                          className={cn(
-                            'text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono',
-                            active
-                              ? 'bg-white/20 text-white'
-                              : item.id === 'orders'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : item.id === 'inventory'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              : 'bg-[#1E647F]/30 text-teal-300 border border-[#1E647F]/40'
-                          )}
-                        >
-                          {badge}
-                        </span>
-                      )}
-                    </button>
+                        {badge && (
+                          <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-[#102A41]">
+                            {badge}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Floating Tooltip to the right on hover */}
+                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#0C2438] text-white text-xs font-semibold whitespace-nowrap shadow-2xl border border-white/15 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                        {item.label}
+                        {badge && <span className="ml-1.5 text-sky-300 font-bold">({badge})</span>}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -343,10 +430,17 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
         </nav>
 
         {/* User Profile & Interactive Role Switcher Footer */}
-        <div className="relative p-3 border-t border-white/5 shrink-0 bg-[#081B2C]" ref={roleSwitcherRef}>
+        <div className="relative p-2.5 border-t border-white/5 shrink-0 bg-transparent" ref={roleSwitcherRef}>
           {/* Quick Role Switcher Popover */}
           {showRoleSwitcher && (
-            <div className="absolute bottom-full left-3 right-3 mb-2 p-2 bg-[#0C2739] border border-[#1E647F] rounded-2xl shadow-2xl z-50 animate-scale-in text-xs space-y-1">
+            <div
+              className={cn(
+                'p-2 bg-[#0C2739] border border-[#1E647F] rounded-xl shadow-2xl z-50 animate-scale-in text-xs space-y-1',
+                isCollapsed
+                  ? 'absolute left-full bottom-2 ml-3 w-64'
+                  : 'absolute bottom-full left-3 right-3 mb-2'
+              )}
+            >
               <div className="px-2 py-1.5 text-[10px] font-bold text-teal-300 uppercase tracking-wider border-b border-slate-700/60 mb-1 flex items-center justify-between">
                 <span>Chuyển Đổi Vai Trò</span>
                 <span className="text-slate-400 font-mono">7 ROLES</span>
@@ -380,36 +474,58 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-            <button
-              onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
-              className="flex items-center gap-2.5 min-w-0 text-left flex-1 cursor-pointer group"
-              title="Nhấn để chuyển đổi vai trò (Role Switcher)"
-            >
-              <div className="w-8 h-8 rounded-lg bg-[#1E647F]/40 border border-[#1E647F]/60 flex items-center justify-center font-bold text-teal-200 text-xs shrink-0 group-hover:border-teal-400 transition-colors">
-                {profile?.full_name?.charAt(0) || 'U'}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-white truncate">
-                  {profile?.full_name || 'Phan Phúc Thịnh'}
-                </p>
-                <div className="flex items-center gap-1">
-                  <p className="text-[10px] text-[#27B4A0] truncate font-mono">
-                    {ROLE_LABELS[currentRole]}
-                  </p>
-                  <ChevronDown size={11} className={cn('text-slate-400 transition-transform', showRoleSwitcher && 'rotate-180')} />
+          {!isCollapsed ? (
+            /* Expanded Footer: User Avatar + Name + Role + Logout Button */
+            <div className="flex items-center justify-between gap-1.5 p-1.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+              <button
+                onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+                className="flex items-center gap-2 min-w-0 text-left flex-1 cursor-pointer group"
+                title="Nhấn để chuyển đổi vai trò (Role Switcher)"
+              >
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0284C7]/60 to-[#0369A1] border border-[#0284C7]/60 flex items-center justify-center font-bold text-sky-200 text-xs shrink-0 group-hover:border-sky-400 transition-colors">
+                  {profile?.full_name?.charAt(0) || 'U'}
                 </div>
-              </div>
-            </button>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-white truncate">
+                    {profile?.full_name || 'Phan Phúc Thịnh'}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-[10px] text-[#38BDF8] truncate font-medium">
+                      {ROLE_LABELS[currentRole]}
+                    </p>
+                    <CaretDown size={11} className={cn('text-slate-400 transition-transform', showRoleSwitcher && 'rotate-180')} />
+                  </div>
+                </div>
+              </button>
 
-            <button
-              onClick={() => signOut()}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer"
-              title="Đăng xuất"
-            >
-              <LogOut size={15} />
-            </button>
-          </div>
+              <button
+                onClick={() => signOut()}
+                className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer"
+                title="Đăng xuất"
+              >
+                <SignOut size={16} />
+              </button>
+            </div>
+          ) : (
+            /* Collapsed Footer: Centered Avatar Icon + Logout Icon */
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+                className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#0284C7]/60 to-[#0369A1] border border-[#0284C7]/60 flex items-center justify-center font-bold text-sky-200 text-xs hover:border-sky-400 transition-colors cursor-pointer"
+                title={`Vai trò: ${ROLE_LABELS[currentRole]} (Bấm để đổi)`}
+              >
+                {profile?.full_name?.charAt(0) || 'U'}
+              </button>
+
+              <button
+                onClick={() => signOut()}
+                className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                title="Đăng xuất"
+              >
+                <SignOut size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

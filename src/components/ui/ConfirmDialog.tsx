@@ -23,7 +23,7 @@ export function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 !m-0" style={{ margin: 0 }}>
       <div
         className="absolute inset-0 bg-ink-950/50 backdrop-blur-sm animate-backdrop"
         onClick={onClose}

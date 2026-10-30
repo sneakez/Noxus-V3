@@ -58,7 +58,7 @@ export function ChannelConnectionsPage({ search }: ChannelConnectionsPageProps) 
       .from('channel_connections')
       .update({ status: newStatus })
       .eq('id', c.id);
-    if (error) { toast('Cap nhat that bai', 'error'); return; }
+    if (error) { toast('Cập nhật thất bại', 'error'); return; }
     toast(`Ket noi da ${newStatus === 'connected' ? 'bat' : 'tat'}`, 'success');
     load();
   }
@@ -67,8 +67,8 @@ export function ChannelConnectionsPage({ search }: ChannelConnectionsPageProps) 
     if (!deleteId) return;
     const { error } = await supabase.from('channel_connections').delete().eq('id', deleteId);
     setDeleteId(null);
-    if (error) { toast('Xoa that bai', 'error'); return; }
-    toast('Da xoa ket noi', 'success');
+    if (error) { toast('Xóa thất bại', 'error'); return; }
+    toast('Đã xóa kết nối', 'success');
     load();
   }
 
@@ -126,7 +126,7 @@ export function ChannelConnectionsPage({ search }: ChannelConnectionsPageProps) 
       {showModal && <NewConnectionModal open={showModal} onClose={() => setShowModal(false)} onSaved={() => { load(); setShowModal(false); }} />}
 
       <ConfirmDialog open={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete}
-        title="Xoa ket noi?" message="Ket noi nay se bi xoa vinh vien." confirmLabel="Xoa" />
+        title="Xóa kết nối?" message="Kết nối này sẽ bị xóa vĩnh viễn." confirmLabel="Xóa" />
     </div>
   );
 
@@ -153,7 +153,7 @@ export function ChannelConnectionsPage({ search }: ChannelConnectionsPageProps) 
 
     return (
       <Modal open={open} onClose={onClose} title="Them ket noi kenh" size="md"
-        footer={<><button onClick={onClose} className="btn-secondary">Huy</button>
+        footer={<><button onClick={onClose} className="btn-secondary">Hủy</button>
           <button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? <Spinner size={16} /> : null} Them</button></>}>
         <div className="space-y-4">
           <div><label className="label">Kenh</label>

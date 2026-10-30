@@ -180,9 +180,9 @@ export function InventoryAnalyticsPage({ onNavigate }: InventoryAnalyticsPagePro
               <span className="flex items-center gap-1.5">
                 <Boxes size={14} className="text-brand-700" /> 1. Tồn Kho Vật Lý Trên Kệ (Physical On-Hand)
               </span>
-              <span className="font-mono text-brand-900 text-sm">{totalPhysicalStock.toLocaleString()} cái ({totalStockValue.toLocaleString()} ₫)</span>
+              <span className="text-brand-900 text-sm">{totalPhysicalStock.toLocaleString()} cái ({totalStockValue.toLocaleString()} ₫)</span>
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+            <div className="grid grid-cols-3 gap-2 pt-1 text-[11px]">
               <div className="p-2 rounded-lg bg-white border border-emerald-200">
                 <span className="text-[10px] text-ink-500 block font-sans">Khả dụng (Sellable):</span>
                 <span className="font-bold text-emerald-700 text-xs">{totalSellable.toLocaleString()} cái</span>
@@ -265,24 +265,24 @@ export function InventoryAnalyticsPage({ onNavigate }: InventoryAnalyticsPagePro
                 <span className="font-bold text-emerald-950 block">Dưới 30 ngày (Fast-Moving)</span>
                 <span className="text-[11px] text-emerald-700">4 SKU • {fastMovingValue.toLocaleString()} ₫ ({fastMovingPercent}% vốn)</span>
               </div>
-              <span className="font-mono font-bold text-emerald-800 text-sm">{fastMovingUnits.toLocaleString()} cái</span>
+              <span className="font-bold text-emerald-800 text-sm">{fastMovingUnits.toLocaleString()} cái</span>
             </div>
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex justify-between items-center">
               <div>
                 <span className="font-bold text-amber-950 block">31 - 60 ngày (Normal Flow)</span>
                 <span className="text-[11px] text-amber-700">1 SKU • {normalFlowValue.toLocaleString()} ₫ ({normalFlowPercent}% vốn)</span>
               </div>
-              <span className="font-mono font-bold text-amber-800 text-sm">{normalFlowUnits.toLocaleString()} cái</span>
+              <span className="font-bold text-amber-800 text-sm">{normalFlowUnits.toLocaleString()} cái</span>
             </div>
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 flex justify-between items-center">
               <div>
                 <span className="font-bold text-rose-950 block">Trên 60 ngày (Slow-Moving)</span>
                 <span className="text-[11px] text-rose-700">1 SKU • {slowMovingValue.toLocaleString()} ₫ ({slowMovingPercent}% vốn)</span>
               </div>
-              <span className="font-mono font-bold text-rose-800 text-sm">{slowMovingUnits.toLocaleString()} cái</span>
+              <span className="font-bold text-rose-800 text-sm">{slowMovingUnits.toLocaleString()} cái</span>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-ink-100 text-ink-600 flex justify-between items-center font-mono text-[11px]">
+            <div className="p-2.5 rounded-lg bg-ink-100 text-ink-600 flex justify-between items-center text-[11px]">
               <span>Tổng Cộng Vốn Lưu Kho:</span>
               <strong className="text-ink-900 font-bold">{totalPhysicalStock.toLocaleString()} cái • {totalStockValue.toLocaleString()} ₫</strong>
             </div>
@@ -325,20 +325,20 @@ export function InventoryAnalyticsPage({ onNavigate }: InventoryAnalyticsPagePro
                       <span className="font-bold text-ink-900 block truncate max-w-[260px]" title={i.name}>{i.name}</span>
                       <span className="font-mono text-[11px] text-ink-500 whitespace-nowrap block">{i.sku} • {i.warehouse_name}</span>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-medium text-ink-800">
+                    <td className="py-2.5 px-3 text-right font-medium text-ink-800">
                       {unitCost.toLocaleString()} ₫
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold text-ink-900">
+                    <td className="py-2.5 px-3 text-right font-bold text-ink-900">
                       {stockVal.toLocaleString()} ₫
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold text-ink-900">{i.sellable} cái</td>
-                    <td className="py-2.5 px-3 text-right font-mono text-ink-600">{i.safety_stock} cái</td>
-                    <td className="py-2.5 px-3 text-right font-mono text-ink-800">{i.sales_velocity} cái/ngày</td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold text-rose-700">
+                    <td className="py-2.5 px-3 text-right font-bold text-ink-900">{i.sellable} cái</td>
+                    <td className="py-2.5 px-3 text-right text-ink-600">{i.safety_stock} cái</td>
+                    <td className="py-2.5 px-3 text-right text-ink-800">{i.sales_velocity} cái/ngày</td>
+                    <td className="py-2.5 px-3 text-right font-bold text-rose-700">
                       {i.runway_days.toFixed(1)} ngày
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-ink-600">10 ngày</td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold text-brand-900">
+                    <td className="py-2.5 px-3 text-right text-ink-600">10 ngày</td>
+                    <td className="py-2.5 px-3 text-right font-bold text-brand-900">
                       {isRisk ? `+${(i.reorder_level * 2)} cái` : 'Tồn Tối Ưu'}
                     </td>
                     <td className="py-2.5 px-3 text-center">

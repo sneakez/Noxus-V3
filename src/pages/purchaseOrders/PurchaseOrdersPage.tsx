@@ -6,6 +6,15 @@ import {
   ChevronRight,
   Trash2,
   Calendar,
+  Building2,
+  Warehouse as WarehouseIcon,
+  Clock,
+  CheckCircle2,
+  DollarSign,
+  PackageCheck,
+  Truck,
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/cn';
@@ -33,10 +42,16 @@ interface POWithItems extends PurchaseOrder {
   purchase_order_items?: (PurchaseOrderItem & { product?: Product })[];
 }
 
-const STATUS_OPTIONS: POStatus[] = ['draft', 'ordered', 'partial', 'received', 'cancelled'];
+const STATUS_OPTIONS: { value: POStatus; label: string }[] = [
+  { value: 'draft', label: 'Bản nháp' },
+  { value: 'ordered', label: 'Đã đặt hàng' },
+  { value: 'partial', label: 'Nhận một phần' },
+  { value: 'received', label: 'Đã nhận đủ' },
+  { value: 'cancelled', label: 'Đã hủy' },
+];
 
 export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
-    const [orders, setOrders] = useState<POWithItems[]>([]);
+  const [orders, setOrders] = useState<POWithItems[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,56 +95,161 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
     });
   }, [orders, search, statusFilter]);
 
-  if (loading) return <FullPageSpinner label="Đang tải danh sách đơn mua hàng..." />;
+  if (loading) return <FullPageSpinner label="Đang tải danh sách đơn mua hàng (PO)..." />;
 
   const totalValue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
   const pendingCount = orders.filter((o) => o.status === 'ordered' || o.status === 'partial').length;
+  const receivedCount = orders.filter((o) => o.status === 'received').length;
+  const draftCount = orders.filter((o) => o.status === 'draft').length;
+  const completionRate = orders.length > 0 ? Math.round((receivedCount / orders.length) * 100) : 0;
 
   return (
-    <div className="p-6 lg:p-8 animate-fade-in-up space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-6 lg:p-8 animate-fade-in-up space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-ink-100">
         <div>
-          <h1 className="text-xl font-bold text-[#123A52] tracking-tight">Đơn Mua Hàng (Purchase Orders)</h1>
-          <p className="text-sm text-ink-500 mt-0.5">
-            {orders.length} đơn · {pendingCount} đang chờ giao · {formatCurrency(totalValue)} tổng giá trị
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight flex items-center gap-2.5">
+            <ShoppingCart className="text-brand-600" size={26} />
+            Đơn Mua Hàng &amp; Nhập Kho (PO)
+          </h1>
+          <p className="text-sm text-ink-500 mt-1">
+            Kiểm soát kế hoạch nhập hàng từ nhà cung cấp, nghiệm thu từng đợt &amp; quản trị dòng vốn hàng tồn.
           </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary">
-          <Plus size={16} /> Tạo đơn PO
+        <button
+          onClick={() => setShowForm(true)}
+          className="btn-primary flex items-center gap-2 shadow-sm shrink-0"
+        >
+          <Plus size={16} />
+          <span>Tạo đơn PO mới</span>
         </button>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        <FilterPill active={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>
-          Tat ca
-        </FilterPill>
-        {STATUS_OPTIONS.map((s) => (
-          <FilterPill
-            key={s}
-            active={statusFilter === s}
-            onClick={() => setStatusFilter(s)}
-          >
-            {PO_STATUS_LABELS[s]}
-          </FilterPill>
-        ))}
+      {/* Top 4 Clean White KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Tổng đơn PO */}
+        <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm flex items-center gap-3.5 hover:border-slate-300 transition-colors">
+          <div className="w-11 h-11 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+            <FileText size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng Đơn PO</p>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{orders.length}</p>
+            <p className="text-xs text-slate-400 mt-0.5 truncate">{draftCount} bản nháp lưu tạm</p>
+          </div>
+        </div>
+
+        {/* KPI 2: Chờ nhận hàng */}
+        <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm flex items-center gap-3.5 hover:border-slate-300 transition-colors">
+          <div className="w-11 h-11 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+            <Clock size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đang Chờ Nhập Kho</p>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{pendingCount}</p>
+            <p className="text-xs text-slate-400 mt-0.5 truncate">Đang trên đường hoặc nhận 1 phần</p>
+          </div>
+        </div>
+
+        {/* KPI 3: Giá trị cam kết PO */}
+        <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm flex items-center gap-3.5 hover:border-slate-300 transition-colors">
+          <div className="w-11 h-11 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+            <DollarSign size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Giá Trị Cam Kết PO</p>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">
+              {formatCurrency(totalValue)}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5 truncate">Công nợ nhà cung cấp</p>
+          </div>
+        </div>
+
+        {/* KPI 4: Tỷ lệ hoàn thành */}
+        <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm flex items-center gap-3.5 hover:border-slate-300 transition-colors">
+          <div className="w-11 h-11 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center shrink-0 border border-violet-100">
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã Nhập Kho Đủ</p>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{receivedCount}</p>
+            <p className="text-xs text-slate-400 mt-0.5 truncate">{completionRate}% đơn hoàn tất</p>
+          </div>
+        </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-ink-100">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={cn(
+            'px-3.5 py-2 text-xs font-medium rounded-lg transition-all flex items-center gap-2 shrink-0',
+            statusFilter === 'all'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          )}
+        >
+          <span>Tất cả</span>
+          <span
+            className={cn(
+              'px-1.5 py-0.5 text-[11px] rounded-full font-semibold',
+              statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+            )}
+          >
+            {orders.length}
+          </span>
+        </button>
+
+        {STATUS_OPTIONS.map((opt) => {
+          const count = orders.filter((o) => o.status === opt.value).length;
+          const isActive = statusFilter === opt.value;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setStatusFilter(opt.value)}
+              className={cn(
+                'px-3.5 py-2 text-xs font-medium rounded-lg transition-all flex items-center gap-2 shrink-0',
+                isActive
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              )}
+            >
+              <span>{opt.label}</span>
+              <span
+                className={cn(
+                  'px-1.5 py-0.5 text-[11px] rounded-full font-semibold',
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* PO List */}
       {filtered.length === 0 ? (
-        <Card>
+        <Card className="p-10">
           <EmptyState
             icon={ShoppingCart}
-            title={search || statusFilter !== 'all' ? 'Không tìm thấy đơn mua hàng phù hợp' : 'Chưa có đơn mua hàng nào'}
+            title={
+              search || statusFilter !== 'all'
+                ? 'Không tìm thấy đơn mua hàng phù hợp'
+                : 'Chưa có đơn mua hàng nào'
+            }
             description={
               search || statusFilter !== 'all'
-                ? 'Thu dieu chinh tim kiem hoac bo loc trang thai'
-                : 'Tao don mua hang de nhap hang tu nha cung cap'
+                ? 'Thử điều chỉnh từ khóa tìm kiếm hoặc chuyển sang bộ lọc trạng thái khác.'
+                : 'Tạo đơn mua hàng (PO) đầu tiên để nhập hàng từ nhà cung cấp vào kho.'
             }
             action={
-              !search && statusFilter === 'all' && (
-                <button onClick={() => setShowForm(true)} className="btn-primary">
-                  <Plus size={16} /> Tao PO
+              !search && statusFilter === 'all' ? (
+                <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
+                  <Plus size={16} />
+                  <span>Tạo đơn PO mới</span>
                 </button>
-              )
+              ) : undefined
             }
           />
         </Card>
@@ -138,103 +258,164 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
           {filtered.map((po) => {
             const isOpen = expanded[po.id] ?? false;
             const items = po.purchase_order_items ?? [];
+            const totalOrderedQty = items.reduce((s, it) => s + it.quantity, 0);
+            const totalReceivedQty = items.reduce((s, it) => s + (it.received_qty || 0), 0);
+            const progressPct =
+              totalOrderedQty > 0 ? Math.round((totalReceivedQty / totalOrderedQty) * 100) : 0;
+
             return (
               <Card
                 key={po.id}
-                className="overflow-hidden hover:shadow-lg hover:shadow-ink-200/40 transition-shadow duration-300"
+                className="overflow-hidden border border-slate-200/90 hover:border-slate-300 hover:shadow-md transition-all duration-200 bg-white rounded-xl"
               >
-                <button
+                <div
                   onClick={() => setExpanded((p) => ({ ...p, [po.id]: !isOpen }))}
-                  className="w-full flex items-center justify-between p-5 text-left hover:bg-ink-50/50 transition-colors"
+                  className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-slate-50/60 transition-colors cursor-pointer select-none"
                 >
-                  <div className="flex items-center gap-3">
-                    {isOpen ? (
-                      <ChevronDown size={18} className="text-ink-400" />
-                    ) : (
-                      <ChevronRight size={18} className="text-ink-400" />
-                    )}
-                    <div className="w-10 h-10 rounded-xl bg-ink-100 flex items-center justify-center shrink-0">
-                      <ShoppingCart size={18} className="text-ink-500" />
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="text-slate-400 shrink-0">
+                      {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-ink-900">{po.po_number}</span>
-                        <span className={cn('badge', PO_STATUS_COLORS[po.status])}>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                      <ShoppingCart size={18} className="text-slate-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-slate-900 font-mono text-base">
+                          {po.po_number}
+                        </span>
+                        <span className={cn('badge text-[11px]', PO_STATUS_COLORS[po.status])}>
                           {PO_STATUS_LABELS[po.status]}
                         </span>
                       </div>
-                      <p className="text-sm text-ink-500 mt-0.5">
-                        {po.supplier_name} · {po.warehouse?.name}
-                      </p>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
+                        <span className="flex items-center gap-1 font-medium text-slate-700">
+                          <Building2 size={13} className="text-slate-400" />
+                          {po.supplier_name}
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <WarehouseIcon size={13} className="text-slate-400" />
+                          {po.warehouse?.name ?? 'Kho chính'}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          {items.length} mặt hàng ({totalOrderedQty} sp)
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-ink-900 tabular-nums">
+
+                  <div className="text-right shrink-0 pl-3">
+                    <p className="font-bold text-slate-900 text-base">
                       {formatCurrency(Number(po.total_amount))}
                     </p>
-                    <p className="text-xs text-ink-400 mt-0.5">
+                    <div className="flex items-center justify-end gap-2 mt-1">
                       {po.expected_arrival_date ? (
-                        <span className="flex items-center justify-end gap-1">
-                          <Calendar size={12} /> {formatDate(po.expected_arrival_date)}
+                        <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                          <Calendar size={12} className="text-slate-400" />
+                          ETA: {formatDate(po.expected_arrival_date)}
                         </span>
                       ) : (
-                        'Chưa có ngày ETA'
+                        <span className="text-[11px] text-slate-400">Chưa có ngày ETA</span>
                       )}
-                    </p>
+                      <span className="text-[11px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
+                        Đã nhận {progressPct}%
+                      </span>
+                    </div>
                   </div>
-                </button>
+                </div>
 
                 {isOpen && (
-                  <div className="border-t border-ink-100 p-5 animate-fade-in">
-                    <table className="w-full text-sm">
-                      <thead className="text-ink-500 text-xs uppercase tracking-wider">
-                        <tr>
-                          <th className="text-left py-2 font-semibold">Sản phẩm</th>
-                          <th className="text-right py-2 font-semibold">Số lượng đặt</th>
-                          <th className="text-right py-2 font-semibold">Đã nhận</th>
-                          <th className="text-right py-2 font-semibold">Đơn giá</th>
-                          <th className="text-right py-2 font-semibold">Thành tiền</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-ink-50">
-                        {items.map((item) => (
-                          <tr key={item.id} className="hover:bg-ink-50/50">
-                            <td className="py-2.5">
-                              <p className="text-ink-800">{item.product?.name ?? '—'}</p>
-                              <code className="text-xs text-ink-400 font-mono">
-                                {item.product?.sku}
-                              </code>
-                            </td>
-                            <td className="py-2.5 text-right tabular-nums text-ink-700">
-                              {item.quantity}
-                            </td>
-                            <td className="py-2.5 text-right tabular-nums">
-                              <span
-                                className={cn(
-                                  item.received_qty >= item.quantity
-                                    ? 'text-emerald-600 font-semibold'
-                                    : item.received_qty > 0
-                                      ? 'text-amber-600 font-semibold'
-                                      : 'text-ink-400'
-                                )}
-                              >
-                                {item.received_qty}
-                              </span>
-                            </td>
-                            <td className="py-2.5 text-right tabular-nums text-ink-600">
-                              {formatCurrency(Number(item.unit_cost))}
-                            </td>
-                            <td className="py-2.5 text-right tabular-nums font-semibold text-ink-800">
-                              {formatCurrency(Number(item.unit_cost) * item.quantity)}
-                            </td>
+                  <div className="border-t border-slate-100 p-5 bg-slate-50/40 animate-fade-in space-y-4">
+                    {/* Progress Bar of Receiving */}
+                    <div className="p-3 rounded-lg bg-white border border-slate-200/80 flex items-center justify-between gap-4">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Tiến độ nhận hàng vào kho:</span>
+                          <span className="">
+                            {totalReceivedQty} / {totalOrderedQty} sản phẩm ({progressPct}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            style={{ width: `${progressPct}%` }}
+                            className={cn(
+                              'h-full transition-all duration-300',
+                              progressPct >= 100
+                                ? 'bg-emerald-600'
+                                : progressPct > 0
+                                ? 'bg-amber-500'
+                                : 'bg-slate-300'
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Table of items */}
+                    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                          <tr>
+                            <th className="text-left py-2.5 px-4 font-semibold">Sản phẩm &amp; SKU</th>
+                            <th className="text-right py-2.5 px-3 font-semibold">Số lượng đặt</th>
+                            <th className="text-right py-2.5 px-3 font-semibold">Đã nhập kho</th>
+                            <th className="text-right py-2.5 px-3 font-semibold">Còn thiếu</th>
+                            <th className="text-right py-2.5 px-3 font-semibold">Đơn giá nhập</th>
+                            <th className="text-right py-2.5 px-4 font-semibold">Thành tiền</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {items.map((item) => {
+                            const remaining = Math.max(0, item.quantity - (item.received_qty || 0));
+                            return (
+                              <tr key={item.id} className="hover:bg-slate-50/60">
+                                <td className="py-2.5 px-4">
+                                  <p className="font-medium text-slate-900">{item.product?.name ?? '—'}</p>
+                                  <code className="text-[11px] text-slate-400 font-mono">
+                                    {item.product?.sku}
+                                  </code>
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-bold text-slate-800">
+                                  {item.quantity}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-bold">
+                                  <span
+                                    className={cn(
+                                      item.received_qty >= item.quantity
+                                        ? 'text-emerald-700'
+                                        : item.received_qty > 0
+                                        ? 'text-amber-700'
+                                        : 'text-slate-400'
+                                    )}
+                                  >
+                                    {item.received_qty || 0}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right">
+                                  <span className={remaining > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}>
+                                    {remaining}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right text-slate-600">
+                                  {formatCurrency(Number(item.unit_cost))}
+                                </td>
+                                <td className="py-2.5 px-4 text-right font-bold text-slate-900">
+                                  {formatCurrency(Number(item.unit_cost) * item.quantity)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
                     {po.notes && (
-                      <p className="mt-3 text-sm text-ink-500 italic border-t border-ink-50 pt-3">
+                      <div className="p-3 rounded-lg bg-white border border-slate-200 text-xs text-slate-600">
+                        <span className="font-semibold text-slate-700">Ghi chú PO: </span>
                         {po.notes}
-                      </p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -244,6 +425,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
         </div>
       )}
 
+      {/* Modal: Create PO */}
       <POFormModal
         open={showForm}
         warehouses={warehouses}
@@ -287,18 +469,20 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
       setExpectedDate(today.toISOString().slice(0, 10));
       setLines([{ product_id: products[0]?.id ?? '', quantity: 1, unit_cost: 0 }]);
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function addLine() {
     const prod = products[lines.length] ?? products[0];
     setLines([
       ...lines,
-      { product_id: prod?.id ?? '', quantity: 1, unit_cost: Number(prod?.cost ?? 0) },
+      { product_id: prod?.id ?? '', quantity: 1, unit_cost: Number(prod?.moving_avg_cost ?? prod?.cost ?? 0) },
     ]);
   }
+
   function removeLine(idx: number) {
     setLines(lines.filter((_, i) => i !== idx));
   }
+
   function updateLine(
     idx: number,
     patch: Partial<{ product_id: string; quantity: number; unit_cost: number }>
@@ -310,16 +494,16 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
 
   async function handleSave() {
     if (!warehouseId) {
-      toast('Vui long chon kho', 'error');
+      toast('Vui lòng chọn kho tiếp nhận', 'error');
       return;
     }
     if (!supplier.trim()) {
-      toast('Vui long nhap ten nha cung cap', 'error');
+      toast('Vui lòng nhập tên nhà cung cấp', 'error');
       return;
     }
     const validLines = lines.filter((l) => l.product_id && l.quantity > 0 && l.unit_cost >= 0);
     if (validLines.length === 0) {
-      toast('Them it nhat mot dong san pham', 'error');
+      toast('Vui lòng thêm ít nhất một mặt hàng hợp lệ', 'error');
       return;
     }
     setSaving(true);
@@ -338,11 +522,13 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
       })
       .select()
       .single();
+
     if (poErr) {
-      toast('Tao PO that bai: ' + poErr.message, 'error');
+      toast('Tạo đơn PO thất bại: ' + poErr.message, 'error');
       setSaving(false);
       return;
     }
+
     const items = validLines.map((l) => ({
       po_id: po.id,
       product_id: l.product_id,
@@ -350,13 +536,15 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
       unit_cost: l.unit_cost,
       received_qty: 0,
     }));
+
     const { error: iErr } = await supabase.from('purchase_order_items').insert(items);
     if (iErr) {
-      toast('PO da tao nhung them san pham that bai: ' + iErr.message, 'error');
+      toast('Đơn PO đã tạo nhưng thêm sản phẩm thất bại: ' + iErr.message, 'error');
       setSaving(false);
       return;
     }
-    toast('Da tao don mua hang', 'success');
+
+    toast(`Đã tạo đơn mua hàng ${number} thành công`, 'success');
     setSaving(false);
     onSaved();
   }
@@ -365,17 +553,17 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
     <Modal
       open={open}
       onClose={onClose}
-      title="Tao don mua hang moi"
-      subtitle="Tao PO nhap voi danh sach san pham"
+      title="Tạo Đơn Mua Hàng Mới (PO)"
+      subtitle="Lập kế hoạch mua hàng từ nhà cung cấp và chỉ định kho tiếp nhận"
       size="lg"
       footer={
         <>
           <button onClick={onClose} className="btn-secondary">
-            Huy
+            Hủy bỏ
           </button>
-          <button onClick={handleSave} disabled={saving} className="btn-primary">
+          <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-1.5">
             {saving && <Spinner size={16} />}
-            Tao PO · {formatCurrency(total)}
+            <span>Tạo đơn PO · {formatCurrency(total)}</span>
           </button>
         </>
       }
@@ -383,17 +571,21 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="label">Ten nha cung cap *</label>
+            <label className="label">Nhà cung cấp *</label>
             <input
               value={supplier}
               onChange={(e) => setSupplier(e.target.value)}
-              placeholder="Nha cung cap ABC"
+              placeholder="Ví dụ: Foxconn VN, Synnex FPT..."
               className="input"
             />
           </div>
           <div>
-            <label className="label">Kho</label>
-            <select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} className="input">
+            <label className="label">Kho tiếp nhận hàng *</label>
+            <select
+              value={warehouseId}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              className="input"
+            >
               {warehouses.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.code} — {w.name}
@@ -403,81 +595,88 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="label">Thoi gian giao (ngay)</label>
+            <label className="label">Thời gian giao hàng (Lead Time - ngày)</label>
             <input
               type="number"
-              min={1}
+              min="1"
               value={leadTime}
-              onChange={(e) => setLeadTime(parseInt(e.target.value) || 7)}
-              className="input"
+              onChange={(e) => setLeadTime(Number(e.target.value))}
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="label">Ngay du kien nhan</label>
+            <label className="label">Ngày hàng về dự kiến (ETA)</label>
             <input
               type="date"
               value={expectedDate}
               onChange={(e) => setExpectedDate(e.target.value)}
-              className="input"
+              className="input font-mono"
             />
           </div>
         </div>
 
+        {/* Product items lines */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="label mb-0">Danh sach san pham</label>
-            <button onClick={addLine} className="btn-ghost text-xs px-2 py-1">
-              <Plus size={14} /> Them dong
+            <label className="label mb-0">Danh sách mặt hàng nhập ({lines.length})</label>
+            <button
+              type="button"
+              onClick={addLine}
+              className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+            >
+              <Plus size={14} /> Thêm dòng
             </button>
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-2 max-h-60 overflow-y-auto p-1">
             {lines.map((line, idx) => (
-              <div key={idx} className="flex items-center gap-2">
+              <div key={idx} className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                 <select
                   value={line.product_id}
                   onChange={(e) => {
-                    const prod = products.find((p) => p.id === e.target.value);
+                    const sel = products.find((p) => p.id === e.target.value);
                     updateLine(idx, {
                       product_id: e.target.value,
-                      unit_cost: prod ? Number(prod.cost) : line.unit_cost,
+                      unit_cost: Number(sel?.moving_avg_cost ?? sel?.cost ?? 0),
                     });
                   }}
-                  className="input flex-1"
+                  className="input flex-1 text-xs"
                 >
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.sku})
+                      {p.sku} — {p.name}
                     </option>
                   ))}
                 </select>
+
                 <input
                   type="number"
-                  min={1}
+                  min="1"
                   value={line.quantity}
-                  onChange={(e) => updateLine(idx, { quantity: parseInt(e.target.value) || 0 })}
-                  className="input w-20 text-center"
+                  onChange={(e) => updateLine(idx, { quantity: Number(e.target.value) })}
+                  className="input w-20 text-xs text-right"
                   placeholder="SL"
                 />
+
                 <input
                   type="number"
+                  min="0"
                   step="1000"
-                  min={0}
                   value={line.unit_cost}
-                  onChange={(e) => updateLine(idx, { unit_cost: parseFloat(e.target.value) || 0 })}
-                  className="input w-24 text-center"
-                  placeholder="Gia"
+                  onChange={(e) => updateLine(idx, { unit_cost: Number(e.target.value) })}
+                  className="input w-32 text-xs text-right"
+                  placeholder="Đơn giá"
                 />
-                <span className="text-sm font-semibold tabular-nums text-ink-700 w-20 text-right">
-                  {formatCurrency(line.quantity * line.unit_cost)}
-                </span>
+
                 <button
+                  type="button"
                   onClick={() => removeLine(idx)}
+                  className="p-1.5 text-slate-400 hover:text-rose-600 rounded"
                   disabled={lines.length === 1}
-                  className="p-2 rounded-lg text-ink-400 hover:text-rose-600 hover:bg-rose-50 transition-all disabled:opacity-30"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             ))}
@@ -485,40 +684,16 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
         </div>
 
         <div>
-          <label className="label">Ghi chu</label>
+          <label className="label">Ghi chú đơn PO</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            placeholder="Ghi chu tuy chon..."
+            placeholder="Điều khoản thanh toán, tiêu chuẩn đóng gói..."
             className="input"
           />
         </div>
       </div>
     </Modal>
-  );
-}
-
-function FilterPill({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'shrink-0 px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200',
-        active
-          ? 'bg-ink-900 text-white border-ink-900 shadow-sm'
-          : 'bg-white border-ink-200 text-ink-600 hover:bg-ink-50 hover:border-ink-300'
-      )}
-    >
-      {children}
-    </button>
   );
 }

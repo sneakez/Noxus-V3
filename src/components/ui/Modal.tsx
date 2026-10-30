@@ -40,7 +40,7 @@ export function Modal({
     size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : 'max-w-xl';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 !m-0" style={{ margin: 0 }}>
       <div
         className="absolute inset-0 bg-ink-950/50 backdrop-blur-sm animate-backdrop"
         onClick={onClose}

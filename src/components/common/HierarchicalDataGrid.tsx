@@ -414,9 +414,9 @@ export function HierarchicalDataGrid<T>({
       )}
 
       {/* Top Action & Filter Toolbar */}
-      <div className="p-3 sm:p-4 border-b border-[#D9E3E8] bg-[#F4F8FA] flex items-center justify-between gap-2.5 flex-wrap">
-        {/* Title & Subtitle or Search */}
-        <div className="flex items-center gap-2.5 flex-1 min-w-[240px] flex-wrap">
+      <div className="p-3 sm:p-4 border-b border-[#D9E3E8] bg-[#F4F8FA] flex items-center justify-between gap-3 flex-wrap">
+        {/* Left Zone: Title, Search & Custom Filters (Query Data) */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           {title && (
             <div className="mr-2">
               <h3 className="text-sm sm:text-base font-extrabold text-[#123A52] tracking-tight">{title}</h3>
@@ -425,7 +425,7 @@ export function HierarchicalDataGrid<T>({
           )}
 
           {searchFilter && (
-            <div className="relative flex-1 max-w-xs min-w-[180px]">
+            <div className="relative w-64 sm:w-72 md:w-80 shrink-0">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
@@ -435,20 +435,25 @@ export function HierarchicalDataGrid<T>({
                   setSearchQuery(e.target.value);
                   onSearchQueryChange?.(e.target.value);
                 }}
-                className="w-full text-xs py-1.5 pl-8 pr-3 rounded-lg border border-[#D9E3E8] bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E647F]/20 focus:border-[#1E647F] transition-all font-sans"
+                className="w-full text-sm py-2 pl-8 pr-3 rounded-lg border border-[#D9E3E8] bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E647F]/20 focus:border-[#1E647F] transition-all font-sans"
               />
             </div>
           )}
 
+          {filterControls}
+        </div>
+
+        {/* Right Zone: Presets, Column Selector, Expand/Collapse & Actions (View Settings) */}
+        <div className="flex items-center gap-2 flex-wrap">
           {/* 4 Standard Presets */}
           <div className="hidden lg:flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg border border-slate-200 shrink-0">
-            <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5">Góc nhìn:</span>
+            <span className="text-xs font-bold text-slate-500 uppercase px-1.5">Góc nhìn:</span>
             {presets.map(p => (
               <button
                 key={p.id}
                 onClick={() => applyPreset(p.id)}
                 className={cn(
-                  'px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                  'px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer',
                   activePreset === p.id
                     ? 'bg-white text-[#123A52] shadow-2xs font-bold border border-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
@@ -459,25 +464,20 @@ export function HierarchicalDataGrid<T>({
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Custom Filters + Column Group Toggle + Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {filterControls}
 
           {/* Column Group Toggle Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowGroupSelector(!showGroupSelector)}
               className={cn(
-                'btn btn-secondary text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-all cursor-pointer border-[#D9E3E8]',
+                'btn btn-secondary text-sm py-2 px-3 flex items-center gap-1.5 transition-all cursor-pointer border-[#D9E3E8]',
                 visibleGroupIds.size < groups.length && 'border-[#1E647F] text-[#1E647F] bg-teal-50/50'
               )}
               title="Tùy chỉnh nhóm cột hiển thị"
             >
-              <SlidersHorizontal size={13} />
-              <span className="hidden sm:inline">Nhóm Cột ({visibleGroupIds.size}/{groups.length})</span>
-              <ChevronDown size={12} className={cn('transition-transform', showGroupSelector && 'rotate-180')} />
+              <SlidersHorizontal size={14} />
+              <span className="hidden sm:inline font-semibold">Nhóm Cột ({visibleGroupIds.size}/{groups.length})</span>
+              <ChevronDown size={13} className={cn('transition-transform', showGroupSelector && 'rotate-180')} />
             </button>
 
             {showGroupSelector && (
@@ -546,11 +546,11 @@ export function HierarchicalDataGrid<T>({
           {renderExpandedRow && (
             <button
               onClick={toggleExpandAll}
-              className="btn btn-secondary text-xs py-1.5 px-2 text-slate-600 hover:text-slate-900 hidden sm:flex items-center gap-1 border-slate-200"
+              className="btn btn-secondary text-sm py-2 px-3 text-slate-600 hover:text-slate-900 hidden sm:flex items-center gap-1.5 border-slate-200"
               title={expandedRowIds.size === paginatedData.length ? 'Thu gọn tất cả' : 'Mở rộng tất cả dòng'}
             >
-              {expandedRowIds.size === paginatedData.length ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-              <span className="hidden md:inline">
+              {expandedRowIds.size === paginatedData.length ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              <span className="hidden md:inline font-semibold">
                 {expandedRowIds.size === paginatedData.length ? 'Thu gọn' : 'Mở tất cả'}
               </span>
             </button>
@@ -562,98 +562,118 @@ export function HierarchicalDataGrid<T>({
 
       {/* Main Table: Desktop & Tablet */}
       <div className="hidden md:block overflow-x-auto relative">
-        <table className="w-full text-xs text-left border-collapse">
+        <table className="w-full text-sm text-left border-separate border-spacing-0">
           {/* Level 1: Grouped Column Headers */}
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-100/80 text-slate-600 font-mono text-[10px] uppercase tracking-wider">
+            <tr className="bg-slate-100/90 text-slate-700 font-sans text-xs font-bold uppercase tracking-wider">
               {/* Select All Checkbox Header */}
               {isSelectionEnabled && (
-                <th className="w-10 py-2 px-2.5 text-center sticky left-0 bg-slate-100 z-30 border-r border-slate-200">
+                <th
+                  style={{ width: 44, minWidth: 44, maxWidth: 44 }}
+                  className="py-2.5 px-2.5 text-center sticky left-0 bg-slate-100 z-30 border-r border-b border-slate-200"
+                >
                   <input
                     ref={headerCheckboxRef}
                     type="checkbox"
                     checked={paginatedData.length > 0 && paginatedData.every(item => selectedIds.has(rowKey(item)))}
                     onChange={handleToggleSelectAll}
-                    className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
                     title="Chọn tất cả trên trang hiện tại"
                   />
                 </th>
               )}
 
               {renderExpandedRow && (
-                <th className={cn(
-                  'w-9 py-2 px-2 text-center z-20 border-r border-slate-200 bg-slate-100',
-                  isSelectionEnabled ? 'sticky left-10' : 'sticky left-0'
-                )} />
+                <th
+                  style={{ width: 36, minWidth: 36, maxWidth: 36 }}
+                  className={cn(
+                    'py-2.5 px-2 text-center z-30 border-r border-b border-slate-200 bg-slate-100',
+                    isSelectionEnabled ? 'sticky left-[44px]' : 'sticky left-0'
+                  )}
+                />
               )}
 
-              {activeGroups.map((group, gIdx) => (
-                <th
-                  key={group.id}
-                  colSpan={group.columns.length}
-                  className={cn(
-                    'py-2 px-3.5 font-extrabold text-slate-800 text-center border-r border-slate-200 last:border-r-0',
-                    gIdx % 2 === 0 ? 'bg-slate-100' : 'bg-teal-50/60 text-teal-900'
-                  )}
-                >
-                  <div className="flex items-center justify-center gap-1.5">
-                    <span>{group.title}</span>
-                    {group.badge && (
-                      <span className={cn('badge text-[9px] px-1 py-0 rounded', group.badgeColor || 'bg-teal-100 text-teal-800 border-teal-200')}>
-                        {group.badge}
-                      </span>
+              {activeGroups.map((group, gIdx) => {
+                const isGroupSticky = group.columns.length > 0 && group.columns.every(c => c.sticky === 'left');
+                const groupStickyPos = isGroupSticky
+                  ? (isSelectionEnabled ? (renderExpandedRow ? 'left-[80px]' : 'left-[44px]') : (renderExpandedRow ? 'left-9' : 'left-0'))
+                  : undefined;
+
+                return (
+                  <th
+                    key={group.id}
+                    colSpan={group.columns.length}
+                    className={cn(
+                      'py-2.5 px-4 font-black text-slate-800 text-center border-r border-b border-slate-200 last:border-r-0 whitespace-nowrap',
+                      gIdx % 2 === 0 ? 'bg-[#F1F5F9]' : 'bg-teal-50/70 text-teal-900',
+                      isGroupSticky && cn('sticky z-30 bg-[#F1F5F9] border-r border-slate-200 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]', groupStickyPos)
                     )}
-                  </div>
-                </th>
-              ))}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span>{group.title}</span>
+                      {group.badge && (
+                        <span className={cn('badge text-[11px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap', group.badgeColor || 'bg-teal-100 text-teal-800 border-teal-200')}>
+                          {group.badge}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
 
             {/* Level 2: Individual Sub-Column Headers */}
-            <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-sans font-bold text-[11px]">
+            <tr className="bg-slate-50 text-slate-700 font-sans font-bold text-xs sm:text-sm">
               {isSelectionEnabled && (
-                <th className="w-10 py-2.5 px-2.5 text-center sticky left-0 bg-slate-50 z-30 border-r border-slate-200" />
+                <th
+                  style={{ width: 44, minWidth: 44, maxWidth: 44 }}
+                  className="py-2.5 px-2.5 text-center sticky left-0 bg-[#F8FAFC] z-30 border-r border-b border-slate-200"
+                />
               )}
 
               {renderExpandedRow && (
-                <th className={cn(
-                  'w-9 py-2.5 px-2 text-center z-20 border-r border-slate-200 bg-slate-50',
-                  isSelectionEnabled ? 'sticky left-10' : 'sticky left-0'
-                )} />
+                <th
+                  style={{ width: 36, minWidth: 36, maxWidth: 36 }}
+                  className={cn(
+                    'py-2.5 px-2 text-center z-30 border-r border-b border-slate-200 bg-[#F8FAFC]',
+                    isSelectionEnabled ? 'sticky left-[44px]' : 'sticky left-0'
+                  )}
+                />
               )}
 
               {activeColumns.map((col) => {
                 const isSorted = sortState?.columnId === col.id;
                 const isStickyLeft = col.sticky === 'left';
                 const stickyLeftPos = isStickyLeft
-                  ? (isSelectionEnabled ? (renderExpandedRow ? 'left-[76px]' : 'left-10') : (renderExpandedRow ? 'left-9' : 'left-0'))
+                  ? (isSelectionEnabled ? (renderExpandedRow ? 'left-[80px]' : 'left-[44px]') : (renderExpandedRow ? 'left-9' : 'left-0'))
                   : undefined;
 
                 return (
                   <th
                     key={col.id}
-                    style={{ width: col.width }}
+                    style={{ width: col.width, minWidth: col.width }}
                     onClick={() => handleSortClick(col)}
                     className={cn(
-                      'py-2.5 px-3.5 transition-colors select-none font-bold',
+                      'py-2.5 px-3.5 transition-colors select-none font-bold whitespace-nowrap group border-b border-slate-200',
                       col.sortable && 'cursor-pointer hover:bg-slate-100 hover:text-slate-900',
                       col.align === 'right' && 'text-right',
                       col.align === 'center' && 'text-center',
-                      isStickyLeft && cn('sticky z-20 bg-slate-50 border-r border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]', stickyLeftPos),
+                      isStickyLeft && cn('sticky z-30 bg-[#F8FAFC] border-r border-slate-200 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]', stickyLeftPos),
                       col.className
                     )}
                   >
                     <div className={cn('inline-flex items-center gap-1.5', col.align === 'right' && 'justify-end')}>
                       <span>{col.header}</span>
                       {col.sortable && (
-                        <span className="text-slate-400">
+                        <span className="inline-flex items-center text-slate-500 group-hover:text-slate-800 transition-colors">
                           {isSorted ? (
                             sortState.direction === 'asc' ? (
-                              <ArrowUp size={11} className="text-teal-600 font-bold" />
+                              <ArrowUp size={12} className="text-teal-600 font-bold stroke-[2.5]" />
                             ) : (
-                              <ArrowDown size={11} className="text-teal-600 font-bold" />
+                              <ArrowDown size={12} className="text-teal-600 font-bold stroke-[2.5]" />
                             )
                           ) : (
-                            <ArrowUpDown size={10} className="opacity-40 group-hover:opacity-100" />
+                            <ArrowUpDown size={12} className="text-slate-500 group-hover:text-teal-600 transition-colors" />
                           )}
                         </span>
                       )}
@@ -670,7 +690,7 @@ export function HierarchicalDataGrid<T>({
               <tr>
                 <td
                   colSpan={activeColumns.length + (renderExpandedRow ? 1 : 0) + (isSelectionEnabled ? 1 : 0)}
-                  className="py-12 text-center text-slate-400"
+                  className="py-12 text-center text-slate-400 border-b border-slate-200"
                 >
                   {emptyState || (
                     <div className="space-y-1">
@@ -692,15 +712,23 @@ export function HierarchicalDataGrid<T>({
                     <tr
                       onClick={() => onRowClick ? onRowClick(item) : toggleRowExpand(id)}
                       className={cn(
-                        'transition-colors group hover:bg-teal-50/30',
-                        isSelected ? 'bg-teal-50/50' : isExpanded ? 'bg-teal-50/20 font-medium' : rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30',
+                        'transition-colors group hover:bg-[#F0FDFA]',
+                        isSelected ? 'bg-teal-50/50' : isExpanded ? 'bg-teal-50/20 font-medium' : rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#FAFCFC]',
                         onRowClick && 'cursor-pointer'
                       )}
                     >
                       {/* Selection Checkbox Cell */}
                       {isSelectionEnabled && (
                         <td
-                          className="w-10 py-3 px-2.5 text-center sticky left-0 z-10 bg-inherit border-r border-slate-100"
+                          style={{ width: 44, minWidth: 44, maxWidth: 44 }}
+                          className={cn(
+                            'py-3 px-2.5 text-center sticky left-0 z-20 border-r border-b border-slate-200 transition-colors',
+                            isSelected
+                              ? 'bg-teal-50 group-hover:bg-[#E6F8F6]'
+                              : rowIdx % 2 === 0
+                                ? 'bg-white group-hover:bg-[#F0FDFA]'
+                                : 'bg-[#FAFCFC] group-hover:bg-[#F0FDFA]'
+                          )}
                           onClick={(e) => handleToggleSelectRow(id, e)}
                         >
                           <input
@@ -715,9 +743,15 @@ export function HierarchicalDataGrid<T>({
                       {/* Expand Toggle Chevron Column */}
                       {renderExpandedRow && (
                         <td
+                          style={{ width: 36, minWidth: 36, maxWidth: 36 }}
                           className={cn(
-                            'w-9 py-3 px-2 text-center z-10 bg-inherit border-r border-slate-100',
-                            isSelectionEnabled ? 'sticky left-10' : 'sticky left-0'
+                            'py-3 px-2 text-center z-20 border-r border-b border-slate-200 transition-colors',
+                            isSelectionEnabled ? 'sticky left-[44px]' : 'sticky left-0',
+                            isSelected
+                              ? 'bg-teal-50 group-hover:bg-[#E6F8F6]'
+                              : rowIdx % 2 === 0
+                                ? 'bg-white group-hover:bg-[#F0FDFA]'
+                                : 'bg-[#FAFCFC] group-hover:bg-[#F0FDFA]'
                           )}
                           onClick={(e) => toggleRowExpand(id, e)}
                         >
@@ -738,17 +772,28 @@ export function HierarchicalDataGrid<T>({
                       {activeColumns.map((col) => {
                         const isStickyLeft = col.sticky === 'left';
                         const stickyLeftPos = isStickyLeft
-                          ? (isSelectionEnabled ? (renderExpandedRow ? 'left-[76px]' : 'left-10') : (renderExpandedRow ? 'left-9' : 'left-0'))
+                          ? (isSelectionEnabled ? (renderExpandedRow ? 'left-[80px]' : 'left-[44px]') : (renderExpandedRow ? 'left-9' : 'left-0'))
                           : undefined;
 
                         return (
                           <td
                             key={col.id}
+                            style={{ width: col.width, minWidth: col.width }}
                             className={cn(
-                              'py-3 px-3.5 align-middle',
-                              col.align === 'right' && 'text-right font-mono',
+                              'py-3 px-3.5 align-middle whitespace-nowrap transition-colors border-b border-slate-100',
+                              col.align === 'right' && 'text-right font-medium',
                               col.align === 'center' && 'text-center',
-                              isStickyLeft && cn('sticky z-10 bg-inherit border-r border-slate-100 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] font-bold', stickyLeftPos),
+                              isStickyLeft
+                                ? cn(
+                                    'sticky z-20 border-r border-slate-200 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] font-bold',
+                                    isSelected
+                                      ? 'bg-teal-50 group-hover:bg-[#E6F8F6]'
+                                      : rowIdx % 2 === 0
+                                        ? 'bg-white group-hover:bg-[#F0FDFA]'
+                                        : 'bg-[#FAFCFC] group-hover:bg-[#F0FDFA]',
+                                    stickyLeftPos
+                                  )
+                                : '',
                               col.className
                             )}
                           >
@@ -853,11 +898,11 @@ export function HierarchicalDataGrid<T>({
       </div>
 
       {/* Footer & Interactive Pagination Bar */}
-      <div className="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-600 font-sans flex items-center justify-between flex-wrap gap-3">
+      <div className="p-3.5 bg-slate-50 border-t border-slate-200 text-xs sm:text-sm text-slate-600 font-sans flex items-center justify-between flex-wrap gap-3">
         {/* Record count info */}
-        <div className="flex items-center gap-2 font-mono">
+        <div className="flex items-center gap-2">
           <span>
-            Hiển thị <strong className="text-slate-900">{startRecord} - {endRecord}</strong> trong số <strong className="text-slate-900">{sortedData.length}</strong> bản ghi
+            Hiển thị <strong className="text-slate-900 font-bold">{startRecord} - {endRecord}</strong> trong số <strong className="text-slate-900 font-bold">{sortedData.length}</strong> bản ghi
           </span>
           {searchQuery && <span className="text-slate-400 font-sans">(đã lọc từ {data.length})</span>}
         </div>
@@ -866,15 +911,15 @@ export function HierarchicalDataGrid<T>({
         {enablePagination && totalPages > 1 && (
           <div className="flex items-center gap-2 flex-wrap">
             {/* Page Size Selector */}
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-slate-500 text-[11px]">Dòng:</span>
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+              <span className="text-slate-500 font-medium">Dòng:</span>
               <select
                 value={actualPageSize}
                 onChange={e => {
                   setActualPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="py-1 px-2 border border-slate-200 rounded-md bg-white text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
+                className="py-1 px-2.5 border border-slate-200 rounded-md bg-white text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500 font-sans"
               >
                 {pageSizeOptions.map(size => (
                   <option key={size} value={size}>{size}</option>
@@ -887,39 +932,39 @@ export function HierarchicalDataGrid<T>({
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={clampedPage === 1}
-                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 title="Trang đầu"
               >
-                <ChevronsLeft size={14} />
+                <ChevronsLeft size={15} />
               </button>
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={clampedPage === 1}
-                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 title="Trang trước"
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft size={15} />
               </button>
 
-              <span className="px-2 py-0.5 text-xs font-mono font-medium text-slate-700 bg-white border border-slate-200 rounded">
+              <span className="px-2.5 py-1 text-xs sm:text-sm font-sans font-semibold text-slate-700 bg-white border border-slate-200 rounded">
                 {clampedPage} / {totalPages}
               </span>
 
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={clampedPage === totalPages}
-                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 title="Trang sau"
               >
-                <ChevronRight size={14} />
+                <ChevronRight size={15} />
               </button>
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={clampedPage === totalPages}
-                className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 title="Trang cuối"
               >
-                <ChevronsRight size={14} />
+                <ChevronsRight size={15} />
               </button>
             </div>
           </div>

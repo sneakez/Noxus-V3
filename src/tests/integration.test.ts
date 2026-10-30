@@ -72,7 +72,7 @@ describe('Real Integration Scenarios — NexusOMS V4.1 (Workstream 3)', () => {
         const available = inventory.get(item.sku) ?? 0;
         if (available < item.qty) {
           // Failure: transaction must rollback without touching inventory
-          return { success: false, error: `Ton kho khong du cho san pham ${item.sku}` };
+          return { success: false, error: `Tồn kho không đủ cho sản phẩm ${item.sku}` };
         }
       }
 

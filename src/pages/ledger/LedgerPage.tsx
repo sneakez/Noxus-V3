@@ -172,7 +172,7 @@ export function LedgerPage({ search }: LedgerPageProps) {
                   {lines.map((l) => (
                     <tr key={l.id}>
                       <td className="px-4 py-3 text-ink-800">
-                        <span className="font-mono font-bold text-[var(--brand-600)]">{l.account?.account_code}</span> — {l.account?.account_name}
+                        <span className="font-bold text-[var(--brand-600)]">{l.account?.account_code}</span> — {l.account?.account_name}
                         {l.description && <p className="text-xs text-ink-400 mt-0.5">{l.description}</p>}
                       </td>
                       <td className="px-4 py-3 text-right font-bold tabular-nums text-ink-900">

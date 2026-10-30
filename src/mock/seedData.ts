@@ -8,7 +8,7 @@ function getRelativeDate(daysAgo: number, hour = 10, minute = 30): string {
 }
 
 export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   snapshotId: 'SNAPSHOT-V6.2-20261029-DIGITAL-AUDIT',
   stateRevision: 0,
   lastUpdated: new Date().toISOString(),
@@ -508,6 +508,32 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       status: 'active',
       tier: 'standard',
       created_at: '2026-03-01T10:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'cust_05',
+      tenant_id: 'tenant_flagship',
+      name: 'Đặng Quốc Anh',
+      email: 'quocanh.dang@gearvn.pro',
+      phone: '0977889900',
+      company: 'Đại lý Gaming Gear Hà Đông',
+      address: 'Số 15 Quang Trung, Hà Đông, Hà Nội',
+      status: 'lead',
+      tier: 'standard',
+      created_at: '2026-03-15T09:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'cust_06',
+      tenant_id: 'tenant_flagship',
+      name: 'Vũ Thị Minh Hạnh',
+      email: 'hanh.vu@gmail.com',
+      phone: '0966554433',
+      company: 'Shop Phụ Kiện Hạnh Phúc',
+      address: 'Số 204 Cầu Giấy, Hà Nội',
+      status: 'inactive',
+      tier: 'silver',
+      created_at: '2026-01-20T14:00:00Z',
       updated_at: '2026-10-28T10:00:00Z'
     }
   ],
@@ -1221,12 +1247,38 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       wave_number: 'WAVE-W410',
       warehouse_id: 'wh_north_01',
       status: 'picking',
-      total_orders: 40,
-      total_items: 68,
-      picked_items: 58,
+      total_orders: 4,
+      total_items: 8,
+      picked_items: 7,
       assigned_to: 'usr_warehouse_01',
-      created_at: '2026-10-28T09:00:00Z',
+      created_at: '2026-10-29T09:00:00Z',
       completed_at: null
+    },
+    {
+      id: 'wave_411',
+      tenant_id: 'tenant_flagship',
+      wave_number: 'WAVE-W411',
+      warehouse_id: 'wh_north_01',
+      status: 'packing',
+      total_orders: 3,
+      total_items: 6,
+      picked_items: 6,
+      assigned_to: 'usr_warehouse_02',
+      created_at: '2026-10-29T08:30:00Z',
+      completed_at: null
+    },
+    {
+      id: 'wave_409',
+      tenant_id: 'tenant_flagship',
+      wave_number: 'WAVE-W409',
+      warehouse_id: 'wh_south_01',
+      status: 'completed',
+      total_orders: 5,
+      total_items: 10,
+      picked_items: 10,
+      assigned_to: 'usr_warehouse_01',
+      created_at: '2026-10-28T07:15:00Z',
+      completed_at: '2026-10-28T10:45:00Z'
     }
   ],
 
@@ -1238,6 +1290,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       return_number: 'RMA-2026-009',
       order_id: 'ord_88201',
       customer_id: 'cust_04',
+      rma_branch: 'refund',
       reason: 'Khách muốn đổi sang bản màu Trắng Bạc',
       status: 'qc_passed',
       return_type: 'customer_rma',
@@ -1246,6 +1299,73 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       maker_checker_rule: 'Bắt buộc Checker duyệt (Đơn >= 1M)',
       created_at: '2026-10-28T11:00:00Z',
       updated_at: '2026-10-28T11:20:00Z'
+    },
+    {
+      id: 'ret_002',
+      tenant_id: 'tenant_flagship',
+      return_number: 'RMA-2026-010',
+      order_id: 'ord_44812',
+      customer_id: 'cust_02',
+      rma_branch: 'returnless_refund',
+      is_refund_without_return: true,
+      reason: 'Cáp sạc Type-C bị gãy chân cắm khi bóc hộp, giá trị nhỏ',
+      status: 'approved',
+      return_type: 'customer_rma',
+      refund_amount: 150000,
+      approval_status: 'maker_approved',
+      maker_checker_rule: 'Maker duyệt trực tiếp (< 1M) — Miễn thu hồi hàng',
+      created_at: '2026-10-29T08:15:00Z',
+      updated_at: '2026-10-29T08:30:00Z'
+    },
+    {
+      id: 'ret_003',
+      tenant_id: 'tenant_flagship',
+      return_number: 'RMA-2026-011',
+      order_id: 'ord_62103',
+      customer_id: 'cust_01',
+      rma_branch: 'exchange',
+      reason: 'Khách yêu cầu đổi size đệm tai nghe từ M sang L',
+      status: 'qc_passed',
+      return_type: 'customer_rma',
+      refund_amount: 780000,
+      approval_status: 'pending',
+      qc_notes: 'Kiểm định ngoại quan hoàn hảo, nguyên seal phụ kiện, đã nhập lại kho Sellable',
+      maker_checker_rule: 'Maker duyệt (< 1M) — Tạo đơn xuất hàng bù',
+      created_at: '2026-10-29T09:00:00Z',
+      updated_at: '2026-10-29T09:45:00Z'
+    },
+    {
+      id: 'ret_004',
+      tenant_id: 'tenant_flagship',
+      return_number: 'RMA-2026-012',
+      order_id: 'ord_55410',
+      customer_id: 'cust_03',
+      rma_branch: 'transit_damage',
+      reason: 'Hộp carton bị móp rách nghiêm trọng, chuột Gaming nứt vỏ',
+      status: 'qc_failed',
+      return_type: 'customer_rma',
+      refund_amount: 390000,
+      approval_status: 'pending',
+      qc_notes: 'Biên bản SPX Express xác nhận bể vỡ do va đập vận chuyển — Đã cách ly kho Phế phẩm (Damaged)',
+      maker_checker_rule: 'Maker duyệt bồi hoàn cho khách (< 1M)',
+      created_at: '2026-10-29T10:10:00Z',
+      updated_at: '2026-10-29T10:30:00Z'
+    },
+    {
+      id: 'ret_005',
+      tenant_id: 'tenant_flagship',
+      return_number: 'RMA-2026-013',
+      order_id: 'ord_48902',
+      customer_id: 'cust_03',
+      rma_branch: 'refund',
+      reason: 'Khách hàng không ưng ý về độ trễ âm thanh gaming, gửi trả nguyên hộp',
+      status: 'approved',
+      return_type: 'customer_rma',
+      refund_amount: 1890000,
+      approval_status: 'pending',
+      maker_checker_rule: 'Bắt buộc Checker duyệt (Đơn >= 1M)',
+      created_at: '2026-10-29T14:20:00Z',
+      updated_at: '2026-10-29T14:30:00Z'
     }
   ],
 
@@ -1259,6 +1379,46 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       condition: 'sealed',
       disposition: 'restock',
       created_at: '2026-10-28T11:00:00Z'
+    },
+    {
+      id: 'reti_002',
+      return_id: 'ret_002',
+      product_id: 'prod_cable_fast',
+      quantity: 1,
+      reason: 'Gãy chân cắm',
+      condition: 'damaged',
+      disposition: 'scrap',
+      created_at: '2026-10-29T08:15:00Z'
+    },
+    {
+      id: 'reti_003',
+      return_id: 'ret_003',
+      product_id: 'prod_air_pro',
+      quantity: 1,
+      reason: 'Đổi size đệm',
+      condition: 'sealed',
+      disposition: 'restock',
+      created_at: '2026-10-29T09:00:00Z'
+    },
+    {
+      id: 'reti_004',
+      return_id: 'ret_004',
+      product_id: 'prod_mouse_pro',
+      quantity: 1,
+      reason: 'Vỡ vỏ do vận chuyển',
+      condition: 'damaged',
+      disposition: 'scrap',
+      created_at: '2026-10-29T10:10:00Z'
+    },
+    {
+      id: 'reti_005',
+      return_id: 'ret_005',
+      product_id: 'prod_keyboard_rgb',
+      quantity: 1,
+      reason: 'Không ưng ý',
+      condition: 'opened',
+      disposition: 'pending_qc',
+      created_at: '2026-10-29T14:20:00Z'
     }
   ],
 

@@ -86,7 +86,7 @@ export function ComplaintsPage({ search }: ComplaintsPageProps) {
     const replies: Record<string, string> = {
       negative: 'Kinh chao quy khach, NexusOMS thanh that xin loi vi su bat tien nay. Đoi ngu cua chung toi se kiem tra ngay lap tuc va lien he lai trong vong 24 gio.',
       mixed: 'Cam on quy khach da phan hoi. Chung toi dang xem xet van de va se theo doi som nhat co the.',
-      neutral: 'Cam on quy khach da lien he. Chung toi da ghi nhan y kien va se xu ly trong thoi gian som.',
+      neutral: 'Cảm ơn quý khách đã liên hệ. Chúng tôi đã ghi nhận ý kiến và sẽ xử lý trong thời gian sớm nhất.',
       positive: 'Cam on quy khach da danh gia tot! Chung oi rat vui khi quy khach co trai nghiem tot voi NexusOMS.',
     };
 
