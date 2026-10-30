@@ -24,7 +24,6 @@ import {
   WarningCircle,
   ShieldCheck,
   Package,
-  Layers,
   CaretRight
 } from '@phosphor-icons/react';
 import { analyticsService } from '@/analytics/analyticsService';

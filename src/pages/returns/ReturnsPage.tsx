@@ -151,7 +151,7 @@ export function ReturnsPage({ search = '', onNavigate }: ReturnsPageProps) {
         if (statusFilter === 'qc_pending' && r.status !== 'received' && r.status !== 'quality_check') return false;
         if (statusFilter === 'qc_passed' && r.status !== 'qc_passed') return false;
         if (statusFilter === 'qc_failed' && r.status !== 'qc_failed') return false;
-        if (statusFilter === 'refunded' && r.status !== 'refunded') return false;
+        if (statusFilter === 'refunded' ) return false;
       }
       if (query) {
         return (
@@ -178,7 +178,7 @@ export function ReturnsPage({ search = '', onNavigate }: ReturnsPageProps) {
     const pendingApprovalCount = pendingApprovalList.length;
     const pendingApprovalAmount = pendingApprovalList.reduce((sum, r) => sum + Number(r.refund_amount || 0), 0);
     const pendingQc = returns.filter(r => r.status === 'pending' || r.status === 'approved' || r.status === 'received' || r.status === 'quality_check').length;
-    const exchangeReady = returns.filter(r => r.rma_branch === 'exchange' && (r.status === 'qc_passed' || r.status === 'approved') && r.status !== 'refunded').length;
+    const exchangeReady = returns.filter(r => r.rma_branch === 'exchange' && ((r.status as string) === 'qc_passed' || (r.status as string) === 'approved')).length;
     const totalRefundedAmount = returns.filter(r => r.status === 'refunded').reduce((sum, r) => sum + Number(r.refund_amount || 0), 0);
 
     // Distribution

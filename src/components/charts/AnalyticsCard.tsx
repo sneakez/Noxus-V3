@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 interface AnalyticsCardProps {
   title: string;
   subtitle?: string;
+  badge?: string;
   sourceType?: 'ACTUAL' | 'ESTIMATED' | 'ASSUMPTION' | 'SIMULATED';
   formulaExplanation?: string;
   action?: React.ReactNode;

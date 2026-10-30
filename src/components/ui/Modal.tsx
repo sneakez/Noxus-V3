@@ -9,7 +9,7 @@ interface ModalProps {
   subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
 }
 
 export function Modal({
@@ -37,7 +37,7 @@ export function Modal({
   if (!open) return null;
 
   const maxWidth =
-    size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : 'max-w-xl';
+    size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : size === 'xl' ? 'max-w-5xl' : size === '2xl' ? 'max-w-6xl' : size === 'full' ? 'max-w-7xl' : 'max-w-xl';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 !m-0" style={{ margin: 0 }}>

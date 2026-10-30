@@ -56,7 +56,7 @@ export function ChannelMappingPage({ search }: ChannelMappingPageProps) {
           m.internal_product?.name.toLowerCase().includes(q) ||
           m.internal_product?.sku.toLowerCase().includes(q) ||
           m.channel_product_id?.toLowerCase().includes(q) ||
-          m.channel.toLowerCase().includes(q)
+          (m.channel || '').toLowerCase().includes(q)
         );
       }
       return true;

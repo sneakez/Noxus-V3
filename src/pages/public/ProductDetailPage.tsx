@@ -149,7 +149,7 @@ export function ProductDetailPage({ productId = 'prod_air_pro', onNavigate }: Pr
                   <div className="text-right">
                     <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Giá vốn nhập kho</span>
                     <div className="text-lg font-bold text-gray-300 mt-1">
-                      {product.cost_price.toLocaleString('vi-VN')} ₫
+                      {(product.cost_price ?? product.cost ?? 0).toLocaleString('vi-VN')} ₫
                     </div>
                   </div>
                 </div>

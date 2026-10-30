@@ -90,8 +90,8 @@ export function CustomerAnalyticsPage() {
     // Prioritize customer mapping based on total_spend and segment criteria
     return rawCustomers.map((c, idx) => {
       let segment = 'Potential Loyalists';
-      if (c.total_spend > 3000000) segment = 'Champions';
-      else if (c.total_spend > 1500000) segment = 'Loyal Customers';
+      if (Number(c.total_spend || 0) > 3000000) segment = 'Champions';
+      else if (Number(c.total_spend || 0) > 1500000) segment = 'Loyal Customers';
       else if (idx % 4 === 0) segment = 'At Risk';
       else if (idx % 6 === 0) segment = 'Lost';
 

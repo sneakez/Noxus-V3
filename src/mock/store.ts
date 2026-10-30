@@ -14,7 +14,10 @@ import type {
   ReturnRecord, 
   PickingWave,
   JournalEntry,
-  JournalLine
+  JournalLine,
+  Product,
+  Customer,
+  Warehouse
 } from '@/types';
 
 const STORAGE_KEY = 'nexus_mock_db_v2';
@@ -160,7 +163,7 @@ class MockDataStore {
     return { ...order, customer, items };
   }
 
-  public placeOrderAtomic(newOrder: Omit<Order, 'id' | 'created_at' | 'updated_at'>, items: Array<{ product_id: string; sku: string; quantity: number; unit_price: number }>): { success: boolean; orderId?: string; error?: string } {
+  public placeOrderAtomic(newOrder: Partial<Order> & { tenant_id: string; order_number: string },  items: Array<{ product_id: string; sku: string; quantity: number; unit_price: number }>): { success: boolean; orderId?: string; error?: string } {
     // 1. Verify stock availability for all items
     for (const item of items) {
       const inv = this.state.inventory5State.find(i => i.sku === item.sku || i.product_id === item.product_id);
@@ -231,14 +234,18 @@ class MockDataStore {
       });
 
       const createdOrder: Order = {
-        subtotal,
         tax: 0,
         shipping: 0,
         discount: 0,
-        total,
-        total_amount: total,
-        channel: (newOrder as unknown as Record<string, unknown>).channel as unknown as Order['channel'] || 'website',
         ...newOrder,
+        customer_id: (newOrder.customer_id as string | null) ?? null,
+        status: (newOrder.status as any) || 'pending',
+        payment_status: (newOrder.payment_status as any) || 'paid',
+        placed_at: placedAt,
+        subtotal: newOrder.subtotal ?? subtotal,
+        total: newOrder.total ?? total,
+        total_amount: newOrder.total_amount ?? total,
+        channel: newOrder.channel || 'website',
         id: orderId,
         order_items: orderItemsList,
         created_at: placedAt,
@@ -279,7 +286,8 @@ class MockDataStore {
             credit_amount: 0,
             debit: total,
             credit: 0,
-            description: `Tiền gửi ngân hàng thu trước đơn #${newOrder.order_number}`
+            description: `Tiền gửi ngân hàng thu trước đơn #${newOrder.order_number}`,
+            created_at: placedAt
           },
           {
             id: `jl_${jeId}_2`,
@@ -460,7 +468,8 @@ class MockDataStore {
             credit_amount: 0,
             debit: totalCost,
             credit: 0,
-            description: `Giá vốn xuất kho đơn #${order.order_number} [ASSUMPTION]`
+            description: `Giá vốn xuất kho đơn #${order.order_number} [ASSUMPTION]`,
+            created_at: now
           },
           {
             id: `jl_${cogsJeId}_2`,
@@ -1120,7 +1129,7 @@ class MockDataStore {
             product_id: it.productId,
             quantity: it.qty,
             reason: params.reason,
-            condition: isDamagedScrap ? 'damaged' : 'opened',
+            condition: isDamagedScrap ? 'damaged' : 'opened' as any,
             disposition: isDamagedScrap ? 'scrap' : isReturnless ? 'returnless' : 'restock',
             created_at: now
           });
@@ -1146,7 +1155,7 @@ class MockDataStore {
     return { success: true, rmaNumber };
   }
 
-  public inspectReturnQC(returnId: string, isGoodCondition: boolean): { success: boolean } {
+  public inspectReturnQC(returnId: string, isGoodCondition: boolean): { success: boolean; error?: string } {
     const ret = this.state.returns.find(r => r.id === returnId);
     if (!ret) return { success: false };
 
@@ -1246,7 +1255,7 @@ class MockDataStore {
     return this.state.journalEntries.filter(j => j.tenant_id === this.state.activeTenantId);
   }
 
-  public postJournalEntry(entry: Omit<JournalEntry, 'id' | 'created_at' | 'status'>, lines: Array<Omit<JournalLine, 'id' | 'entry_id'>>): { success: boolean; error?: string } {
+  public postJournalEntry(entry: Partial<JournalEntry> & { entry_number: string },  lines: Array<Omit<JournalLine, 'id' | 'entry_id'>>): { success: boolean; error?: string } {
     const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
     const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
 
@@ -1262,12 +1271,13 @@ class MockDataStore {
 
     this.mutate(draft => {
       draft.journalEntries.unshift({
+        event_source: 'manual',
         ...entry,
         id: entryId,
         status: 'posted',
         created_at: now,
         posted_at: now
-      });
+      } as JournalEntry);
 
       lines.forEach((l, idx) => {
         draft.journalLines.push({

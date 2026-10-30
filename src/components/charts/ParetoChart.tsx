@@ -23,6 +23,9 @@ interface ParetoChartProps {
   data: ParetoItem[];
   height?: number;
   className?: string;
+  xKey?: string;
+  barKey?: string;
+  lineKey?: string;
 }
 
 export function ParetoChart({ data, height = 300, className }: ParetoChartProps) {

@@ -27,7 +27,7 @@ import {
 import { mockStore } from '@/mock/store';
 import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/card';
-import { Modal } from '@/components/ui/modal';
+import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/cn';
 import type { BusinessRuleConfig, ScenarioValidationResult } from '@/mock/types';
 

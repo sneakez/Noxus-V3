@@ -34,6 +34,8 @@ export interface OrderUnitEconomics {
   fixedOverheadEstimate: number;// Fixed G&A / SaaS / Rent estimate
   netProfitEstimate: number;    // CM3 - Fixed Overhead
   attributionType: DataAttributionType;
+  confidenceStatus?: DataConfidenceStatus;
+  cogsSource?: string;
 }
 
 export interface SkuUnitEconomics {
@@ -62,6 +64,11 @@ export interface SkuUnitEconomics {
   contributionRank: 'STAR' | 'CASH_COW' | 'QUESTION_MARK' | 'DOG';
   abcCategory: 'A' | 'B' | 'C';
   xyzCategory: 'X' | 'Y' | 'Z';
+  contributionMarginPerUnit?: number;
+  cm2?: number;
+  barcode?: string;
+  revenue?: number;
+  rank?: string;
 }
 
 export interface ChannelUnitEconomics {

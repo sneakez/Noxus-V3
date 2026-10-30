@@ -219,7 +219,7 @@ export function OrderDetailDrawer({
       signature_verified: podSignature,
       notes: podNotes,
       source: podSource,
-      submitted_by: podSource === 'carrier_webhook_verified' ? 'CARRIER_WEBHOOK_API' : `${activeRole.toUpperCase()} (Demo Thủ Công)`,
+      submitted_by: podSource === 'carrier_webhook_verified' ? 'CARRIER_WEBHOOK_API' : `${(activeRole || 'owner').toUpperCase()} (Demo Thủ Công)`,
       verified_at: now
     };
 

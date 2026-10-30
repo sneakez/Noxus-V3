@@ -2,7 +2,7 @@ import React, { ElementType } from 'react';
 import { cn } from '@/lib/cn';
 
 interface StatCardProps {
-  icon: ElementType<{ size?: number; className?: string }>;
+  icon: ElementType<{ size?: number | string; className?: string }>;
   label: string;
   value: React.ReactNode;
   subtext?: React.ReactNode;

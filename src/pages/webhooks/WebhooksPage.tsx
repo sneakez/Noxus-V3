@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Webhook, Plus, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
+import { isMockMode } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -60,6 +61,26 @@ export function WebhooksPage({ search }: WebhooksPageProps) {
     const webhook = webhooks.find((w) => w.id === log.webhook_id);
     if (!webhook) { toast('Webhook config not found', 'error'); return; }
     setRetryingId(log.id);
+
+    // R28: Mock mode must not perform real HTTP side effects to external partner URLs
+    if (isMockMode()) {
+      await new Promise((r) => setTimeout(r, 150));
+      const { error } = await supabase.from('webhook_delivery_logs').insert({
+        webhook_id: webhook.id,
+        event_type: log.event_type,
+        payload: log.payload,
+        status_code: 200,
+        response_body: JSON.stringify({ mock_delivered: true, note: 'Simulated mock delivery without external network side effect' }),
+        attempt_number: (log.attempt_number ?? 0) + 1,
+        delivered_at: new Date().toISOString(),
+      });
+      setRetryingId(null);
+      if (error) { toast('Mock retry logged with error', 'error'); return; }
+      toast('[Mock Mode] Simulated retry logged — HTTP 200', 'success');
+      load();
+      return;
+    }
+
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);

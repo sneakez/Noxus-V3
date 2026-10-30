@@ -23,10 +23,10 @@ export interface DataGridColumn<T> {
   accessor: (item: T) => React.ReactNode;
   width?: string;
   minWidth?: string;
-  align?: 'left' | 'center' | 'right';
+  align?: 'left' | 'center' | 'right' | string;
   sortable?: boolean;
   sortValue?: (item: T) => number | string;
-  sticky?: 'left' | 'right';
+  sticky?: 'left' | 'right' | string;
   className?: string;
   hideOnMobile?: boolean;
 }

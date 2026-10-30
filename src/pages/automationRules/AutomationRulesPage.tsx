@@ -65,7 +65,7 @@ const ACTION_TYPES: { value: ActionType; label: string; needsValue: boolean; val
   { value: 'auto_approve', label: 'Tự động duyệt đơn', needsValue: false, valuePlaceholder: '' },
 ];
 
-const TRIGGER_LABELS: Record<AutomationTrigger, string> = {
+const TRIGGER_LABELS: Record<string, string> = {
   order_created: 'Khi tạo đơn mới',
   order_status_changed: 'Khi đổi trạng thái đơn',
   payment_received: 'Khi nhận thanh toán',

@@ -133,7 +133,7 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
           align: 'right',
           width: '110px',
           sortable: true,
-          sortValue: s => s.breakEvenPrice,
+          sortValue: s => s.breakEvenPrice ?? 0,
           accessor: s => (
             <div className="text-right">
               <span className="font-bold text-ink-800 block">{formatCurrency(s.breakEvenPrice)}</span>
@@ -155,10 +155,10 @@ export function SkuEconomicsPage({ onNavigate }: SkuEconomicsPageProps) {
           align: 'right',
           width: '110px',
           sortable: true,
-          sortValue: s => s.contributionMarginPerUnit,
+          sortValue: s => (s.contributionMarginPerUnit ?? s.cmPerUnit ?? 0),
           accessor: s => (
-            <span className={cn('font-bold', s.contributionMarginPerUnit >= 0 ? 'text-brand-900' : 'text-rose-600')}>
-              {formatCurrency(s.contributionMarginPerUnit)}
+            <span className={cn('font-bold', (s.contributionMarginPerUnit ?? s.cmPerUnit ?? 0) >= 0 ? 'text-brand-900' : 'text-rose-600')}>
+              {formatCurrency(s.contributionMarginPerUnit ?? s.cmPerUnit ?? 0)}
             </span>
           )
         },
@@ -663,9 +663,9 @@ function SkuPnLDrawer({
             <span className="text-[11px] font-semibold text-slate-500 block">Lãi CM / Cái</span>
             <span className={cn(
               'text-lg font-bold block',
-              sku.contributionMarginPerUnit >= 0 ? 'text-brand-900' : 'text-rose-600'
+              ((sku.contributionMarginPerUnit ?? sku.cmPerUnit ?? 0)) >= 0 ? 'text-brand-900' : 'text-rose-600'
             )}>
-              {formatCurrency(sku.contributionMarginPerUnit)}
+              {formatCurrency(sku.contributionMarginPerUnit ?? sku.cmPerUnit ?? 0)}
             </span>
             <span className="text-[10px] text-slate-400">
               Biên CM: <strong className="text-slate-700">{sku.cmPercent.toFixed(1)}%</strong>
@@ -715,7 +715,7 @@ function SkuPnLDrawer({
             <div className="flex items-center justify-between py-1 text-slate-600 bg-slate-50 px-2 rounded">
               <span>Phí sàn TMĐT & Chi phí đóng gói WMS ước tính:</span>
               <span className="text-rose-700 font-semibold">
-                -{formatCurrency(sku.asp - sku.cogs - sku.contributionMarginPerUnit)}
+                -{formatCurrency(sku.asp - sku.cogs - (sku.contributionMarginPerUnit ?? sku.cmPerUnit ?? 0))}
               </span>
             </div>
 

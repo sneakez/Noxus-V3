@@ -109,7 +109,7 @@ export type WaveStatus = 'open' | 'picking' | 'packing' | 'completed' | 'cancell
 export type AutomationTrigger = 'order_created' | 'order_status_changed' | 'payment_received';
 export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
 export type ReturnType = 'customer_rma' | 'failed_delivery_rts';
-export type ReturnStatus = 'pending' | 'approved' | 'rejected' | 'received' | 'quality_check' | 'refunded' | 'closed';
+export type ReturnStatus = 'requested' | 'pending' | 'approved' | 'rejected' | 'in_transit' | 'received' | 'inspecting' | 'quality_check' | 'refunded' | 'completed' | 'cancelled' | 'closed' | 'qc_passed' | 'qc_failed';
 export type ApprovalStatus = 'pending' | 'maker_approved' | 'checker_approved' | 'rejected';
 export type ComplaintStatus = 'open' | 'analyzed' | 'responded' | 'closed';
 export type Sentiment = 'positive' | 'neutral' | 'negative' | 'mixed';
@@ -141,6 +141,7 @@ export interface Brand {
 }
 
 export interface Warehouse {
+  tenant_id?: string;
   id: string;
   code: string;
   name: string;
@@ -155,7 +156,7 @@ export interface Warehouse {
 
 export interface WarehouseBin {
   id: string;
-  warehouse_id: string;
+  warehouse_id?: string;
   zone: string;
   aisle: string;
   rack: string;
@@ -165,25 +166,26 @@ export interface WarehouseBin {
 }
 
 export interface Customer {
+  tenant_id?: string;
   id: string;
   name: string;
   email: string | null;
   phone: string | null;
   company: string | null;
   address: string | null;
-  city: string | null;
-  state: string | null;
-  postal_code: string | null;
-  country: string;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string;
   status: CustomerStatus;
-  notes: string | null;
-  phone_hash: string | null;
-  masked_phone: string | null;
-  total_spend: number;
-  return_rate: number;
-  loyalty_points: number;
+  notes?: string | null;
+  phone_hash?: string | null;
+  masked_phone?: string | null;
+  total_spend?: number;
+  return_rate?: number;
+  loyalty_points?: number;
   tier: CustomerTier;
-  rfm_score: string | null;
+  rfm_score?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -204,24 +206,27 @@ export interface CustomerInput {
 }
 
 export interface Product {
+  tenant_id?: string;
+  barcode?: string | null;
+  cost_price?: number;
   id: string;
   sku: string;
   name: string;
-  description: string | null;
+  description?: string | null;
   category: string | null;
   price: number;
   cost: number;
   stock: number;
   reorder_level: number;
   status: ProductStatus;
-  image_url: string | null;
-  brand_id: string | null;
-  sku_type: SkuType;
-  allow_preorder: boolean;
-  is_serialized: boolean;
+  image_url?: string | null;
+  brand_id?: string | null;
+  sku_type?: SkuType;
+  allow_preorder?: boolean;
+  is_serialized?: boolean;
   moving_avg_cost: number;
-  weight_grams: number | null;
-  dimensions_cm: string | null;
+  weight_grams?: number | null;
+  dimensions_cm?: string | null;
   safety_stock: number;
   created_at: string;
   updated_at: string;
@@ -279,21 +284,25 @@ export interface InventoryItem {
   safety_stock: number;
   reorder_point: number;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   warehouse?: Warehouse;
   product?: Product;
 }
 
 export interface InventoryBatch {
   id: string;
-  warehouse_id: string;
-  bin_id: string | null;
+  tenant_id?: string;
+  initial_quantity?: number;
+  remaining_quantity?: number;
+  status?: string;
+  warehouse_id?: string;
+  bin_id?: string | null;
   product_id: string;
   batch_number: string;
   expiry_date: string | null;
-  import_unit_cost: number;
-  qty_on_hand: number;
-  qty_reserved: number;
+  import_unit_cost?: number;
+  qty_on_hand?: number;
+  qty_reserved?: number;
   created_at: string;
   warehouse?: Warehouse;
   product?: Product;
@@ -327,15 +336,20 @@ export interface ChannelStockPool {
 
 export interface StockTransaction {
   id: string;
+  tenant_id?: string;
+  transaction_type?: string;
+  quantity?: number;
+  reference_type?: string | null;
+  notes?: string | null;
   warehouse_id: string;
   product_id: string;
-  batch_id: string | null;
-  type: InventoryTxnType;
-  quantity_delta: number;
+  batch_id?: string | null;
+  type?: InventoryTxnType;
+  quantity_delta?: number;
   balance_after: number;
   reference_id: string | null;
-  reason: string | null;
-  created_by: string;
+  reason?: string | null;
+  created_by?: string;
   created_at: string;
   product?: Product;
   warehouse?: Warehouse;
@@ -350,9 +364,9 @@ export interface PurchaseOrder {
   status: POStatus;
   expected_arrival_date: string | null;
   total_amount: number;
-  notes: string | null;
+  notes?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   warehouse?: Warehouse;
   purchase_order_items?: PurchaseOrderItem[];
 }
@@ -392,6 +406,9 @@ export interface StockTransferItem {
 }
 
 export interface Order {
+  tenant_id?: string;
+  shop_id?: string | null;
+  total_amount?: number;
   id: string;
   order_number: string;
   customer_id: string | null;
@@ -402,21 +419,21 @@ export interface Order {
   discount: number;
   total: number;
   payment_status: PaymentStatus;
-  payment_method: string | null;
-  shipping_address: string | null;
-  notes: string | null;
+  payment_method?: string | null;
+  shipping_address?: string | null;
+  notes?: string | null;
   placed_at: string;
-  shipped_at: string | null;
-  delivered_at: string | null;
+  shipped_at?: string | null;
+  delivered_at?: string | null;
   created_at: string;
   updated_at: string;
   channel: Channel;
-  channel_order_sn: string | null;
-  assigned_warehouse_id: string | null;
-  estimated_margin: number | null;
-  must_ship_by_sla: string | null;
-  hold_reason: string | null;
-  fulfillment_wave_id: string | null;
+  channel_order_sn?: string | null;
+  assigned_warehouse_id?: string | null;
+  estimated_margin?: number | null;
+  must_ship_by_sla?: string | null;
+  hold_reason?: string | null;
+  fulfillment_wave_id?: string | null;
   // Segregated status dimensions & POD
   order_status?: DetailedOrderStatus;
   fulfillment_status?: FulfillmentStatus;
@@ -431,6 +448,7 @@ export interface Order {
 }
 
 export interface OrderItem {
+  total_price?: number;
   id: string;
   order_id: string;
   product_id: string;
@@ -484,14 +502,22 @@ export interface OrderItemInput {
 }
 
 export interface FulfillmentWave {
+  tenant_id?: string;
+  assigned_to?: string | null;
+  total_items?: number;
+  picked_items?: number;
+  completed_at?: string | null;
+  wave_number?: string;
+  must_ship_by_sla?: string;
+  total_orders?: number;
   id: string;
   warehouse_id: string;
-  wave_code: string;
+  wave_code?: string;
   status: WaveStatus;
-  assigned_picker_id: string | null;
-  order_count: number;
+  assigned_picker_id?: string | null;
+  order_count?: number;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   warehouse?: Warehouse;
 }
 
@@ -528,9 +554,13 @@ export interface LedgerAccount {
 }
 
 export interface JournalEntry {
+  tenant_id?: string;
+  status?: string;
+  reference_type?: string | null;
+  posted_by?: string | null;
   id: string;
   entry_number: string;
-  event_source: string;
+  event_source?: string;
   reference_id: string | null;
   description: string | null;
   posted_at: string;
@@ -540,11 +570,16 @@ export interface JournalEntry {
 
 export interface JournalLine {
   id: string;
-  journal_entry_id: string;
-  account_id: string;
-  debit_amount: number;
-  credit_amount: number;
-  created_at: string;
+  journal_entry_id?: string;
+  account_id?: string;
+  debit_amount?: number;
+  credit_amount?: number;
+  created_at?: string;
+  entry_id?: string;
+  account_code?: string;
+  description?: string | null;
+  debit?: number;
+  credit?: number;
   account?: LedgerAccount;
 }
 
@@ -566,6 +601,10 @@ export interface OrderFeeBreakdown {
 }
 
 export interface ReturnRequest {
+  tenant_id?: string;
+  customer_id?: string | null;
+  maker_by?: string | null;
+  checker_by?: string | null;
   id: string;
   return_number: string;
   order_id: string;
@@ -573,9 +612,9 @@ export interface ReturnRequest {
   status: ReturnStatus;
   refund_amount: number;
   reason: string | null;
-  carrier_deadline_date: string | null;
-  evidence_media_id: string | null;
-  is_refund_without_return: boolean;
+  carrier_deadline_date?: string | null;
+  evidence_media_id?: string | null;
+  is_refund_without_return?: boolean;
   rma_branch?: RmaBranch;
   exchange_order_id?: string;
   qc_notes?: string;
@@ -695,3 +734,21 @@ export interface RoutingRule {
   updated_at: string;
   warehouse?: Warehouse;
 }
+
+export type ReturnRecord = ReturnRequest;
+export interface ReturnItem {
+  id?: string;
+  return_id?: string;
+  product_id: string;
+  sku?: string;
+  product_name?: string;
+  quantity: number;
+  condition?: string;
+  qc_notes?: string;
+  [key: string]: any;
+}
+export type PickingWave = FulfillmentWave;
+export type Transfer = StockTransfer;
+export type StockLedgerEntry = StockTransaction;
+export type Batch = InventoryBatch;
+export type RfmCustomerSegment = string;

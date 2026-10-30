@@ -213,7 +213,12 @@ export const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
   expense: 'bg-rose-100 text-rose-800 border-rose-200',
 };
 
-export const RETURN_STATUS_LABELS: Record<ReturnStatus, string> = {
+export const RETURN_STATUS_LABELS: Record<string, string> = {
+  requested: 'Yêu cầu mới',
+  in_transit: 'Đang vận chuyển',
+  inspecting: 'Đang kiểm định',
+  completed: 'Hoàn thành',
+  cancelled: 'Đã hủy',
   pending: 'Chờ duyệt',
   approved: 'Đã duyệt',
   rejected: 'Từ chối',
@@ -221,9 +226,11 @@ export const RETURN_STATUS_LABELS: Record<ReturnStatus, string> = {
   quality_check: 'Kiểm tra CL',
   refunded: 'Đã hoàn tiền',
   closed: 'Đã đóng',
+  qc_passed: 'Đạt kiểm định (QC)',
+  qc_failed: 'Lỗi / Hỏng kiểm định',
 };
 
-export const RETURN_STATUS_COLORS: Record<ReturnStatus, string> = {
+export const RETURN_STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800 border-amber-200',
   approved: 'bg-blue-100 text-blue-800 border-blue-200',
   rejected: 'bg-rose-100 text-rose-800 border-rose-200',
@@ -231,6 +238,8 @@ export const RETURN_STATUS_COLORS: Record<ReturnStatus, string> = {
   quality_check: 'bg-orange-100 text-orange-800 border-orange-200',
   refunded: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   closed: 'bg-slate-100 text-slate-700 border-slate-200',
+  qc_passed: 'bg-teal-100 text-teal-800 border-teal-200',
+  qc_failed: 'bg-rose-100 text-rose-800 border-rose-200',
 };
 
 export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, string> = {
@@ -287,14 +296,14 @@ export const INVENTORY_TXN_TYPE_COLORS: Record<InventoryTxnType, string> = {
   return_in: 'bg-indigo-100 text-indigo-800 border-indigo-200',
 };
 
-export const APPROVAL_STATUS_LABELS: Record<ApprovalStatus, string> = {
+export const APPROVAL_STATUS_LABELS: Record<string, string> = {
   pending: 'Chờ duyệt',
   maker_approved: 'Maker duyệt',
   checker_approved: 'Checker duyệt',
   rejected: 'Từ chối',
 };
 
-export const APPROVAL_STATUS_COLORS: Record<ApprovalStatus, string> = {
+export const APPROVAL_STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800 border-amber-200',
   maker_approved: 'bg-blue-100 text-blue-800 border-blue-200',
   checker_approved: 'bg-emerald-100 text-emerald-800 border-emerald-200',

@@ -41,6 +41,10 @@ const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Quản trị viên (Admin)',
   manager: 'Quản lý (Manager)',
   warehouse: 'Thủ kho (Warehouse)',
+  owner: 'Chủ sở hữu (Owner)',
+  finance: 'Tài chính (Finance)',
+  growth: 'Tăng trưởng (Growth)',
+  viewer: 'Người xem (Viewer)',
 };
 
 const ROLE_COLORS: Record<UserRole, { badge: string; pill: string }> = {
@@ -55,6 +59,22 @@ const ROLE_COLORS: Record<UserRole, { badge: string; pill: string }> = {
   warehouse: {
     badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     pill: 'bg-emerald-500',
+  },
+  owner: {
+    badge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    pill: 'bg-indigo-500',
+  },
+  finance: {
+    badge: 'bg-amber-50 text-amber-800 border-amber-200',
+    pill: 'bg-amber-500',
+  },
+  growth: {
+    badge: 'bg-violet-50 text-violet-800 border-violet-200',
+    pill: 'bg-violet-500',
+  },
+  viewer: {
+    badge: 'bg-slate-50 text-slate-800 border-slate-200',
+    pill: 'bg-slate-500',
   },
 };
 

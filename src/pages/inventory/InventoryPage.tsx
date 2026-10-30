@@ -43,6 +43,8 @@ interface InventoryPageProps {
 }
 
 interface InventoryRow extends InventoryItem {
+  sku?: string;
+  name?: string;
   warehouses?: Warehouse;
   products?: { id: string; name: string; sku: string; safety_stock: number };
   pending_qc_qty?: number;
@@ -491,7 +493,7 @@ export function InventoryPage({ search = '' }: InventoryPageProps) {
                   outerRadius={86}
                   paddingAngle={3}
                   dataKey="value"
-                  onClick={(entry) => setSelectedStateDrawer(entry.key)}
+                  onClick={(entry: any) => setSelectedStateDrawer(entry.key)}
                   className="cursor-pointer focus:outline-none"
                 >
                   {donutData.map((entry, index) => (
@@ -499,9 +501,9 @@ export function InventoryPage({ search = '' }: InventoryPageProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(val: number | undefined, name: string | undefined) => [
+                  formatter={(val: any, name: any) => [
                     `${(val ?? 0).toLocaleString()} cái (${totalPhysical > 0 ? (((val ?? 0) / totalPhysical) * 100).toFixed(1) : 0}%)`,
-                    name ?? '',
+                    name ?? ''
                   ]}
                   contentStyle={{
                     backgroundColor: '#0F172A',

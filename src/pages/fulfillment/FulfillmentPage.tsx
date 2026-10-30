@@ -117,7 +117,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
       if (search) {
         const q = search.toLowerCase();
         return (
-          w.wave_code.toLowerCase().includes(q) ||
+          (w.wave_code || w.wave_number || "").toLowerCase().includes(q) ||
           w.warehouse?.name.toLowerCase().includes(q) ||
           w.status.toLowerCase().includes(q)
         );
@@ -172,7 +172,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
   if (loading) return <FullPageSpinner label="Đang tải đợt xuất kho..." />;
 
   const slaBreaches = unassignedOrders.filter(
-    (o) => slaStatus(o.must_ship_by_sla) === 'critical'
+    (o) => slaStatus(o.must_ship_by_sla ?? null) === 'critical'
   ).length;
 
   const activeWaves = waves.filter(
@@ -509,7 +509,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
                           </thead>
                           <tbody className="divide-y divide-slate-100 font-sans">
                             {(wave.orders ?? []).map((o) => {
-                              const sla = slaStatus(o.must_ship_by_sla);
+                              const sla = slaStatus(o.must_ship_by_sla ?? null);
                               const ch = CHANNEL_BADGES[o.channel || 'shopee'] || CHANNEL_BADGES.shopee;
 
                               return (
@@ -555,7 +555,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
                                             : 'text-slate-600'
                                         )}
                                       >
-                                        {slaLabel(o.must_ship_by_sla)}
+                                        {slaLabel(o.must_ship_by_sla ?? null)}
                                       </span>
                                     </div>
                                   </td>

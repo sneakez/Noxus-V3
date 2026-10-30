@@ -2,7 +2,7 @@ import React, { ElementType } from 'react';
 import { cn } from '@/lib/cn';
 
 interface PageHeaderProps {
-  icon?: ElementType<{ size?: number; className?: string }>;
+  icon?: ElementType<{ size?: number | string; className?: string }>;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   badge?: React.ReactNode;

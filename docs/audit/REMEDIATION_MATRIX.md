@@ -1,0 +1,40 @@
+# NOXUS — Kế Hoạch & Ma Trận Đại Trùng Tu (Remediation Matrix)
+
+**Ngày khởi tạo:** 30/10/2026 (Asia/Ho_Chi_Minh)  
+**Baseline Git Commit:** `b891421eecf1efb6670af93912a04b2a7154a766`  
+**Refactor Branch:** `refactor/prototype-marketplace-e2e`  
+
+---
+
+## 1. Bảng Ma Trận Khắc Phục R01 — R28
+
+| ID | Ưu tiên | Phân loại | Tóm tắt lỗi tại baseline | Quyết định kỹ thuật | Vị trí mã nguồn | Trạng thái | Test ID liên quan |
+|---|---|---|---|---|---|---|---|
+| **R01** | P0 | C | `mockSupabaseAdapter.ts`: `insert()` trả payload mà không persist; `delete()` trả success không xóa | Cập nhật adapter & mockStore: thêm hàm `insertTable`, `deleteTable`, persist vào localStorage, rollback nếu lỗi | `src/mock/mockSupabaseAdapter.ts`, `src/mock/store.ts` | **IN PROGRESS** | X01, X03, X09 |
+| **R02** | P0 | C | `insert()` trả async Promise đơn giản; `PurchaseOrdersPage.tsx` gọi `.insert(...).select().single()` crash runtime | Cung cấp query builder chain hỗ trợ `.select().single()`, `.maybeSingle()`, `.then()` trên insert/update/delete | `src/mock/mockSupabaseAdapter.ts`, `src/pages/purchaseOrders/PurchaseOrdersPage.tsx` | **IN PROGRESS** | W-H3, X11 |
+| **R03** | P0 | C | Adapter `update()` chỉ map một số bảng; thiếu fee reconciliation, transfers, connections, rules; unknown table không báo lỗi | Map đầy đủ các bảng được truy vấn trong app; unknown table ném lỗi rõ ràng | `src/mock/mockSupabaseAdapter.ts` | **IN PROGRESS** | X09, M-H2 |
+| **R04** | P0 | C | 203 lỗi TypeScript diagnostic; build lỗi import `@/components/ui/modal` casing trên Linux | Sửa import `Modal.tsx`, chuẩn hóa types đồng bộ giữa Order, Product, SkuEconomics, Permissions | Toàn bộ repo, `BusinessRulesReviewPage.tsx`, `types/index.ts` | **IN PROGRESS** | Build, Typecheck |
+| **R05** | P0 | C/G | `Order` thiếu `shop_id`; định danh đơn chưa gắn tenant + shop + external ID | Thêm `shop_id` vào `Order`, khóa logic đơn theo `(tenant_id, shop_id, external_order_id)` chống duplicate | `src/types/index.ts`, `src/mock/store.ts`, `src/mock/seedData.ts` | **PENDING** | M-E5, X10 |
+| **R06** | P0 | C/G | Status bị gộp; giao thất bại / hủy tự nhận hoàn hoặc sai lệch | Tách bạch `raw_source_status`, `fulfillment_status`, `delivery_status`, `return_status`, `settlement_status` | `src/types/index.ts`, `OrderDetailDrawer.tsx`, `store.ts` | **PENDING** | M-E3, X06 |
+| **R07** | P0 | C | `handleDispatchReplacement` gán EXC timestamp rồi đặt `refunded` giả | Tạo linked replacement order thực tế; reserve và dispatch qua kho | `src/pages/returns/ReturnsPage.tsx`, `src/mock/store.ts` | **PENDING** | F07 |
+| **R08** | P0 | C | `handleCompleteRefund` dùng actor/tenant cứng | Lấy tenant & actor user_id từ auth context; kiểm tra idempotent | `src/pages/returns/ReturnsPage.tsx` | **PENDING** | X04, X06 |
+| **R09** | P0 | C | `inspectReturnQC` cộng dồn physical vô điều kiện, hardcode kho | Nhận kiện (unavailable: pending_qc) -> QC pass (pending_qc -> available), QC fail (pending_qc -> damaged). Chống cộng lặp | `src/mock/store.ts`, `src/pages/returns/ReturnsPage.tsx` | **PENDING** | W-H2, W-E1, W-E4, X02 |
+| **R10** | P0 | C | `filterOrdersByPeriod` kỳ trống fallback toàn bộ orders; tháng tính 30 ngày tròn | Tính đúng calendar theo múi giờ `Asia/Ho_Chi_Minh`; kỳ không có đơn trả mảng rỗng (revenue = 0) | `src/analytics/analyticsService.ts` | **PENDING** | O-E1, X13 |
+| **R11** | P0 | C | Marketing analytics Ads = 8% hằng số, mảng fixed, tự gán ACTUAL | Tính chỉ số từ đơn hàng thật và chi phí Ads thật trong store; có nhãn ước tính nếu thiếu attribution | `src/analytics/analyticsService.ts`, `src/mock/seedData.ts` | **PENDING** | G-H1, G-E1, G-E2 |
+| **R12** | P0 | C | Permission ma trận không nhất quán; Finance bị chặn Returns; Manager thiếu reconcile; actor lưu role thay vì user_id | Thống nhất ma trận quyền; định danh bằng user_id; Manager có quyền reconcile; Finance optional | `src/lib/permissions.ts`, `src/mock/store.ts` | **PENDING** | O-H2, M-H2, X12 |
+| **R13** | P1 | C/G | `OrderDetailDrawer.tsx` có nút `markDeliveredWithPOD` thủ công cho kho | Kho chỉ xác nhận bàn giao vận chuyển (dispatched/handover). Sự kiện delivered chuyển về test simulator | `src/pages/orders/OrderDetailDrawer.tsx`, `src/mock/store.ts` | **PENDING** | W-H1, X01 |
+| **R14** | P1 | C/G | `advanceWave` cập nhật status wave trực tiếp không kiểm pick/pack | Kiểm tra đầy đủ số lượng pick, serial nếu có; không cho complete khi còn thiếu hàng | `src/pages/fulfillment/FulfillmentPage.tsx`, `src/mock/store.ts` | **PENDING** | W-E6 |
+| **R15** | P1 | C/G | PO page chưa có UI nhận hàng thực tế; store có hàm nhưng không nối | Thêm dialog/action nhận hàng (toàn bộ hoặc một phần), cập nhật received_qty, pending QC | `src/pages/purchaseOrders/PurchaseOrdersPage.tsx`, `src/mock/store.ts` | **PENDING** | W-H3, W-E8 |
+| **R16** | P1 | C/G | Transfers page cập nhật status thiếu mapping adapter | Bổ sung `stock_transfers` và `stock_transfer_items` vào adapter; xử lý in-transit -> destination warehouse | `src/pages/transfers/TransfersPage.tsx`, `src/mock/mockSupabaseAdapter.ts` | **PENDING** | F09, W-E7 |
+| **R17** | P1 | C | `FeeReconciliation` chỉ set cờ `is_reconciled`; đối chiếu đơn sơ | So sánh phí dự kiến vs phí thực tế, bồi hoàn sau (compensation), ghi rõ lý do chênh lệch | `src/pages/feeReconciliation/FeeReconciliationPage.tsx`, `src/mock/store.ts` | **PENDING** | M-H2, M-E7, F11 |
+| **R18** | P1 | G | Chỉ có order-level fields; thiếu item/package lifecycle | Hỗ trợ partial cancel / return theo từng item line; cập nhật lại total, cogs, stock | `src/mock/store.ts`, `src/types/index.ts` | **PENDING** | M-E4, X07 |
+| **R19** | P1 | G | Nhiều bảng tồn phân tán | Chuẩn hóa quy tắc 5-trạng thái: physical = available + reserved + unavailable (pending_qc + damaged) | `src/mock/store.ts`, `src/mock/types.ts` | **PENDING** | X02, W-E5 |
+| **R20** | P1 | G/D | Sync Monitor thiếu retry/replay idempotency | Bổ sung exception queue, xử lý event trùng lặp không lùi trạng thái | `src/pages/syncMonitor/SyncMonitorPage.tsx`, `src/mock/store.ts` | **PENDING** | A-H2, A-E2, X04 |
+| **R21** | P1 | D | Thiếu queue công việc theo vai trò ("Việc của tôi") | Action center lọc công việc theo role/shop/warehouse: kho chỉ thấy đơn cần pick/pack/nhận; Manager thấy đối soát | `src/pages/orders/OrdersPage.tsx`, `src/pages/fulfillment/FulfillmentPage.tsx` | **PENDING** | X05, M-H1 |
+| **R22** | P1 | C | ChannelConnections giả lập OAuth thành công | Ghi rõ Mock Connector (Last Sync, Status, Disconnected, Error Replay), không tuyên bố kết nối OAuth thật | `src/pages/channelConnections/ChannelConnectionsPage.tsx` | **PENDING** | A-H1, A-E1 |
+| **R23** | P1 | C | Warehouse role có quyền `warehouses:manage`; Admin kiêm tài chính | Thu gọn quyền Kho vào thao tác kệ/phiếu; Admin chỉ cấu hình kỹ thuật | `src/lib/permissions.ts` | **PENDING** | W-E7, A-E5 |
+| **R24** | P2 | C/D | Complaints dùng keyword matching nhưng toast "AI analysis complete" | Đổi nhãn thành "Rule-based Auto Triage (Demo)", ưu tiên gán người phụ trách và bằng chứng | `src/pages/complaints/ComplaintsPage.tsx` | **PENDING** | R24 |
+| **R25** | P2 | D | Menu bị phân mảnh quá nhiều mục con khó điều hướng | Tối ưu danh mục điều hướng theo vai trò (Operations, Analytics, Technical Config, Test Lab) | `src/components/layout/Sidebar.tsx` | **PENDING** | R25 |
+| **R26** | P2 | D | Viewer còn trong hệ thống | Bỏ Viewer khỏi bộ vai trò mặc định; truy cập role=viewer báo lỗi hoặc chuyển hướng hợp lệ | `src/lib/permissions.ts`, `src/types/index.ts`, `src/mock/store.ts` | **PENDING** | V-H1, V-E1 |
+| **R27** | P2 | D | Finance role nặng nề, cồng kềnh | Đặt feature flag `ENABLE_FINANCE_ROLE = false` mặc định; chức năng đối soát chuyển cho Owner/Manager | `src/lib/permissions.ts`, `src/config/features.ts` | **PENDING** | F-H1, F-E1 |
+| **R28** | P1 | C/G | WebhooksPage resend phát lệnh `fetch` ra Internet | Trong chế độ mock, chỉ mô phỏng gửi và ghi log mock webhook, không bắn HTTP ra ngoài | `src/pages/webhooks/WebhooksPage.tsx` | **PENDING** | A-E4, X15 |

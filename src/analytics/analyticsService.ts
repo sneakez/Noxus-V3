@@ -78,9 +78,9 @@ class AnalyticsService {
           const mac = (item as any).unit_cost_mac_snapshot;
           if (mac !== undefined && mac !== null && mac > 0) {
             totalCogs += mac * (item.quantity || 1);
-          } else if (prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price) {
+          } else if (prod && (prod.moving_avg_cost ?? prod.cost ?? (prod as any)?.cost_price)) {
             cogsSource = 'PRODUCT_MASTER';
-            totalCogs += (prod.moving_avg_cost ?? prod.cost ?? (prod as any).cost_price ?? 0) * (item.quantity || 1);
+            totalCogs += ((prod.moving_avg_cost ?? prod.cost ?? (prod as any).cost_price) || 0) * (item.quantity || 1);
           } else {
             hasEstimatedFallback = true;
           }
@@ -121,7 +121,7 @@ class AnalyticsService {
       const contrib = calculateOrderContribution({
         grossSales,
         discounts,
-        returnsRefunds,
+        returnsRefunds: Number(returnsRefunds ?? 0),
         cogs: totalCogs,
         channel: order.channel || 'website',
         shippingSubsidies,
@@ -136,7 +136,7 @@ class AnalyticsService {
         orderNumber: order.order_number,
         channel: order.channel || 'website',
         placedAt: order.placed_at || order.created_at,
-        orderStatus: order.order_status || order.status,
+        orderStatus: (order.order_status || order.status) as string,
         grossSales,
         discounts,
         returnsRefunds,
@@ -159,7 +159,7 @@ class AnalyticsService {
         attributionType: hasEstimatedFallback ? 'ESTIMATED' : 'ACTUAL',
         confidenceStatus: hasEstimatedFallback
           ? 'ESTIMATED'
-          : (order.order_status === 'delivered' || order.status === 'delivered')
+          : (order.delivery_status === 'delivered' || order.status === 'delivered' || (order.order_status as string) === 'delivered' || (order.order_status as string) === 'completed')
           ? 'VERIFIED'
           : 'PARTIALLY_RECONCILED',
         cogsSource

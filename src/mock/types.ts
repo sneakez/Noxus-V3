@@ -1,3 +1,4 @@
+export type { Tenant, TenantRole };
 import type {
   Tenant,
   TenantRole,
@@ -219,9 +220,9 @@ export interface ScenarioValidationResult {
   category: 'inventory' | 'order_pod' | 'revenue' | 'rma' | 'cross_module';
   passed: boolean;
   timestamp: string;
-  before: Record<string, number | string>;
-  after: Record<string, number | string>;
-  deltas: Record<string, number | string>;
+  before: Record<string, any>;
+  after: Record<string, any>;
+  deltas: Record<string, any>;
   invariantsChecked: Array<{
     name: string;
     passed: boolean;
@@ -256,9 +257,9 @@ export interface MockDatabaseSnapshot {
   suppliers: Supplier[];
   orders: Order[];
   orderItems: OrderItem[];
-  purchaseOrders: PurchaseOrder[];
-  purchaseOrderItems: PurchaseOrderItem[];
-  transfers: Transfer[];
+  purchaseOrders?: PurchaseOrder[];
+  purchaseOrderItems?: PurchaseOrderItem[];
+  transfers?: Transfer[];
   pickingWaves: PickingWave[];
   returns: ReturnRecord[];
   returnItems: ReturnItem[];

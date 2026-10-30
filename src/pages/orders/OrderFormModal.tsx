@@ -15,9 +15,10 @@ import type {
 } from '@/types';
 
 interface OrderFormModalProps {
-  open: boolean;
+  open?: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved?: () => void;
+  onSuccess?: () => void;
 }
 
 interface LineItem extends OrderItemInput {
@@ -27,7 +28,7 @@ interface LineItem extends OrderItemInput {
 const TAX_RATE = 0.10;
 const SHIPPING_DEFAULT = 30000;
 
-export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) {
+export function OrderFormModal({ open = true, onClose, onSaved, onSuccess }: OrderFormModalProps) {
   const toast = useToast();
   const { activeTenant } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -204,7 +205,7 @@ export function OrderFormModal({ open, onClose, onSaved }: OrderFormModalProps) 
 
     toast(`Don hang ${orderNumber} da tao thanh cong`, 'success');
     setSaving(false);
-    onSaved();
+    if (onSaved) onSaved(); if (onSuccess) onSuccess();
     onClose();
   }
 

@@ -162,7 +162,7 @@ export function ScatterBubbleChart({
             <Scatter
               name="SKUs"
               data={chartData}
-              onClick={(node) => {
+              onClick={(node: any) => {
                 if (node && node.sku && onSelectSku) {
                   onSelectSku(node.sku);
                 }
