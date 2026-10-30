@@ -1,3 +1,4 @@
+export const ENABLE_FINANCE_ROLE = false;
 import type { TenantRole } from '@/types';
 
 export type Permission =
@@ -74,7 +75,7 @@ const ROLE_PERMISSIONS: Record<TenantRole, readonly Permission[]> = {
     'inventory:view', 'inventory:receive', 'inventory:move', 'inventory:mutate',
     'products:view', 'products:manage', 'warehouses:manage',
     'purchasing:view', 'purchasing:create',
-    'finance:view',
+    'finance:view', 'finance:reconcile',
     'growth:view',
     'analytics:view', 'audit:view',
     'simulator:access',
@@ -84,7 +85,7 @@ const ROLE_PERMISSIONS: Record<TenantRole, readonly Permission[]> = {
   warehouse: [
     'orders:view',
     'inventory:view', 'inventory:receive', 'inventory:move', 'inventory:mutate',
-    'products:view', 'warehouses:manage',
+    'products:view',
     'purchasing:view',
   ],
 
@@ -150,7 +151,7 @@ export function getAllowedPagesForRole(role: TenantRole | null | undefined): str
         'dashboard', 'operationsAnalytics',
         'orders', 'fulfillment', 'returns', 'customers',
         'products', 'inventory', 'purchaseOrders', 'transfers', 'stockLedger', 'batches', 'warehouses',
-        'orderEconomics', 'skuEconomics', 'channelEconomics', 'pricingCalculator',
+        'orderEconomics', 'skuEconomics', 'channelEconomics', 'feeReconciliation', 'pricingCalculator',
         'salesVelocity', 'revenueReport',
         'marketingAnalytics', 'customerAnalytics', 'salesAnalytics', 'inventoryAnalytics',
         'founderExecution',
@@ -184,10 +185,8 @@ export function getAllowedPagesForRole(role: TenantRole | null | undefined): str
       ];
 
     case 'viewer':
-      return [
-        'dashboard', 'orders', 'products', 'inventory',
-        'salesAnalytics', 'customerAnalytics', 'flowGuide',
-      ];
+      // R26: Viewer deprecated, no operational access
+      return [];
 
     default:
       return ['dashboard', 'flowGuide'];

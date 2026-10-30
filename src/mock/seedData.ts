@@ -1383,7 +1383,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
     {
       id: 'reti_002',
       return_id: 'ret_002',
-      product_id: 'prod_cable_fast',
+      product_id: 'prod_cable_100w',
       quantity: 1,
       reason: 'Gãy chân cắm',
       condition: 'damaged',
@@ -1413,7 +1413,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
     {
       id: 'reti_005',
       return_id: 'ret_005',
-      product_id: 'prod_keyboard_rgb',
+      product_id: 'prod_kb_wave',
       quantity: 1,
       reason: 'Không ưng ý',
       condition: 'opened',
@@ -1891,6 +1891,478 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
     }
   ],
 
+  // ============ Purchase Orders & Items ============
+  purchaseOrders: [
+    {
+      id: 'po_01',
+      po_number: 'PO-2026-001',
+      supplier_name: 'Phúc Khang Electronics Tech',
+      supplier_id: 'sup_01',
+      warehouse_id: 'wh_north_01',
+      status: 'ordered',
+      total_amount: 156000000,
+      expected_delivery_date: getRelativeDate(-2),
+      notes: 'Nhập lô hàng linh kiện tai nghe và phụ kiện chính hãng đợt 1',
+      created_at: getRelativeDate(5),
+      updated_at: getRelativeDate(1)
+    },
+    {
+      id: 'po_02',
+      po_number: 'PO-2026-002',
+      supplier_name: 'An Phát Global Supply Chain',
+      supplier_id: 'sup_02',
+      warehouse_id: 'wh_south_01',
+      status: 'partial',
+      total_amount: 84000000,
+      expected_delivery_date: getRelativeDate(-5),
+      notes: 'Đã nhận đợt 1 (50 cái), chờ nhà cung cấp giao tiếp đợt 2',
+      created_at: getRelativeDate(10),
+      updated_at: getRelativeDate(2)
+    }
+  ],
+  purchaseOrderItems: [
+    {
+      id: 'poi_01',
+      po_id: 'po_01',
+      product_id: 'prod_air_pro',
+      quantity: 100,
+      received_qty: 0,
+      unit_cost: 650000,
+      created_at: getRelativeDate(5)
+    },
+    {
+      id: 'poi_02',
+      po_id: 'po_01',
+      product_id: 'prod_keyboard_rgb',
+      quantity: 50,
+      received_qty: 0,
+      unit_cost: 950000,
+      created_at: getRelativeDate(5)
+    },
+    {
+      id: 'poi_03',
+      po_id: 'po_02',
+      product_id: 'prod_mouse_pro',
+      quantity: 100,
+      received_qty: 50,
+      unit_cost: 420000,
+      created_at: getRelativeDate(10)
+    },
+    {
+      id: 'poi_04',
+      po_id: 'po_02',
+      product_id: 'prod_cable_fast',
+      quantity: 100,
+      received_qty: 100,
+      unit_cost: 150000,
+      created_at: getRelativeDate(10)
+    }
+  ],
+  transfers: [
+    {
+      id: 'tr_01',
+      transfer_number: 'TR-2026-001',
+      from_warehouse_id: 'wh_north_01',
+      to_warehouse_id: 'wh_south_01',
+      status: 'in_transit',
+      tracking_number: 'VNPOST-TR-88912',
+      notes: 'Điều phối cân bằng tồn kho tai nghe Pro giữa kho Bắc và kho Nam',
+      created_at: getRelativeDate(2),
+      updated_at: getRelativeDate(1),
+      transfer_items: [
+        { id: 'tri_01', transfer_id: 'tr_01', product_id: 'prod_01', quantity: 30 }
+      ]
+    }
+  ],
+  channelConnections: [
+    {
+      id: 'conn_shopee',
+      channel: 'shopee',
+      shop_name: 'Nexus Official Flagship Store',
+      shop_id: 'shp_vn_90214',
+      status: 'connected',
+      last_sync_at: getRelativeDate(0, 10, 0),
+      api_key_masked: 'shp_live_••••••••9021',
+      created_at: '2026-01-15T08:00:00Z',
+      updated_at: getRelativeDate(0, 10, 0)
+    },
+    {
+      id: 'conn_tiktok',
+      channel: 'tiktok',
+      shop_name: 'Nexus Audio Vietnam (TikTok Shop)',
+      shop_id: 'tts_vn_44812',
+      status: 'connected',
+      last_sync_at: getRelativeDate(0, 9, 45),
+      api_key_masked: 'tts_live_••••••••4481',
+      created_at: '2026-02-01T08:00:00Z',
+      updated_at: getRelativeDate(0, 9, 45)
+    },
+    {
+      id: 'conn_lazada',
+      channel: 'lazada',
+      shop_name: 'Nexus Audio LazMall',
+      shop_id: 'laz_vn_33109',
+      status: 'connected',
+      last_sync_at: getRelativeDate(0, 9, 30),
+      api_key_masked: 'laz_live_••••••••3310',
+      created_at: '2026-02-10T08:00:00Z',
+      updated_at: getRelativeDate(0, 9, 30)
+    },
+    {
+      id: 'conn_website',
+      channel: 'website',
+      shop_name: 'Nexus Online Store (D2C)',
+      shop_id: 'web_vn_d2c',
+      status: 'connected',
+      last_sync_at: getRelativeDate(0, 10, 15),
+      api_key_masked: 'd2c_key_••••••••1100',
+      created_at: '2026-01-01T08:00:00Z',
+      updated_at: getRelativeDate(0, 10, 15)
+    }
+  ],
+  channelSkuMappings: [
+    {
+      id: 'csm_01',
+      channel: 'shopee',
+      channel_sku_id: 'SHP-SKU-AIR-01',
+      channel_product_id: 'SHP-PROD-9901',
+      channel_product_name: 'Tai nghe Bluetooth Nexus Air Pro - Shopee Mall',
+      product_id: 'prod_01',
+      sync_price: true,
+      sync_inventory: true,
+      created_at: '2026-01-15T09:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'csm_02',
+      channel: 'tiktok',
+      channel_sku_id: 'TTS-SKU-AIR-01',
+      channel_product_id: 'TTS-PROD-8802',
+      channel_product_name: 'Tai nghe Không Dây Nexus Air Pro (Chống Ồn ANC) - TikTok Shop',
+      product_id: 'prod_01',
+      sync_price: true,
+      sync_inventory: true,
+      created_at: '2026-02-01T09:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'csm_03',
+      channel: 'lazada',
+      channel_sku_id: 'LAZ-SKU-AIR-01',
+      channel_product_id: 'LAZ-PROD-7703',
+      channel_product_name: 'Nexus Air Pro True Wireless ANC - LazMall',
+      product_id: 'prod_01',
+      sync_price: true,
+      sync_inventory: true,
+      created_at: '2026-02-10T09:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'csm_04',
+      channel: 'shopee',
+      channel_sku_id: 'SHP-SKU-MAX-02',
+      channel_product_id: 'SHP-PROD-9902',
+      channel_product_name: 'Loa Bluetooth Nexus Sound Max Bass - Shopee',
+      product_id: 'prod_02',
+      sync_price: true,
+      sync_inventory: true,
+      created_at: '2026-01-15T09:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'csm_05',
+      channel: 'tiktok',
+      channel_sku_id: 'TTS-SKU-MAX-02',
+      channel_product_id: 'TTS-PROD-8803',
+      channel_product_name: 'Loa Di Động Nexus Sound Max Kháng Nước IPX7',
+      product_id: 'prod_02',
+      sync_price: true,
+      sync_inventory: true,
+      created_at: '2026-02-01T09:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    },
+    {
+      id: 'csm_06',
+      channel: 'website',
+      channel_sku_id: 'WEB-SKU-CASE-03',
+      channel_product_id: 'WEB-PROD-1003',
+      channel_product_name: 'Bao Da Chống Sốc Cao Cấp MagSafe',
+      product_id: 'prod_03',
+      sync_price: true,
+      sync_inventory: true,
+      created_at: '2026-01-01T09:00:00Z',
+      updated_at: '2026-10-28T10:00:00Z'
+    }
+  ],
+  orderAutomationRules: [
+    {
+      id: 'rule_01',
+      rule_name: 'Tự động kiểm tra đơn giá trị cao (>= 2 triệu)',
+      priority: 1,
+      trigger_event: 'order_created',
+      is_active: true,
+      conditions_json: { field: 'order_total', operator: 'gte', value: 2000000 },
+      actions_json: { type: 'set_status', value: 'processing', note: 'Đã gắn cờ đơn giá trị cao cần kiểm tra' },
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    },
+    {
+      id: 'rule_02',
+      rule_name: 'Tặng túi phụ kiện cho khách hàng Platinum',
+      priority: 2,
+      trigger_event: 'order_created',
+      is_active: true,
+      conditions_json: { field: 'customer_tier', operator: 'eq', value: 'platinum' },
+      actions_json: { type: 'add_free_gift', value: 'NX-GIFT-BAG', note: 'Tặng kèm túi bảo quản cho VIP' },
+      created_at: '2026-01-15T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    },
+    {
+      id: 'rule_03',
+      rule_name: 'Cảnh báo SLA đơn hàng cận giờ xuất kho (<= 4h)',
+      priority: 3,
+      trigger_event: 'order_created',
+      is_active: true,
+      conditions_json: { field: 'sla_hours_remaining', operator: 'lte', value: 4 },
+      actions_json: { type: 'set_status', value: 'processing', note: 'Ưu tiên xuất kho hỏa tốc' },
+      created_at: '2026-02-01T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    }
+  ],
+  bufferRules: [
+    {
+      id: 'buf_01',
+      warehouse_id: 'wh_north_01',
+      product_id: 'prod_01',
+      safety_stock: 15,
+      reorder_point: 30,
+      push_ratio_percent: 60,
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-25T08:00:00Z'
+    },
+    {
+      id: 'buf_02',
+      warehouse_id: 'wh_south_01',
+      product_id: 'prod_01',
+      safety_stock: 10,
+      reorder_point: 25,
+      push_ratio_percent: 40,
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-25T08:00:00Z'
+    },
+    {
+      id: 'buf_03',
+      warehouse_id: 'wh_north_01',
+      product_id: 'prod_02',
+      safety_stock: 8,
+      reorder_point: 15,
+      push_ratio_percent: 70,
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-25T08:00:00Z'
+    },
+    {
+      id: 'buf_04',
+      warehouse_id: 'wh_south_01',
+      product_id: 'prod_02',
+      safety_stock: 5,
+      reorder_point: 12,
+      push_ratio_percent: 30,
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-25T08:00:00Z'
+    }
+  ],
+  routingRules: [
+    {
+      id: 'route_01',
+      name: 'Đơn Shopee & TikTok miền Bắc -> Kho Bắc Ninh',
+      priority: 1,
+      channel: 'shopee',
+      preferred_warehouse_id: 'wh_north_01',
+      strategy: 'priority',
+      is_active: true,
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    },
+    {
+      id: 'route_02',
+      name: 'Đơn TikTok Shop miền Nam -> Kho Tân Bình',
+      priority: 2,
+      channel: 'tiktok',
+      preferred_warehouse_id: 'wh_south_01',
+      strategy: 'nearest',
+      is_active: true,
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    },
+    {
+      id: 'route_03',
+      name: 'Tối ưu kho còn nhiều hàng khả dụng nhất (Most Stock)',
+      priority: 3,
+      channel: null,
+      preferred_warehouse_id: null,
+      strategy: 'most_stock',
+      is_active: true,
+      created_at: '2026-01-15T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    }
+  ],
+  customerComplaints: [
+    {
+      id: 'comp_01',
+      order_id: 'ord_90214',
+      customer_id: 'cust_01',
+      raw_content: 'Hộp sản phẩm hơi móp góc khi nhận, nhưng tai nghe bên trong nghe rất êm.',
+      redacted_content: 'Hộp sản phẩm hơi móp góc khi nhận, nhưng tai nghe bên trong nghe rất êm.',
+      sentiment: 'neutral',
+      urgency_score: 4,
+      issue_category: 'Đóng gói & Vận chuyển',
+      suggested_reply: 'Dạ Nexus rất tiếc vì hộp bị móp trong quá trình vận chuyển. Shop xin gửi tặng bạn voucher 50k cho lần mua sau ạ!',
+      analyzed_at: getRelativeDate(1),
+      status: 'responded',
+      created_at: getRelativeDate(2),
+      updated_at: getRelativeDate(1)
+    },
+    {
+      id: 'comp_02',
+      order_id: 'ord_44812',
+      customer_id: 'cust_02',
+      raw_content: 'Đã 3 ngày chưa thấy bưu tá giao hàng, tôi cần hàng gấp trước thứ 7.',
+      redacted_content: 'Đã 3 ngày chưa thấy bưu tá giao hàng, tôi cần hàng gấp trước thứ 7.',
+      sentiment: 'negative',
+      urgency_score: 8,
+      issue_category: 'Chậm trễ giao hàng',
+      suggested_reply: 'Dạ Nexus đã liên hệ hối bưu tá tuyến giao ưu tiên cho bạn trong chiều nay ạ.',
+      analyzed_at: getRelativeDate(0, 8, 30),
+      status: 'open',
+      created_at: getRelativeDate(0, 8, 0),
+      updated_at: getRelativeDate(0, 8, 30)
+    },
+    {
+      id: 'comp_03',
+      order_id: 'ord_33109',
+      customer_id: 'cust_03',
+      raw_content: 'Chất âm rất xuất sắc, pin trâu đúng như mô tả. Sẽ ủng hộ shop dài dài!',
+      redacted_content: 'Chất âm rất xuất sắc, pin trâu đúng như mô tả. Sẽ ủng hộ shop dài dài!',
+      sentiment: 'positive',
+      urgency_score: 1,
+      issue_category: 'Khen ngợi sản phẩm',
+      suggested_reply: 'Cảm ơn bạn đã tin chọn Nexus! Chúc bạn có những phút giây trải nghiệm âm nhạc tuyệt vời!',
+      analyzed_at: getRelativeDate(3),
+      status: 'closed',
+      created_at: getRelativeDate(4),
+      updated_at: getRelativeDate(3)
+    }
+  ],
+  outboundWebhooks: [
+    {
+      id: 'wh_erp_01',
+      name: 'Đồng bộ đơn hàng ERP MISA',
+      target_url: 'https://api.erp-misa-mock.internal/v1/orders/webhook',
+      event_types: ['order.created', 'order.delivered', 'return.completed'],
+      secret: 'whsec_misa_live_90214',
+      is_active: true,
+      max_retries: 3,
+      created_at: '2026-01-10T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    },
+    {
+      id: 'wh_crm_02',
+      name: 'Cập nhật điểm thành viên CRM HubSpot',
+      target_url: 'https://api.crm-mock.internal/v2/customer/loyalty',
+      event_types: ['order.delivered'],
+      secret: 'whsec_crm_live_44812',
+      is_active: true,
+      max_retries: 3,
+      created_at: '2026-01-15T08:00:00Z',
+      updated_at: '2026-10-20T08:00:00Z'
+    }
+  ],
+  webhookDeliveryLogs: [
+    {
+      id: 'wlog_01',
+      webhook_id: 'wh_erp_01',
+      event_type: 'order.created',
+      payload: { order_number: 'ORD-90214', total: 1250000, status: 'processing' },
+      status_code: 200,
+      response_body: '{"success": true, "code": "OK"}',
+      attempt_number: 1,
+      delivered_at: getRelativeDate(0, 9, 16)
+    },
+    {
+      id: 'wlog_02',
+      webhook_id: 'wh_crm_02',
+      event_type: 'order.delivered',
+      payload: { customer_id: 'cust_01', points_added: 125 },
+      status_code: 200,
+      response_body: '{"loyalty_updated": true}',
+      attempt_number: 1,
+      delivered_at: getRelativeDate(1, 14, 20)
+    }
+  ],
+  orderFeeBreakdowns: [
+    {
+      id: 'fee_001',
+      order_id: 'ord_shopee_01',
+      commission_fee: 45000,
+      transaction_fee: 25000,
+      voucher_co_fund_fee: 10000,
+      estimated_shipping_fee: 30000,
+      actual_shipping_fee: 30000,
+      weight_penalty_fee: 0,
+      net_payout: 890000,
+      is_reconciled: false,
+      discrepancy_note: null,
+      created_at: getRelativeDate(2),
+      updated_at: getRelativeDate(2),
+    },
+    {
+      id: 'fee_002',
+      order_id: 'ord_tiktok_01',
+      commission_fee: 65000,
+      transaction_fee: 30000,
+      voucher_co_fund_fee: 15000,
+      estimated_shipping_fee: 35000,
+      actual_shipping_fee: 45000,
+      weight_penalty_fee: 10000,
+      net_payout: 1050000,
+      is_reconciled: false,
+      discrepancy_note: 'Chênh lệch phí vận chuyển vượt cân nặng 250g',
+      created_at: getRelativeDate(1),
+      updated_at: getRelativeDate(1),
+    }
+  ],
+  syncLogs: [
+    {
+      id: 'sync_01',
+      channel: 'shopee',
+      shop_name: 'Nexus Official Flagship Store',
+      sync_type: 'inventory_push',
+      status: 'success',
+      message: 'Đã đẩy tồn kho 6 SKU lên gian hàng Shopee thành công',
+      retry_count: 0,
+      synced_at: getRelativeDate(0, 10, 0)
+    },
+    {
+      id: 'sync_02',
+      channel: 'tiktok',
+      shop_name: 'Nexus Audio Vietnam (TikTok Shop)',
+      sync_type: 'order_pull',
+      status: 'success',
+      message: 'Đã kéo 14 đơn hàng mới từ TikTok Shop',
+      retry_count: 0,
+      synced_at: getRelativeDate(0, 9, 45)
+    },
+    {
+      id: 'sync_03',
+      channel: 'lazada',
+      shop_name: 'Nexus Audio LazMall',
+      sync_type: 'tracking_sync',
+      status: 'success',
+      message: 'Đã cập nhật mã vận đơn cho 8 kiện hàng',
+      retry_count: 0,
+      synced_at: getRelativeDate(0, 9, 30)
+    }
+  ],
   // ============ RMA Dynamic Configuration ============
   rmaConfig: {
     approvalThreshold: 1000000,

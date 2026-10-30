@@ -6,6 +6,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { formatCurrency } from '@/lib/utils';
 import type { OrderFeeBreakdown } from '@/types';
+import { hasPermission } from '@/lib/permissions';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface FeeReconciliationPageProps {
   search: string;
@@ -13,6 +15,8 @@ interface FeeReconciliationPageProps {
 
 export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
   const toast = useToast();
+  const { activeRole } = useAuth();
+  const currentRole = activeRole ?? 'owner';
   const [fees, setFees] = useState<OrderFeeBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,9 +47,13 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
   });
 
   async function reconcile(id: string) {
+    if (!hasPermission(currentRole, 'finance:reconcile')) {
+      toast('Quyền hạn bị từ chối: Bạn không có quyền đối soát phí sàn', 'error');
+      return;
+    }
     const { error } = await supabase.from('order_fee_breakdowns').update({ is_reconciled: true }).eq('id', id);
-    if (error) { toast('Failed', 'error'); return; }
-    toast('Reconciled', 'success');
+    if (error) { toast('Đối soát thất bại: ' + error.message, 'error'); return; }
+    toast('✓ Đã xác nhận đối soát phí sàn thành công', 'success');
     load();
   }
 
@@ -118,8 +126,19 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
                       )}
                     </td>
                     <td className="px-3 py-3">
-                      {!f.is_reconciled && (
-                        <button onClick={() => reconcile(f.id)} className="text-xs text-blue-600 hover:underline">Reconcile</button>
+                      {!f.is_reconciled ? (
+                        <button
+                          onClick={() => reconcile(f.id)}
+                          disabled={!hasPermission(currentRole, 'finance:reconcile')}
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-40 disabled:cursor-not-allowed hover:underline"
+                        >
+                          Xác nhận đối soát
+                        </button>
+                      ) : (
+                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                          <CheckCircle size={13} />
+                          Đã đối soát
+                        </span>
                       )}
                     </td>
                   </tr>

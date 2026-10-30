@@ -102,7 +102,7 @@ export function ComplaintsPage({ search }: ComplaintsPageProps) {
 
     setAnalyzingId(null);
     if (error) { toast('Analysis failed', 'error'); return; }
-    toast('AI analysis complete — PII masked', 'success');
+    toast('✓ Phân tích theo quy tắc & che PII hoàn tất (Mô phỏng trợ lý gợi ý)', 'success');
     load();
   }
 
@@ -116,14 +116,14 @@ export function ComplaintsPage({ search }: ComplaintsPageProps) {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-ink-900">Complaints & AI Analysis ({filtered.length})</h2>
+        <h2 className="text-lg font-semibold text-ink-900">Khiếu Nại & Trợ Lý Quy Tắc CSKH ({filtered.length})</h2>
         <button onClick={() => { loadRefData(); setShowModal(true); }} className="btn-primary"><Plus size={16} /> New Complaint</button>
       </div>
 
       <div className="card p-4 flex items-center gap-3 bg-blue-50 border-blue-200">
         <Shield size={20} className="text-blue-600 shrink-0" />
         <p className="text-sm text-blue-800">
-          PII Guardrails active: Phone numbers, emails, and addresses are masked as [PHONE], [EMAIL], [ADDRESS] before AI analysis.
+          Bảo vệ dữ liệu PII: Số điện thoại, email, địa chỉ được che [PHONE], [EMAIL], [ADDRESS] trước khi áp dụng quy tắc phân loại và gợi ý phản hồi (Mô phỏng hỗ trợ CSKH, không tự ý gửi phản hồi cho khách).
         </p>
       </div>
 
@@ -165,7 +165,7 @@ export function ComplaintsPage({ search }: ComplaintsPageProps) {
                 <div className="flex flex-col gap-2 shrink-0">
                   {c.status === 'open' && (
                     <button onClick={() => analyze(c.id)} disabled={analyzingId === c.id} className="btn-secondary text-xs px-3 py-1.5 disabled:opacity-50">
-                      {analyzingId === c.id ? <Spinner size={14} /> : <Bot size={14} />} Analyze
+                      {analyzingId === c.id ? <Spinner size={14} /> : <Bot size={14} />} Gợi ý mẫu (Quy tắc)
                     </button>
                   )}
                   {c.status === 'analyzed' && (

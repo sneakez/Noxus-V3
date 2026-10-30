@@ -146,6 +146,21 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
   async function advanceWave(wave: FulfillmentWave) {
     const next = NEXT_WAVE_STATUS[wave.status];
     if (!next) return;
+
+    // W-E6: Guard completing wave if items remain unpicked
+    if (next === 'completed') {
+      const waveRow = waves.find((w) => w.id === wave.id);
+      if (
+        waveRow &&
+        waveRow.total_items !== undefined &&
+        waveRow.picked_items !== undefined &&
+        waveRow.picked_items < waveRow.total_items
+      ) {
+        toast(`Chặn hoàn tất wave: Còn ${waveRow.total_items - waveRow.picked_items} mặt hàng chưa nhặt đủ!`, 'error');
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from('fulfillment_waves')
       .update({ status: next })
@@ -432,11 +447,26 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
 
                   {/* Right: SLA Countdown & Action Command Buttons */}
                   <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-start sm:items-center md:items-end lg:items-center gap-2.5 shrink-0 self-end md:self-auto">
-                    {/* SLA Pill */}
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
-                      <Clock size={13} className="text-amber-600" />
-                      <span>SLA: Còn 3h 45m</span>
-                    </div>
+                    {/* SLA Pill (Dynamic calculation) */}
+                    {(() => {
+                      const waveSlaDate = wave.created_at
+                        ? new Date(new Date(wave.created_at).getTime() + 4 * 3600000).toISOString()
+                        : null;
+                      const isCritical = slaStatus(waveSlaDate) === 'critical';
+                      return (
+                        <div
+                          className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold',
+                            isCritical
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
+                              : 'bg-amber-50 text-amber-800 border-amber-200'
+                          )}
+                        >
+                          <Clock size={13} className={isCritical ? 'text-rose-600' : 'text-amber-600'} />
+                          <span>SLA: {slaLabel(waveSlaDate)}</span>
+                        </div>
+                      );
+                    })()}
 
                     {/* Operational Action Buttons */}
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -459,7 +489,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
                         title="In tem vận đơn sàn (Shopee/TikTok) hàng loạt"
                       >
                         <Barcode size={14} className="text-blue-600" />
-                        <span>In Tem ({wave.order_count ?? 4})</span>
+                        <span>In Tem ({wave.orders?.length ?? wave.order_count ?? 0})</span>
                       </button>
 
                       {/* Action 3: Chuyển bước tiến trình */}

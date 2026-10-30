@@ -16,6 +16,7 @@ import { mockStore } from '@/mock/store';
 import { DEMO_SCENARIOS, executeScenario } from '@/mock/scenarios/scenarioRunner';
 import { useToast } from '@/components/ui/Toast';
 import type { TenantRole } from '@/types';
+import { ENABLE_FINANCE_ROLE } from '@/lib/permissions';
 import type { DemoScenarioId } from '@/mock/types';
 
 export function DemoControlPanel() {

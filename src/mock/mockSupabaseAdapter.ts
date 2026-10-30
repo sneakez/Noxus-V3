@@ -15,7 +15,7 @@ type FilterOp =
   | { col: string; op: 'like'; val: string }
   | { col: string; op: 'ilike'; val: string };
 
-const DEFAULT_LEDGER_ACCOUNTS = [
+export const DEFAULT_LEDGER_ACCOUNTS = [
   { id: 'acc_112', account_code: '112', account_name: 'Tiền gửi ngân hàng', account_type: 'asset', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
   { id: 'acc_131', account_code: '131', account_name: 'Phải thu khách hàng & Sàn TMĐT', account_type: 'asset', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
   { id: 'acc_156', account_code: '156', account_name: 'Hàng hóa tồn kho', account_type: 'asset', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
@@ -26,20 +26,21 @@ const DEFAULT_LEDGER_ACCOUNTS = [
   { id: 'acc_641', account_code: '641', account_name: 'Chi phí bán hàng & Logistics', account_type: 'expense', parent_account_id: null, is_active: true, created_at: '2026-01-01T00:00:00Z' },
 ];
 
-class MockQueryBuilder {
+export class MockQueryBuilder {
   private table: string;
   private filters: FilterOp[] = [];
   private orderCol: string | null = null;
   private orderAsc: boolean = true;
   private limitCount: number | null = null;
   private rangeBounds: [number, number] | null = null;
+  private selectedFields: string = '*';
 
   constructor(table: string) {
     this.table = table;
   }
 
-  public select(_fields: string = '*') {
-    void _fields;
+  public select(fields: string = '*') {
+    this.selectedFields = fields;
     return this;
   }
 
@@ -277,7 +278,77 @@ class MockQueryBuilder {
       });
     }
 
-    // 7. Ledger Accounts & Journal Entries
+    // 7. Channel SKU Mappings (With Product join)
+    if (this.table === 'channel_sku_mappings') {
+      const mappings = mockStore.getTableData('channel_sku_mappings');
+      return mappings.map(m => {
+        const prod = snap.products.find(p => p.id === m.product_id);
+        return {
+          ...m,
+          internal_product: prod,
+          product: prod
+        };
+      });
+    }
+
+    // 8. Buffer Rules (With Warehouse and Product join)
+    if (this.table === 'buffer_rules') {
+      const rules = mockStore.getTableData('buffer_rules');
+      return rules.map(r => {
+        const wh = snap.warehouses.find(w => w.id === r.warehouse_id);
+        const prod = snap.products.find(p => p.id === r.product_id);
+        return {
+          ...r,
+          warehouse: wh,
+          product: prod
+        };
+      });
+    }
+
+    // 9. Routing Rules (With Warehouse join)
+    if (this.table === 'routing_rules') {
+      const rules = mockStore.getTableData('routing_rules');
+      return rules.map(r => {
+        const wh = snap.warehouses.find(w => w.id === r.preferred_warehouse_id);
+        return {
+          ...r,
+          warehouse: wh
+        };
+      });
+    }
+
+    // 10. Purchase Orders (With Warehouse and Items join)
+    if (this.table === 'purchase_orders') {
+      const orders = mockStore.getTableData('purchase_orders');
+      const allItems = mockStore.getTableData('purchase_order_items');
+      return orders.map(po => {
+        const wh = snap.warehouses.find(w => w.id === po.warehouse_id);
+        const items = allItems.filter(i => i.po_id === po.id).map(i => ({
+          ...i,
+          product: snap.products.find(p => p.id === i.product_id)
+        }));
+        return {
+          ...po,
+          warehouse: wh,
+          purchase_order_items: items
+        };
+      });
+    }
+
+    // 11. Webhook Delivery Logs (With Webhook join)
+    if (this.table === 'webhook_delivery_logs') {
+      const logs = mockStore.getTableData('webhook_delivery_logs');
+      const webhooks = mockStore.getTableData('outbound_webhooks');
+      return logs.map(l => {
+        const wh = webhooks.find(w => w.id === l.webhook_id);
+        return {
+          ...l,
+          webhook: wh
+        };
+      });
+    }
+
+    // 12. Ledger Accounts & Journal Entries
     if (this.table === 'ledger_accounts') {
       return DEFAULT_LEDGER_ACCOUNTS.map(a => ({ ...a }));
     }
@@ -305,8 +376,18 @@ class MockQueryBuilder {
       });
     }
 
-    // 8. Order Fee Breakdowns (Reconciliation)
+    // 13. Order Fee Breakdowns (Reconciliation)
     if (this.table === 'order_fee_breakdowns') {
+      const existing = mockStore.getTableData('order_fee_breakdowns');
+      if (existing.length > 0) {
+        return existing.map(item => {
+          const rawOrd = snap.orders.find(o => o.id === item.order_id);
+          return {
+            ...item,
+            order: rawOrd ? this.normalizeOrder(rawOrd as unknown as Record<string, unknown>, snap) : null
+          };
+        });
+      }
       return snap.orders.map(o => {
         const norm = this.normalizeOrder(o as unknown as Record<string, unknown>, snap);
         const orderTotal = Number(norm.total || 0);
@@ -327,7 +408,7 @@ class MockQueryBuilder {
       });
     }
 
-    // 9. Margin Config
+    // 14. Margin Config
     if (this.table === 'margin_config') {
       return [
         {
@@ -342,31 +423,8 @@ class MockQueryBuilder {
       ];
     }
 
-    // 10. Fallback for other standard tables
-    const map: Record<string, keyof MockDatabaseSnapshot> = {
-      products: 'products',
-      customers: 'customers',
-      warehouses: 'warehouses',
-      suppliers: 'suppliers',
-      purchase_orders: 'purchaseOrders',
-      purchase_order_items: 'purchaseOrderItems',
-      transfers: 'transfers',
-      return_items: 'returnItems',
-      batches: 'batches',
-      reconciliations: 'reconciliations',
-      audit_logs: 'auditLogs',
-      business_rules: 'businessRules',
-      tenants: 'tenants',
-      tenant_memberships: 'memberships',
-      profiles: 'profiles'
-    };
-
-    const key = map[this.table];
-    if (key && Array.isArray(snap[key])) {
-      return (snap[key] as unknown as Record<string, unknown>[]).map(item => ({ ...item }));
-    }
-
-    return [];
+    // 15. Default mockStore.getTableData for other recognized tables
+    return mockStore.getTableData(this.table);
   }
 
   private applyFilters(rows: Record<string, unknown>[]): Record<string, unknown>[] {
@@ -457,10 +515,14 @@ class MockQueryBuilder {
   }
 
   public async then<TResult1 = unknown, TResult2 = never>(
-    onfulfilled?: ((value: { data: unknown; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+    onfulfilled?: ((value: { data: unknown; error: { message: string; code?: string } | null }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ) {
     await mockStore.delay(20);
+    if (!mockStore.isTableSupported(this.table)) {
+      const res = { data: null, error: { message: `Table "${this.table}" not found in schema`, code: 'PGRST100' } };
+      return Promise.resolve(res).then(onfulfilled, onrejected);
+    }
     const rows = this.getTableData();
     const filtered = this.applyFilters(rows);
     const res = { data: filtered, error: null };
@@ -469,6 +531,9 @@ class MockQueryBuilder {
 
   public async single() {
     await mockStore.delay(20);
+    if (!mockStore.isTableSupported(this.table)) {
+      return { data: null, error: { message: `Table "${this.table}" not found in schema`, code: 'PGRST100' } };
+    }
     const rows = this.getTableData();
     const filtered = this.applyFilters(rows);
     return { data: filtered[0] || null, error: filtered.length === 0 ? { message: 'Row not found' } : null };
@@ -476,62 +541,155 @@ class MockQueryBuilder {
 
   public async maybeSingle() {
     await mockStore.delay(20);
+    if (!mockStore.isTableSupported(this.table)) {
+      return { data: null, error: { message: `Table "${this.table}" not found in schema`, code: 'PGRST100' } };
+    }
     const rows = this.getTableData();
     const filtered = this.applyFilters(rows);
     return { data: filtered[0] || null, error: null };
   }
 
-  public async insert(payload: Record<string, unknown> | Record<string, unknown>[]) {
-    await mockStore.delay(30);
+  public insert(payload: Record<string, unknown> | Record<string, unknown>[]) {
+    const table = this.table;
     const items = Array.isArray(payload) ? payload : [payload];
-    return { data: items, error: null };
+
+    if (!mockStore.isTableSupported(table)) {
+      const err = { message: `Table "${table}" not found in schema`, code: 'PGRST100' };
+      const errBuilder = {
+        select: () => errBuilder,
+        single: async () => ({ data: null, error: err }),
+        maybeSingle: async () => ({ data: null, error: err }),
+        then: (onfulfilled?: any, onrejected?: any) => Promise.resolve({ data: null, error: err }).then(onfulfilled, onrejected)
+      };
+      return errBuilder;
+    }
+
+    let inserted: Record<string, unknown>[] | null = null;
+    const executeInsert = async () => {
+      if (inserted === null) {
+        await mockStore.delay(20);
+        inserted = mockStore.insertTable(table, items);
+      }
+      return inserted;
+    };
+
+    const builder = {
+      select: (_fields?: string) => builder,
+      single: async () => {
+        const rows = await executeInsert();
+        return { data: rows[0] || null, error: null };
+      },
+      maybeSingle: async () => {
+        const rows = await executeInsert();
+        return { data: rows[0] || null, error: null };
+      },
+      then: async (onfulfilled?: any, onrejected?: any) => {
+        const rows = await executeInsert();
+        return Promise.resolve({ data: rows, error: null }).then(onfulfilled, onrejected);
+      }
+    };
+    return builder;
   }
 
   public update(payload: Record<string, unknown>) {
     const table = this.table;
-    const mutateStore = (col: string, val: unknown) => {
-      if (table === 'orders') {
-        mockStore.updateOrder(String(val), payload as any);
-      } else if (table === 'return_requests' || table === 'returns') {
-        mockStore.updateReturn(String(val), payload as any);
-      } else if (table === 'inventory_items') {
-        mockStore.mutateTable('inventory5State', item => (item as any)[col] === val || (item as any).id === val || (item as any).sku === val, payload);
-      } else {
-        const tableMap: Record<string, any> = {
-          products: 'products',
-          customers: 'customers',
-          warehouses: 'warehouses',
-          picking_waves: 'pickingWaves',
-          fulfillment_waves: 'pickingWaves',
-        };
-        const mappedKey = tableMap[table];
-        if (mappedKey) {
-          mockStore.mutateTable(mappedKey, item => (item as any)[col] === val || (item as any).id === val, payload);
-        }
-      }
-    };
-    return {
-      eq: async (col: string, val: unknown) => {
-        await mockStore.delay(20);
-        mutateStore(col, val);
-        return { data: payload, error: null, select: () => Promise.resolve({ data: payload, error: null }) };
+    const updateFilters: FilterOp[] = [...this.filters];
+
+    const builder = {
+      eq: (col: string, val: unknown) => {
+        updateFilters.push({ col, op: 'eq', val });
+        return builder;
       },
-      then: (resolve: (val: { data: unknown; error: null }) => void) => {
-        resolve({ data: payload, error: null });
+      neq: (col: string, val: unknown) => {
+        updateFilters.push({ col, op: 'neq', val });
+        return builder;
+      },
+      in: (col: string, vals: unknown[]) => {
+        updateFilters.push({ col, op: 'in', val: vals });
+        return builder;
+      },
+      select: (_fields?: string) => builder,
+      single: async () => {
+        const res = await builder.execute();
+        return { data: (res.data as any[])?.[0] || payload, error: res.error };
+      },
+      maybeSingle: async () => {
+        const res = await builder.execute();
+        return { data: (res.data as any[])?.[0] || payload, error: res.error };
+      },
+      execute: async () => {
+        await mockStore.delay(20);
+        if (!mockStore.isTableSupported(table)) {
+          return { data: null, error: { message: `Table "${table}" not found in schema`, code: 'PGRST100' } };
+        }
+        const predicate = (item: Record<string, unknown>) => {
+          for (const f of updateFilters) {
+            if (f.op === 'eq' && item[f.col] !== f.val) return false;
+            if (f.op === 'neq' && item[f.col] === f.val) return false;
+            if (f.op === 'in' && Array.isArray(f.val) && !f.val.includes(item[f.col])) return false;
+          }
+          return true;
+        };
+        mockStore.updateTable(table, predicate, payload);
+
+        // Special handling for return_requests: if status changed to 'received', trigger dock receipt
+        if ((table === 'return_requests' || table === 'returns') && payload.status === 'received') {
+          for (const f of updateFilters) {
+            if (f.op === 'eq' && f.col === 'id' && typeof f.val === 'string') {
+              mockStore.receiveReturnDock(f.val);
+            }
+          }
+        }
+
+        return { data: [payload], error: null };
+      },
+      then: async (onfulfilled?: any, onrejected?: any) => {
+        const res = await builder.execute();
+        return Promise.resolve(res).then(onfulfilled, onrejected);
       }
     };
+    return builder;
   }
 
   public delete() {
-    return {
-      eq: async (_col: string, _val: unknown) => {
+    const table = this.table;
+    const deleteFilters: FilterOp[] = [...this.filters];
+
+    const builder = {
+      eq: (col: string, val: unknown) => {
+        deleteFilters.push({ col, op: 'eq', val });
+        return builder;
+      },
+      neq: (col: string, val: unknown) => {
+        deleteFilters.push({ col, op: 'neq', val });
+        return builder;
+      },
+      in: (col: string, vals: unknown[]) => {
+        deleteFilters.push({ col, op: 'in', val: vals });
+        return builder;
+      },
+      execute: async () => {
         await mockStore.delay(20);
+        if (!mockStore.isTableSupported(table)) {
+          return { data: null, error: { message: `Table "${table}" not found in schema`, code: 'PGRST100' } };
+        }
+        const predicate = (item: Record<string, unknown>) => {
+          for (const f of deleteFilters) {
+            if (f.op === 'eq' && item[f.col] !== f.val) return false;
+            if (f.op === 'neq' && item[f.col] === f.val) return false;
+            if (f.op === 'in' && Array.isArray(f.val) && !f.val.includes(item[f.col])) return false;
+          }
+          return true;
+        };
+        mockStore.deleteTable(table, predicate);
         return { data: null, error: null };
       },
-      then: (resolve: (val: { data: null; error: null }) => void) => {
-        resolve({ data: null, error: null });
+      then: async (onfulfilled?: any, onrejected?: any) => {
+        const res = await builder.execute();
+        return Promise.resolve(res).then(onfulfilled, onrejected);
       }
     };
+    return builder;
   }
 }
 
@@ -606,50 +764,70 @@ export const mockSupabaseClient = {
             // Filter real orders placed on this date (excluding cancelled)
             const matchedOrders = snap.orders.filter(o => {
               if (o.status === 'cancelled') return false;
-              const oDate = new Date(o.placed_at);
+              const oDate = new Date(o.placed_at || o.created_at);
               const oDayStr = `${oDate.getFullYear()}-${String(oDate.getMonth() + 1).padStart(2, '0')}-${String(oDate.getDate()).padStart(2, '0')}`;
               return oDayStr === dayStr;
             });
 
-            const dayRev = matchedOrders.reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
-
+            const rev = matchedOrders.reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
             daily.push({
               day: dayStr,
-              revenue: dayRev,
+              revenue: rev,
               order_count: matchedOrders.length
             });
           }
+
           resolve({ data: daily, error: null });
           return;
         }
 
-        // 3. Low Stock Products
-        if (fnName === 'get_low_stock_products') {
-          const low = snap.products
-            .filter(p => p.stock <= (p.safety_stock || 20))
-            .map(p => ({
-              id: p.id,
-              name: p.name,
-              stock: p.stock,
-              reorder_level: p.safety_stock || 20
-            }));
-          resolve({ data: low, error: null });
+        // 3. Sales By Channel (Accurately Summed from Orders)
+        if (fnName === 'get_sales_by_channel') {
+          const channels = ['shopee', 'tiktok', 'lazada', 'website'] as const;
+          const result = channels.map(ch => {
+            const chOrders = snap.orders.filter(o => o.channel === ch && o.status !== 'cancelled');
+            const rev = chOrders.reduce((sum, o) => sum + Number(o.total || o.total_amount || 0), 0);
+            return {
+              channel: ch,
+              total_sales: rev,
+              order_count: chOrders.length
+            };
+          });
+
+          resolve({ data: result, error: null });
           return;
         }
 
-        // 4. Inventory Consistency Check
-        if (fnName === 'verify_inventory_consistency') {
-          resolve({ data: { checked: true, discrepancies: [] }, error: null });
+        // 4. Low Stock Alerts
+        if (fnName === 'get_low_stock_alerts') {
+          const lowStock = snap.inventory5State
+            .filter(i => i.available <= i.reorder_level || i.available <= i.safety_stock)
+            .map(i => {
+              const p = snap.products.find(prod => prod.id === i.product_id);
+              const w = snap.warehouses.find(wh => wh.id === i.warehouse_id);
+              return {
+                product_id: i.product_id,
+                sku: i.sku,
+                product_name: i.name,
+                warehouse_name: w?.name || i.warehouse_name,
+                stock: i.available,
+                reorder_level: i.reorder_level,
+                safety_stock: i.safety_stock,
+                cost_price: p?.cost_price || 0,
+                price: p?.price || 0
+              };
+            });
+          resolve({ data: lowStock, error: null });
           return;
         }
 
         // 5. Sequence Generators
         if (fnName === 'next_order_number') {
-          resolve({ data: `ORD-${Math.floor(10000 + Math.random() * 90000)}`, error: null });
+          resolve({ data: `ORD-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`, error: null });
           return;
         }
 
-        if (fnName === 'next_return_number') {
+        if (fnName === 'next_rma_number') {
           resolve({ data: `RMA-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`, error: null });
           return;
         }

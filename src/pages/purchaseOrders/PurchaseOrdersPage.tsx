@@ -17,6 +17,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { mockStore } from '@/mock/store';
 import { cn } from '@/lib/cn';
 import { FullPageSpinner, Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -94,6 +95,28 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
       return true;
     });
   }, [orders, search, statusFilter]);
+
+  const toast = useToast();
+
+  async function handleConfirmOrder(poId: string) {
+    const { error } = await supabase.from('purchase_orders').update({ status: 'ordered' }).eq('id', poId);
+    if (error) {
+      toast('Không thể xác nhận PO: ' + error.message, 'error');
+      return;
+    }
+    toast('✓ Đã duyệt và gửi đơn mua hàng sang nhà cung cấp', 'success');
+    load();
+  }
+
+  async function handleReceivePO(poId: string) {
+    const res = mockStore.receivePurchaseOrder(poId);
+    if (!res.success) {
+      toast('Lỗi nhận hàng: ' + (res.error || 'Thao tác không thành công'), 'error');
+      return;
+    }
+    toast('✓ Đã nhận hàng vào kho thành công! Tồn kho khả dụng và vật lý đã được cộng.', 'success');
+    load();
+  }
 
   if (loading) return <FullPageSpinner label="Đang tải danh sách đơn mua hàng (PO)..." />;
 
@@ -417,6 +440,41 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
                         {po.notes}
                       </div>
                     )}
+
+                    {/* Operational Action Toolbar */}
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-200/80 flex-wrap gap-2">
+                      <div className="text-xs text-slate-500 font-medium">
+                        Mã đơn: <span className="font-mono font-bold text-slate-700">{po.po_number}</span> • Kho tiếp nhận: <span className="font-semibold text-slate-800">{po.warehouse?.name || 'Kho W1'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {po.status === 'draft' && (
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmOrder(po.id)}
+                            className="btn-primary text-xs py-2 px-3.5 bg-blue-600 hover:bg-blue-700 font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <PackageCheck size={14} />
+                            <span>Duyệt & Đặt Hàng (Order PO)</span>
+                          </button>
+                        )}
+                        {(po.status === 'ordered' || po.status === 'partial') && (
+                          <button
+                            type="button"
+                            onClick={() => handleReceivePO(po.id)}
+                            className="btn-primary text-xs py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <PackageCheck size={14} />
+                            <span>📥 Nhận Hàng Vào Kho (Receive Stock)</span>
+                          </button>
+                        )}
+                        {po.status === 'received' && (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 py-1.5 px-3 rounded-lg">
+                            <CheckCircle2 size={14} />
+                            Đã nhận đủ toàn bộ mặt hàng vào kho
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </Card>

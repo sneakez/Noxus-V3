@@ -264,11 +264,16 @@ export interface BundleComponent {
 export interface ChannelSkuMapping {
   id: string;
   channel: Channel;
-  channel_shop_id: string | null;
-  channel_product_id: string | null;
+  channel_shop_id?: string | null;
+  channel_product_id?: string | null;
+  channel_product_name?: string;
   channel_sku_id: string;
-  internal_product_id: string;
+  internal_product_id?: string;
+  product_id?: string;
+  sync_price?: boolean;
+  sync_inventory?: boolean;
   created_at: string;
+  updated_at?: string;
   internal_product?: Product;
 }
 
@@ -360,9 +365,11 @@ export interface PurchaseOrder {
   po_number: string;
   warehouse_id: string;
   supplier_name: string;
-  lead_time_days: number;
+  supplier_id?: string;
+  lead_time_days?: number;
   status: POStatus;
-  expected_arrival_date: string | null;
+  expected_arrival_date?: string | null;
+  expected_delivery_date?: string | null;
   total_amount: number;
   notes?: string | null;
   created_at: string;
@@ -389,8 +396,10 @@ export interface StockTransfer {
   to_warehouse_id: string;
   status: TransferStatus;
   notes: string | null;
+  tracking_number?: string;
+  transfer_items?: any[];
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   from_warehouse?: Warehouse;
   to_warehouse?: Warehouse;
   stock_transfer_items?: StockTransferItem[];

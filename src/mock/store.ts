@@ -31,6 +31,19 @@ class MockDataStore {
 
   constructor() {
     this.state = this.loadFromStorage();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY && e.newValue) {
+          try {
+            const nextState = JSON.parse(e.newValue) as MockDatabaseSnapshot;
+            this.state = nextState;
+            this.listeners.forEach(fn => fn());
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      });
+    }
   }
 
   private loadFromStorage(): MockDatabaseSnapshot {
@@ -164,6 +177,21 @@ class MockDataStore {
   }
 
   public placeOrderAtomic(newOrder: Partial<Order> & { tenant_id: string; order_number: string },  items: Array<{ product_id: string; sku: string; quantity: number; unit_price: number }>): { success: boolean; orderId?: string; error?: string } {
+    // 0. Verify Multi-shop Uniqueness (tenant_id, shop_id, channel_order_sn) (R05)
+    if (newOrder.channel_order_sn) {
+      const existingDup = this.state.orders.find(o =>
+        o.tenant_id === (newOrder.tenant_id || this.state.activeTenantId) &&
+        (o.shop_id || 'default') === (newOrder.shop_id || 'default') &&
+        o.channel_order_sn === newOrder.channel_order_sn
+      );
+      if (existingDup) {
+        return {
+          success: false,
+          error: `Đơn hàng trùng lặp: Mã đơn sàn [${newOrder.channel_order_sn}] trên gian hàng [${newOrder.shop_id || 'default'}] đã tồn tại trong hệ thống.`
+        };
+      }
+    }
+
     // 1. Verify stock availability for all items
     for (const item of items) {
       const inv = this.state.inventory5State.find(i => i.sku === item.sku || i.product_id === item.product_id);
@@ -1157,10 +1185,12 @@ class MockDataStore {
 
   public inspectReturnQC(returnId: string, isGoodCondition: boolean): { success: boolean; error?: string } {
     const ret = this.state.returns.find(r => r.id === returnId);
-    if (!ret) return { success: false };
+    if (!ret) return { success: false, error: 'Không tìm thấy yêu cầu đổi trả' };
+// Allow QC inspection transition
 
     const items = this.state.returnItems.filter(i => i.return_id === returnId);
     const now = new Date().toISOString();
+    const isAlreadyReceived = ret.status === 'received';
 
     this.mutate(draft => {
       const draftItems = draft.returnItems.filter(i => i.return_id === returnId);
@@ -1171,19 +1201,32 @@ class MockDataStore {
       for (const item of items) {
         const inv = draft.inventory5State.find(i => i.product_id === item.product_id);
         if (inv) {
-          if (isGoodCondition) {
-            // Restock to sellable
-            inv.physical += item.quantity;
-            inv.unavailable = (inv.pending_qc || 0) + (inv.damaged || 0);
-            inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
-            inv.sellable = inv.available;
+          if (isAlreadyReceived) {
+            // Transition from pending_qc to available or damaged (NO double physical addition!)
+            inv.pending_qc = Math.max(0, (inv.pending_qc || 0) - item.quantity);
+            if (isGoodCondition) {
+              inv.unavailable = inv.pending_qc + (inv.damaged || 0);
+              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
+              inv.sellable = inv.available;
+            } else {
+              inv.damaged = (inv.damaged || 0) + item.quantity;
+              inv.unavailable = inv.pending_qc + inv.damaged;
+              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
+              inv.sellable = inv.available;
+            }
           } else {
-            // Quarantine to damaged
+            // Direct QC bypass without dock receipt
             inv.physical += item.quantity;
-            inv.damaged += item.quantity;
-            inv.unavailable = (inv.pending_qc || 0) + inv.damaged;
-            inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
-            inv.sellable = inv.available;
+            if (isGoodCondition) {
+              inv.unavailable = (inv.pending_qc || 0) + (inv.damaged || 0);
+              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
+              inv.sellable = inv.available;
+            } else {
+              inv.damaged = (inv.damaged || 0) + item.quantity;
+              inv.unavailable = (inv.pending_qc || 0) + inv.damaged;
+              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
+              inv.sellable = inv.available;
+            }
           }
         }
 
@@ -1630,6 +1673,251 @@ class MockDataStore {
   }
 
   // ============ Inventory 5-State Queries ============
+
+
+  // ============ Generic Table Methods (R01, R02, R03) ============
+
+  private static readonly TABLE_KEY_MAP: Record<string, keyof MockDatabaseSnapshot> = {
+    orders: 'orders',
+    order_items: 'orderItems',
+    inventory_items: 'inventory5State',
+    products: 'products',
+    customers: 'customers',
+    warehouses: 'warehouses',
+    suppliers: 'suppliers',
+    purchase_orders: 'purchaseOrders',
+    purchase_order_items: 'purchaseOrderItems',
+    transfers: 'transfers',
+    stock_transfers: 'transfers',
+    stock_transfer_items: 'transfers',
+    picking_waves: 'pickingWaves',
+    fulfillment_waves: 'pickingWaves',
+    returns: 'returns',
+    return_requests: 'returns',
+    return_items: 'returnItems',
+    batches: 'batches',
+    inventory_batches: 'batches',
+    serials: 'serials',
+    inventory_serials: 'serials',
+    journal_entries: 'journalEntries',
+    journal_lines: 'journalLines',
+    reconciliations: 'reconciliations',
+    audit_logs: 'auditLogs',
+    business_rules: 'businessRules',
+    tenants: 'tenants',
+    tenant_memberships: 'memberships',
+    profiles: 'profiles',
+    channel_connections: 'channelConnections',
+    channel_sku_mappings: 'channelSkuMappings',
+    order_automation_rules: 'orderAutomationRules',
+    buffer_rules: 'bufferRules',
+    routing_rules: 'routingRules',
+    customer_complaints: 'customerComplaints',
+    outbound_webhooks: 'outboundWebhooks',
+    webhook_delivery_logs: 'webhookDeliveryLogs',
+    order_fee_breakdowns: 'orderFeeBreakdowns',
+    sync_logs: 'syncLogs',
+  };
+
+  public isTableSupported(table: string): boolean {
+    if (MockDataStore.TABLE_KEY_MAP[table]) return true;
+    if (['margin_config', 'ledger_accounts', 'order_status_log'].includes(table)) return true;
+    if (this.state.dynamicTables && this.state.dynamicTables[table]) return true;
+    return false;
+  }
+
+  public getTableData(table: string): Record<string, unknown>[] {
+    const key = MockDataStore.TABLE_KEY_MAP[table];
+    if (key && Array.isArray(this.state[key])) {
+      return (this.state[key] as unknown as Record<string, unknown>[]).map(item => ({ ...item }));
+    }
+    if (this.state.dynamicTables && Array.isArray(this.state.dynamicTables[table])) {
+      return this.state.dynamicTables[table].map(item => ({ ...item }));
+    }
+    return [];
+  }
+
+  public insertTable(table: string, rows: Record<string, unknown>[]): Record<string, unknown>[] {
+    const key = MockDataStore.TABLE_KEY_MAP[table];
+    const insertedRows: Record<string, unknown>[] = [];
+    const now = new Date().toISOString();
+
+    for (const r of rows) {
+      const copy = { ...r };
+      if (!copy.id) {
+        copy.id = `${table}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      }
+      if (!copy.created_at) {
+        copy.created_at = now;
+      }
+      if (!copy.updated_at) {
+        copy.updated_at = now;
+      }
+      if (!copy.tenant_id && this.state.activeTenantId) {
+        copy.tenant_id = this.state.activeTenantId;
+      }
+      insertedRows.push(copy);
+    }
+
+    this.mutate(draft => {
+      if (key) {
+        if (!draft[key]) {
+          (draft[key] as any) = [];
+        }
+        (draft[key] as any[]).unshift(...insertedRows);
+      } else {
+        if (!draft.dynamicTables) {
+          draft.dynamicTables = {};
+        }
+        if (!draft.dynamicTables[table]) {
+          draft.dynamicTables[table] = [];
+        }
+        draft.dynamicTables[table].unshift(...insertedRows);
+      }
+    }, 'DATABASE_RESET', { table, count: insertedRows.length });
+
+    return insertedRows;
+  }
+
+  public updateTable(table: string, predicate: (item: Record<string, unknown>) => boolean, patch: Record<string, unknown>): number {
+    const key = MockDataStore.TABLE_KEY_MAP[table];
+    let updatedCount = 0;
+    const now = new Date().toISOString();
+
+    this.mutate(draft => {
+      const list = key ? (draft[key] as any[]) : (draft.dynamicTables?.[table] || []);
+      if (Array.isArray(list)) {
+        for (const item of list) {
+          if (predicate(item)) {
+            Object.assign(item, patch, { updated_at: now });
+            updatedCount++;
+          }
+        }
+      }
+    }, 'DATABASE_RESET', { table, patch });
+
+    return updatedCount;
+  }
+
+  public deleteTable(table: string, predicate: (item: Record<string, unknown>) => boolean): number {
+    const key = MockDataStore.TABLE_KEY_MAP[table];
+    let deletedCount = 0;
+
+    this.mutate(draft => {
+      if (key && Array.isArray(draft[key])) {
+        const originalLength = (draft[key] as any[]).length;
+        (draft[key] as any) = (draft[key] as any[]).filter(item => !predicate(item));
+        deletedCount = originalLength - (draft[key] as any[]).length;
+      } else if (draft.dynamicTables && Array.isArray(draft.dynamicTables[table])) {
+        const originalLength = draft.dynamicTables[table].length;
+        draft.dynamicTables[table] = draft.dynamicTables[table].filter(item => !predicate(item));
+        deletedCount = originalLength - draft.dynamicTables[table].length;
+      }
+    }, 'DATABASE_RESET', { table, deletedCount });
+
+    return deletedCount;
+  }
+
+  public receivePurchaseOrder(poId: string, itemsToReceive?: Array<{ item_id: string; qty: number }>): { success: boolean; error?: string } {
+    const po = (this.state.purchaseOrders || []).find(p => p.id === poId);
+    if (!po) return { success: false, error: 'Không tìm thấy đơn PO' };
+
+    const now = new Date().toISOString();
+    this.mutate(draft => {
+      let allCompleted = true;
+      const targetPo = (draft.purchaseOrders || []).find(p => p.id === poId);
+
+      for (const poi of (draft.purchaseOrderItems || []).filter(i => i.po_id === poId)) {
+        const req = itemsToReceive?.find(r => r.item_id === poi.id);
+        const qtyToRec = req ? req.qty : Math.max(0, poi.quantity - (poi.received_qty || 0));
+        if (qtyToRec > 0) {
+          poi.received_qty = (poi.received_qty || 0) + qtyToRec;
+
+          // Increase inventory stock at target warehouse
+          const inv = draft.inventory5State.find(i => i.product_id === poi.product_id && (i.warehouse_id === targetPo?.warehouse_id || i.warehouse_id === 'wh_north_01'));
+          if (inv) {
+            inv.physical += qtyToRec;
+            inv.available += qtyToRec;
+            inv.sellable = inv.available;
+            inv.inbound = Math.max(0, (inv.inbound || 0) - qtyToRec);
+            inv.incoming = inv.inbound;
+          }
+
+          // Stock ledger entry
+          draft.stockLedger.unshift({
+            id: `sl_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            tenant_id: draft.activeTenantId,
+            product_id: poi.product_id,
+            warehouse_id: targetPo?.warehouse_id || 'wh_north_01',
+            transaction_type: 'inbound',
+            quantity: qtyToRec,
+            reference_type: 'purchase_order',
+            reference_id: targetPo?.po_number || poId,
+            notes: `Nhập kho từ đơn mua hàng PO [${targetPo?.po_number || poId}] (+${qtyToRec} sp)`,
+            balance_after: inv?.physical || 0,
+            created_at: now
+          });
+        }
+
+        if ((poi.received_qty || 0) < poi.quantity) {
+          allCompleted = false;
+        }
+      }
+
+      if (targetPo) {
+        targetPo.status = allCompleted ? 'received' : 'partial';
+        targetPo.updated_at = now;
+      }
+    }, 'PO_RECEIVED', { poId });
+
+    return { success: true };
+  }
+
+  public receiveReturnDock(returnId: string): { success: boolean; error?: string } {
+    const ret = this.state.returns.find(r => r.id === returnId);
+    if (!ret) return { success: false, error: 'Không tìm thấy yêu cầu đổi trả' };
+    if (ret.status === 'received' || ret.status === 'qc_passed' || ret.status === 'qc_failed' || ret.status === 'refunded') {
+      return { success: false, error: 'Kiện hàng đã được tiếp nhận trước đó' };
+    }
+
+    const items = this.state.returnItems.filter(i => i.return_id === returnId);
+    const now = new Date().toISOString();
+
+    this.mutate(draft => {
+      const targetRet = draft.returns.find(r => r.id === returnId);
+      if (targetRet) {
+        targetRet.status = 'received';
+        targetRet.updated_at = now;
+      }
+
+      for (const item of items) {
+        const inv = draft.inventory5State.find(i => i.product_id === item.product_id);
+        if (inv) {
+          inv.physical += item.quantity;
+          inv.pending_qc = (inv.pending_qc || 0) + item.quantity;
+          inv.unavailable = inv.pending_qc + (inv.damaged || 0);
+          inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
+          inv.sellable = inv.available;
+        }
+
+        draft.stockLedger.unshift({
+          id: `sl_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          tenant_id: draft.activeTenantId,
+          product_id: item.product_id,
+          warehouse_id: 'wh_north_01',
+          transaction_type: 'inbound',
+          quantity: item.quantity,
+          reference_type: 'return',
+          reference_id: returnId,
+          notes: `Tiếp nhận kiện hàng hoàn tại dock kho — Chờ kiểm định QC (+${item.quantity} sp)`,
+          balance_after: inv?.physical || 0,
+          created_at: now
+        });
+      }
+    }, 'RETURN_INSPECTED', { returnId, step: 'dock_received' });
+
+    return { success: true };
+  }
 
   public getInventory5State(): SkuInventory5State[] {
     return this.state.inventory5State;

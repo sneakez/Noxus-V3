@@ -16,6 +16,7 @@ import {
   Box,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { mockStore } from '@/mock/store';
 import { cn } from '@/lib/cn';
 import { FullPageSpinner, Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -105,6 +106,19 @@ export function TransfersPage({ search }: TransfersPageProps) {
   async function advanceStatus(t: StockTransfer) {
     const next = NEXT_STATUS[t.status];
     if (!next) return;
+
+    // R16: Move physical / in_transit stock between warehouses
+    const items = (t as TransferWithItems).stock_transfer_items ?? [];
+    for (const it of items) {
+      const prod = products.find((p) => p.id === it.product_id);
+      const sku = prod?.sku || it.product_id;
+      if (next === 'in_transit') {
+        mockStore.transferStock(sku, t.from_warehouse_id, t.to_warehouse_id, it.quantity, 'dispatch');
+      } else if (next === 'received') {
+        mockStore.transferStock(sku, t.from_warehouse_id, t.to_warehouse_id, it.quantity, 'receive');
+      }
+    }
+
     const { error } = await supabase
       .from('stock_transfers')
       .update({ status: next })

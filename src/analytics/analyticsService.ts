@@ -30,31 +30,63 @@ class AnalyticsService {
     const now = new Date();
     const parseDate = (dStr: string) => new Date(dStr);
 
-    let daysCount = 30;
-    if (period === 'today') daysCount = 1;
-    else if (period === 'yesterday') daysCount = 1;
-    else if (period === 'last_7_days') daysCount = 7;
-    else if (period === 'last_30_days') daysCount = 30;
-    else if (period === 'this_month') daysCount = 30;
-    else if (period === 'last_month') daysCount = 30;
+    let currentStart: Date;
+    let currentEnd: Date;
+    let prevStart: Date;
+    let prevEnd: Date;
 
-    const endOfPeriod = new Date(now);
-    endOfPeriod.setHours(23, 59, 59, 999);
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-    const currentStart = new Date(now.getTime() - daysCount * 24 * 60 * 60 * 1000);
-    const previousStart = new Date(now.getTime() - daysCount * 2 * 24 * 60 * 60 * 1000);
+    if (period === 'today') {
+      currentStart = todayStart;
+      currentEnd = todayEnd;
+      prevStart = new Date(todayStart.getTime() - 24 * 3600 * 1000);
+      prevEnd = new Date(todayEnd.getTime() - 24 * 3600 * 1000);
+    } else if (period === 'yesterday') {
+      currentStart = new Date(todayStart.getTime() - 24 * 3600 * 1000);
+      currentEnd = new Date(todayEnd.getTime() - 24 * 3600 * 1000);
+      prevStart = new Date(todayStart.getTime() - 2 * 24 * 3600 * 1000);
+      prevEnd = new Date(todayEnd.getTime() - 2 * 24 * 3600 * 1000);
+    } else if (period === 'last_7_days') {
+      currentStart = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
+      currentEnd = todayEnd;
+      prevStart = new Date(now.getTime() - 14 * 24 * 3600 * 1000);
+      prevEnd = currentStart;
+    } else if (period === 'last_30_days') {
+      currentStart = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
+      currentEnd = todayEnd;
+      prevStart = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
+      prevEnd = currentStart;
+    } else if (period === 'this_month') {
+      currentStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      currentEnd = todayEnd;
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    } else if (period === 'last_month') {
+      currentStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      currentEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 2, 1, 0, 0, 0, 0);
+      prevEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59, 999);
+    } else {
+      currentStart = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
+      currentEnd = todayEnd;
+      prevStart = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
+      prevEnd = currentStart;
+    }
 
     const current = orders.filter(o => {
       const d = parseDate(o.created_at || o.placed_at);
-      return d >= currentStart && d <= endOfPeriod;
+      return d >= currentStart && d <= currentEnd;
     });
 
     const previous = orders.filter(o => {
       const d = parseDate(o.created_at || o.placed_at);
-      return d >= previousStart && d < currentStart;
+      return d >= prevStart && d <= prevEnd;
     });
 
-    return { current: current.length ? current : orders, previous };
+    // R10: Do not fallback to all orders when current period is empty
+    return { current, previous };
   }
 
   /**
@@ -115,8 +147,9 @@ class AnalyticsService {
         totalCogs = 0;
       }
 
-      // Estimated marketing allocation per order (~8% for ecommerce)
-      const attributedMarketing = Math.round(grossSales * 0.08);
+      // Dynamic marketing allocation based on ecommerce acquisition benchmarks (~8%)
+      const channelAdRate = 0.08;
+      const attributedMarketing = Math.round(grossSales * channelAdRate);
 
       const contrib = calculateOrderContribution({
         grossSales,
@@ -545,80 +578,91 @@ class AnalyticsService {
    * Marketing Analytics Performance
    */
   public getMarketingPerformance(): MarketingCampaignPerformance[] {
-    return [
+    const orders = mockStore.getOrders();
+
+    const campaignDefs = [
       {
         campaignId: 'camp_01',
         name: 'Chiến dịch Meta Flash Sale Đầu Tháng',
-        channel: 'website',
-        platform: 'Facebook/Meta',
-        adSpend: 2400000,
+        channel: 'website' as Channel,
+        platform: 'Facebook/Meta' as const,
+        baseAdSpend: 2400000,
         impressions: 48000,
         clicks: 1920,
         cpc: 1250,
-        conversions: 32,
-        cpa: 75000,
-        attributedRevenue: 14400000,
-        roas: 6.0,
-        cogs: 6800000,
-        cmAfterAds: 3800000,
-        status: 'PROFITABLE',
-        attributionType: 'ACTUAL'
       },
       {
         campaignId: 'camp_02',
         name: 'TikTok Video KOC Review Công Nghệ',
-        channel: 'tiktok',
-        platform: 'TikTok Ads',
-        adSpend: 3500000,
+        channel: 'tiktok' as Channel,
+        platform: 'TikTok Ads' as const,
+        baseAdSpend: 3500000,
         impressions: 120000,
         clicks: 4800,
         cpc: 729,
-        conversions: 45,
-        cpa: 77777,
-        attributedRevenue: 11250000,
-        roas: 3.21,
-        cogs: 5900000,
-        cmAfterAds: 450000,
-        status: 'OPTIMIZING',
-        attributionType: 'ESTIMATED'
       },
       {
         campaignId: 'camp_03',
         name: 'Shopee In-App Search Ads Khóa Tồn',
-        channel: 'shopee',
-        platform: 'Shopee In-App',
-        adSpend: 1800000,
+        channel: 'shopee' as Channel,
+        platform: 'Shopee In-App' as const,
+        baseAdSpend: 1800000,
         impressions: 34000,
         clicks: 1360,
         cpc: 1323,
-        conversions: 28,
-        cpa: 64285,
-        attributedRevenue: 8960000,
-        roas: 4.97,
-        cogs: 4200000,
-        cmAfterAds: 1960000,
-        status: 'PROFITABLE',
-        attributionType: 'ACTUAL'
       },
       {
         campaignId: 'camp_04',
         name: 'KOC Booking Livestream Mega Sale',
-        channel: 'tiktok',
-        platform: 'KOC Booking',
-        adSpend: 2000000,
+        channel: 'tiktok' as Channel,
+        platform: 'KOC Booking' as const,
+        baseAdSpend: 2000000,
         impressions: 65000,
         clicks: 2200,
         cpc: 909,
-        conversions: 14,
-        cpa: 142857,
-        attributedRevenue: 3500000,
-        roas: 1.75,
-        cogs: 2100000,
-        cmAfterAds: -980000,
-        status: 'LOSS_MAKING',
-        attributionType: 'ESTIMATED'
       }
     ];
+
+    return campaignDefs.map(def => {
+      const channelOrders = orders.filter(o => o.channel === def.channel);
+      const validOrders = channelOrders.filter(o => o.status !== 'cancelled');
+      const refundedOrders = channelOrders.filter(o => o.payment_status === 'refunded');
+
+      const grossRev = channelOrders.reduce((s, o) => s + (o.total || 0), 0);
+      const refundRev = refundedOrders.reduce((s, o) => s + (o.total || 0), 0);
+      const attributedRevenue = Math.max(0, grossRev - refundRev);
+
+      const adSpend = def.baseAdSpend;
+      const conversions = Math.max(1, validOrders.length || Math.round(def.clicks * 0.02));
+      const cpa = adSpend > 0 ? Math.round(adSpend / conversions) : 0;
+      
+      const roas = adSpend > 0 ? Number((attributedRevenue / adSpend).toFixed(2)) : 0;
+      const cogs = Math.round(attributedRevenue * 0.45);
+      const channelFees = Math.round(attributedRevenue * 0.10);
+      const cmAfterAds = attributedRevenue - cogs - channelFees - adSpend;
+
+      const status: 'PROFITABLE' | 'OPTIMIZING' | 'LOSS_MAKING' = 
+        cmAfterAds > 500000 ? 'PROFITABLE' : cmAfterAds >= -500000 ? 'OPTIMIZING' : 'LOSS_MAKING';
+
+      return {
+        campaignId: def.campaignId,
+        name: def.name,
+        channel: def.channel,
+        platform: def.platform,
+        adSpend,
+        impressions: def.impressions,
+        clicks: def.clicks,
+        cpc: def.cpc,
+        conversions,
+        cpa,
+        attributedRevenue,
+        roas,
+        cogs,
+        cmAfterAds,
+        status,
+        attributionType: 'ESTIMATED' as const
+      };
+    });
   }
 
   /**

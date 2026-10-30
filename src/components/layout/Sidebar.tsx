@@ -33,7 +33,7 @@ import {
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/providers/AuthProvider';
-import { getAllowedPagesForRole } from '@/lib/permissions';
+import { getAllowedPagesForRole, ENABLE_FINANCE_ROLE } from '@/lib/permissions';
 import type { TenantRole } from '@/types';
 
 export type PageId =

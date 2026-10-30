@@ -20,7 +20,17 @@ import type {
   JournalEntry,
   JournalLine,
   Channel,
-  SerialStatus
+  SerialStatus,
+  ChannelConnection,
+  ChannelSkuMapping,
+  OrderAutomationRule,
+  BufferRule,
+  RoutingRule,
+  CustomerComplaint,
+  OutboundWebhook,
+  WebhookDeliveryLog,
+  OrderFeeBreakdown,
+  SyncLog
 } from '@/types';
 
 // ============ 5-State Inventory Model ============
@@ -271,6 +281,17 @@ export interface MockDatabaseSnapshot {
   businessRules?: BusinessRuleConfig[];
   rmaConfig?: RmaGovernanceConfig;
   revenuePolicy?: RevenuePolicyType;
+  channelConnections?: ChannelConnection[];
+  channelSkuMappings?: ChannelSkuMapping[];
+  orderAutomationRules?: OrderAutomationRule[];
+  bufferRules?: BufferRule[];
+  routingRules?: RoutingRule[];
+  customerComplaints?: CustomerComplaint[];
+  outboundWebhooks?: OutboundWebhook[];
+  webhookDeliveryLogs?: WebhookDeliveryLog[];
+  orderFeeBreakdowns?: OrderFeeBreakdown[];
+  syncLogs?: SyncLog[];
+  dynamicTables?: Record<string, Record<string, unknown>[]>;
   auditLogs: Array<{
     id: string;
     action: string;

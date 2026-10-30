@@ -147,6 +147,10 @@ export function OrderDetailDrawer({
 
     // Delivery requires Verified Proof of Delivery (POD)
     if (newStatus === 'delivered') {
+      if (activeRole === 'warehouse') {
+        toast('Nhân viên kho chỉ bàn giao hàng cho bưu tá, không có quyền kết luận giao hàng thành công', 'error');
+        return;
+      }
       setShowPodModal(true);
       return;
     }
@@ -527,26 +531,26 @@ export function OrderDetailDrawer({
 
                     {order.status === 'shipped' && (
                       <div className="w-full space-y-2">
-                        <div className="flex flex-wrap gap-2.5">
-                          <button
-                            disabled={updating}
-                            onClick={() => setShowPodModal(true)}
-                            className="btn-primary text-xs py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1.5 shadow-xs"
-                          >
-                            <FileCheck2 size={14} />
-                            <span>
-                              {activeRole === 'warehouse'
-                                ? 'Xác thực Bằng chứng Giao hàng (POD Bắt buộc)'
-                                : '🚚 Giao hàng thành công (Xác nhận POD)'}
-                            </span>
-                          </button>
-                        </div>
-                        {activeRole === 'warehouse' && (
-                          <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
-                            <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
-                            <p>
-                              <strong>Ràng buộc bảo mật Kho:</strong> Nhân viên Kho không được tự ý đánh dấu đơn hoàn tất nếu thiếu bằng chứng đối soát vận chuyển (POD). Bắt buộc nhập mã vận đơn đối soát hoặc chữ ký xác nhận.
-                            </p>
+                        {activeRole === 'warehouse' ? (
+                          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-start gap-2.5">
+                            <Truck size={16} className="text-blue-600 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-semibold text-blue-900">Kiện hàng đã xuất kho và bàn giao bưu tá</p>
+                              <p className="text-blue-700 mt-0.5">
+                                Nhân viên kho đã hoàn thành xuất hàng. Trạng thái giao thành công (POD) thuộc thẩm quyền của hãng vận chuyển / sàn hoặc quản trị viên (Owner/Manager).
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2.5">
+                            <button
+                              disabled={updating}
+                              onClick={() => setShowPodModal(true)}
+                              className="btn-primary text-xs py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1.5 shadow-xs"
+                            >
+                              <FileCheck2 size={14} />
+                              <span>🚚 Giao hàng thành công (Mô phỏng POD)</span>
+                            </button>
                           </div>
                         )}
                       </div>
