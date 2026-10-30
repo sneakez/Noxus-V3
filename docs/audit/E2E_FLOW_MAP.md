@@ -80,25 +80,29 @@ flowchart TD
 
 ---
 
-### F04: Hoàn Hàng Giao Không Thành Công (Failed Delivery & Return)
-- **Tác nhân:** Đơn vị vận chuyển (Carrier), `Warehouse` (thủ kho nhận & QC).
-- **Quy trình 2 Bước Nghiêm Ngặt:**
+### F04: Hoàn Hàng Giao Không Thành Công & Tiếp Nhận Một Phần (Failed Delivery & Partial Return)
+- **Tác nhân:** Đơn vị vận chuyển (Carrier), `Warehouse` (thủ kho nhận & QC), `Manager` (xử lý chênh lệch).
+- **Quy trình 2 Bước Nghiêm Ngặt & Xử Lý Chênh Lệch Kiện Thiếu (W-E2):**
   1. **Bước 1 — Tiếp nhận kiện hàng tại cửa kho (Dock Receipt):**
      - Khi bưu tá mang kiện hàng không giao được quay lại kho, nhân viên kho quét mã vận đơn trên `ReturnsPage`.
-     - Tồn vật lý tăng vào nhóm chờ kiểm tra: `physical += qty`, `unavailable += qty`, `pending_qc += qty`.
-     - **Tồn khả dụng bán (`available`) tuyệt đối không tăng ở bước này.**
+     - **Nếu nhận thiếu (Ví dụ: Dự kiến 2 cái, thực nhận 1 cái, thiếu 1 cái):**
+       - Tồn vật lý chỉ tăng theo đúng số lượng thực nhận: `physical += 1`, `pending_qc += 1`, `unavailable += 1`.
+       - **Tồn khả dụng bán (`available`) tuyệt đối không tăng ở bước này.**
+       - Hệ thống tự động bật cờ cảnh báo: `has_discrepancy = true`, `missing_items_count = 1`.
+       - Sinh tác vụ khẩn cấp cho `Manager` trong `customerComplaints`: *"Kiện hoàn RMA-... nhận thiếu 1 sản phẩm NX-... Cần khiếu nại đơn vị vận chuyển."*
   2. **Bước 2 — Kiểm tra tình trạng sản phẩm (QC Inspection):**
-     - Thủ kho mở kiện hàng kiểm tra tem mác, phụ kiện, tình trạng nguyên vẹn.
+     - Thủ kho mở kiện hàng kiểm tra tem mác, phụ kiện, tình trạng của 1 sản phẩm thực nhận.
      - **Nếu Đạt (Good Condition):** Chuyển từ chờ kiểm sang bán được:
-       - `pending_qc -= qty`, `unavailable -= qty`
-       - `available += qty`, `sellable += qty`
+       - `pending_qc -= 1`, `unavailable -= 1`
+       - `available += 1`, `sellable += 1`
        - Tồn vật lý `physical` giữ nguyên (không bị cộng dồn lần 2).
+       - Tổng tồn vật lý chỉ tăng đúng 1 cái so với ban đầu.
        - Ghi sổ kho `stockLedger`: `RETURN_RESTOCK_SELLABLE`.
      - **Nếu Hỏng (Damaged / Scrap):** Chuyển sang tồn hư hỏng:
-       - `pending_qc -= qty`
-       - `damaged += qty`
+       - `pending_qc -= 1`
+       - `damaged += 1`
        - Tồn khả dụng `available` không đổi. Ghi sổ kho tổn thất.
-- **Bất biến:** Chống cộng lặp khi thủ kho quét hai lần cùng một mã kiện hoàn.
+- **Bất biến:** Chống cộng lặp khi thủ kho quét hai lần cùng một mã kiện hoàn; chống tăng khống tồn đối với sản phẩm bị thất lạc trong quá trình vận chuyển hoàn.
 
 ---
 
@@ -107,7 +111,7 @@ flowchart TD
 - **Quy trình:**
   1. Sàn thông báo yêu cầu trả hàng từ người mua (do sai sản phẩm, lỗi, đổi ý).
   2. `Manager` theo dõi tiến độ gửi hàng của khách trên sàn.
-  3. Khi hàng thực tế về đến kho: Áp dụng quy trình nhận tại dock và kiểm tra QC giống F04.
+  3. Khi hàng thực tế về đến kho: Áp dụng quy trình nhận tại dock và kiểm tra QC giống F04 (hỗ trợ tiếp nhận một phần, kiểm tra tình trạng).
   4. Sàn hoàn tất chuyển tiền hoàn cho khách (`payment_status: 'refunded'`).
   5. Hệ thống ghi nhận chi phí vận chuyển chiều về (nếu shop phải chịu) và giảm trừ doanh thu giữ lại.
 
@@ -175,16 +179,21 @@ flowchart TD
 
 ---
 
-### F11: Đối Soát Phí Sàn & Quyết Toán (Marketplace Fee Reconciliation)
+### F11: Đối Soát Phí Sàn, Xử Lý Chênh Lệch & Phí Phát Sinh Muộn (R17)
 - **Tác nhân:** `Manager` (được cấp scope reconcile), `Owner`.
-- **Quy trình:**
+- **Quy trình đối soát chuẩn mực:**
   1. Nhập bảng kê quyết toán định kỳ từ Seller Center (Shopee Settlement, TikTok Payout).
   2. Khớp mã đơn `order_id` với các bản ghi `order_fee_breakdowns`:
      - Phí hoa hồng sàn (Commission Fee).
      - Phí thanh toán (Payment / Transaction Fee).
      - Phí đồng tài trợ Voucher (Voucher Co-fund).
      - Chênh lệch phí vận chuyển thực tế vs dự tính (Shipping Weight Discrepancy).
-  3. `Manager` kiểm tra và bấm "Xác nhận đối soát". Bản ghi được lưu bền vững: `is_reconciled: true`.
+  3. **Xử lý chênh lệch & Phí phát sinh muộn (R17):**
+     - Nút đối soát mở hộp thoại modal cho phép chọn phân loại chênh lệch: `WEIGHT_MISMATCH` (Lệch cân nặng kiện hàng), `COMMISSION_DIFF` (Sai lệch tỷ lệ hoa hồng), `PROMOTION_DIFF` (Sai lệch voucher/khuyến mãi), hoặc `LATE_FEE` (Phát sinh khoản phạt/phí trễ).
+     - Nhập số tiền chênh lệch hoặc khoản bồi hoàn/điều chỉnh nhận sau (`late_fee_adjustment`, ví dụ +5.000 ₫).
+     - **Bảo toàn dữ liệu nguồn:** Tuyệt đối không xóa hay ghi đè biểu phí hoa hồng gốc (`commission_fee`).
+     - **Tính toán tiền thực nhận (Net Payout):** Cập nhật `net_payout = (revenue - commission - transaction_fee - shipping_fee + promotions) + late_fee_adjustment`.
+     - Lưu vết người thực hiện (`reconciled_by`), thời điểm (`reconciled_at`) và trạng thái `is_reconciled: true`.
 
 ---
 

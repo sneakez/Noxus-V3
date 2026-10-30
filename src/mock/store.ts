@@ -1,4 +1,6 @@
 import { INITIAL_MOCK_DATABASE } from './seedData';
+import { hasPermission } from '@/lib/permissions';
+import type { OrderFeeBreakdown } from '@/types';
 import type { 
   MockDatabaseSnapshot, 
   MockEvent, 
@@ -531,7 +533,37 @@ class MockDataStore {
 
   // ============ Proof of Delivery (POD) & FOB Destination Recognition ============
 
-  public markDeliveredWithPOD(orderId: string, podData: import('@/types').PodEvidence): { success: boolean; error?: string } {
+  public refundOrder(orderId: string, refundAmount?: number, actorRole?: TenantRole, actorId?: string): { success: boolean; error?: string } {
+    const role = actorRole || this.state.activeRole || 'owner';
+    if (role === 'admin') {
+      return { success: false, error: 'Command rejected: Quyền hạn kỹ thuật Admin không được phép duyệt hoàn tiền / giao dịch tài chính' };
+    }
+    if (role === 'warehouse' || role === 'growth') {
+      return { success: false, error: 'Command rejected: Bạn không có quyền thực hiện hoàn tiền' };
+    }
+
+    const order = this.state.orders.find(o => o.id === orderId);
+    if (!order) return { success: false, error: 'Không tìm thấy đơn hàng' };
+
+    const amount = refundAmount !== undefined ? refundAmount : order.total;
+    const now = new Date().toISOString();
+
+    this.mutate(draft => {
+      const target = draft.orders.find(o => o.id === orderId);
+      if (target) {
+        target.payment_status = 'refunded';
+        target.updated_at = now;
+      }
+    }, 'ORDER_STATUS_CHANGED', { orderId, amount, actorRole: role, actorId });
+
+    return { success: true };
+  }
+
+  public markDeliveredWithPOD(orderId: string, podData: import('@/types').PodEvidence, actorRole?: TenantRole): { success: boolean; error?: string } {
+    const role = actorRole || this.state.activeRole || 'owner';
+    if (role === 'warehouse') {
+      return { success: false, error: 'Command rejected: Nhân viên kho chỉ bàn giao bưu tá, không có thẩm quyền kết luận giao hàng thành công (POD)' };
+    }
     const order = this.state.orders.find(o => o.id === orderId);
     if (!order) return { success: false, error: 'Không tìm thấy đơn hàng' };
     if (!podData.tracking_code || !podData.recipient_name) {
@@ -1183,46 +1215,62 @@ class MockDataStore {
     return { success: true, rmaNumber };
   }
 
-  public inspectReturnQC(returnId: string, isGoodCondition: boolean): { success: boolean; error?: string } {
+  public inspectReturnQC(
+    returnId: string,
+    isGoodCondition: boolean,
+    qcLines?: Array<{ item_id?: string; product_id?: string; pass_qty: number; fail_qty: number }>,
+    actorRole?: TenantRole,
+    actorId?: string
+  ): { success: boolean; error?: string } {
     const ret = this.state.returns.find(r => r.id === returnId);
     if (!ret) return { success: false, error: 'Không tìm thấy yêu cầu đổi trả' };
-// Allow QC inspection transition
 
     const items = this.state.returnItems.filter(i => i.return_id === returnId);
     const now = new Date().toISOString();
     const isAlreadyReceived = ret.status === 'received';
 
     this.mutate(draft => {
+      const targetRet = draft.returns.find(r => r.id === returnId);
+      if (targetRet) {
+        targetRet.status = isGoodCondition ? 'qc_passed' : 'qc_failed';
+        targetRet.updated_at = now;
+      }
+
       const draftItems = draft.returnItems.filter(i => i.return_id === returnId);
       draftItems.forEach(item => {
         item.disposition = isGoodCondition ? 'restock' : 'scrap';
       });
 
-      for (const item of items) {
+      for (const item of draftItems) {
+        const line = qcLines?.find(l => (l.item_id && l.item_id === item.id) || (l.product_id && l.product_id === item.product_id));
+        const inspectQty = line !== undefined ? (line.pass_qty + line.fail_qty) : (item.received_qty !== undefined ? item.received_qty : item.quantity);
+        const passQty = line !== undefined ? line.pass_qty : (isGoodCondition ? inspectQty : 0);
+        const failQty = line !== undefined ? line.fail_qty : (isGoodCondition ? 0 : inspectQty);
+
         const inv = draft.inventory5State.find(i => i.product_id === item.product_id);
         if (inv) {
           if (isAlreadyReceived) {
-            // Transition from pending_qc to available or damaged (NO double physical addition!)
-            inv.pending_qc = Math.max(0, (inv.pending_qc || 0) - item.quantity);
-            if (isGoodCondition) {
-              inv.unavailable = inv.pending_qc + (inv.damaged || 0);
-              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
-              inv.sellable = inv.available;
-            } else {
-              inv.damaged = (inv.damaged || 0) + item.quantity;
-              inv.unavailable = inv.pending_qc + inv.damaged;
-              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
-              inv.sellable = inv.available;
-            }
-          } else {
-            // Direct QC bypass without dock receipt
-            inv.physical += item.quantity;
+            // Already added to pending_qc at dock, now move to available or damaged (NO double physical increment!)
+            inv.pending_qc = Math.max(0, (inv.pending_qc || 0) - inspectQty);
             if (isGoodCondition) {
               inv.unavailable = (inv.pending_qc || 0) + (inv.damaged || 0);
               inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
               inv.sellable = inv.available;
             } else {
-              inv.damaged = (inv.damaged || 0) + item.quantity;
+              inv.damaged = (inv.damaged || 0) + inspectQty;
+              inv.unavailable = (inv.pending_qc || 0) + inv.damaged;
+              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
+              inv.sellable = inv.available;
+            }
+          } else {
+            // Direct QC: increment physical once
+            inv.physical += inspectQty;
+            if (isGoodCondition) {
+              inv.unavailable = (inv.pending_qc || 0) + (inv.damaged || 0);
+              inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
+              inv.sellable = inv.available;
+            } else {
+              inv.damaged = (inv.damaged || 0) + inspectQty;
               inv.unavailable = (inv.pending_qc || 0) + inv.damaged;
               inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
               inv.sellable = inv.available;
@@ -1230,30 +1278,25 @@ class MockDataStore {
           }
         }
 
-        // Ledger Entry
-        draft.stockLedger.unshift({
-          id: `sl_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-          tenant_id: draft.activeTenantId,
-          product_id: item.product_id,
-          warehouse_id: 'wh_north_01',
-          transaction_type: isGoodCondition ? 'return_in' : 'scrap',
-          quantity: item.quantity,
-          reference_type: 'return',
-          reference_id: returnId,
-          notes: isGoodCondition 
-            ? `Nhập lại kho khả dụng từ đổi trả (QC Đạt chuẩn)`
-            : `Cách ly hàng hỏng/lỗi từ đổi trả (QC Không đạt)`,
-          balance_after: isGoodCondition ? (inv?.available || 0) : (inv?.damaged || 0),
-          created_at: now
-        });
+        if (inspectQty > 0) {
+          draft.stockLedger.unshift({
+            id: `sl_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            tenant_id: draft.activeTenantId,
+            product_id: item.product_id,
+            warehouse_id: 'wh_north_01',
+            transaction_type: isGoodCondition ? 'return_in' : 'scrap',
+            quantity: inspectQty,
+            reference_type: 'return_qc',
+            reference_id: returnId,
+            notes: isGoodCondition
+              ? `Nhập lại kho khả dụng từ đổi trả (QC Đạt chuẩn: ${passQty} sp)`
+              : `Cách ly hàng hỏng/lỗi từ đổi trả (QC Không đạt: ${failQty} sp)`,
+            balance_after: inv?.physical || 0,
+            created_at: now
+          });
+        }
       }
-
-      const targetRet = draft.returns.find(r => r.id === returnId);
-      if (targetRet) {
-        targetRet.status = isGoodCondition ? 'qc_passed' : 'qc_failed';
-        targetRet.updated_at = now;
-      }
-    }, 'RETURN_INSPECTED', { returnId, isGoodCondition });
+    }, 'RETURN_INSPECTED', { returnId, isGoodCondition, qcLines });
 
     return { success: true };
   }
@@ -1675,6 +1718,64 @@ class MockDataStore {
   // ============ Inventory 5-State Queries ============
 
 
+  public reconcileFeeBreakdown(
+    feeId: string,
+    params: {
+      actorRole?: TenantRole;
+      actorId?: string;
+      discrepancyReason?: 'NONE' | 'WEIGHT_MISMATCH' | 'COMMISSION_RATE_DIFF' | 'VOUCHER_UNEXPECTED' | 'LATE_COMPENSATION' | 'OTHER';
+      discrepancyNote?: string;
+      lateFeeAdjustment?: number;
+    } = {}
+  ): { success: boolean; error?: string; data?: OrderFeeBreakdown } {
+    const role = params.actorRole || this.state.activeRole || 'owner';
+    if (!hasPermission(role, 'finance:reconcile')) {
+      return { success: false, error: 'Command rejected: Quyền hạn bị từ chối: Bạn không có quyền đối soát phí sàn' };
+    }
+
+    const fee = (this.state.orderFeeBreakdowns || []).find(f => f.id === feeId);
+    if (!fee) return { success: false, error: 'Không tìm thấy bản ghi đối soát phí' };
+
+    const now = new Date().toISOString();
+    let updatedFee: OrderFeeBreakdown | undefined;
+
+    this.mutate(draft => {
+      const target = (draft.orderFeeBreakdowns || []).find(f => f.id === feeId);
+      if (target) {
+        target.is_reconciled = true;
+        target.reconciled_at = now;
+        target.reconciled_by = params.actorId || `${role.toUpperCase()}_USER`;
+        
+        const estShip = Number(target.estimated_shipping_fee) || 0;
+        const actShip = Number(target.actual_shipping_fee) || 0;
+        const penalty = Number(target.weight_penalty_fee) || 0;
+        target.discrepancy_amount = Math.abs(actShip - estShip) + penalty;
+
+        if (params.discrepancyReason) {
+          target.discrepancy_reason = params.discrepancyReason;
+        } else if (target.discrepancy_amount > 0) {
+          target.discrepancy_reason = 'WEIGHT_MISMATCH';
+        } else {
+          target.discrepancy_reason = 'NONE';
+        }
+
+        if (params.discrepancyNote) {
+          target.discrepancy_note = params.discrepancyNote;
+        }
+
+        if (params.lateFeeAdjustment !== undefined && params.lateFeeAdjustment !== 0) {
+          target.late_fee_adjustment = (target.late_fee_adjustment || 0) + params.lateFeeAdjustment;
+          target.net_payout = (target.net_payout || 0) + params.lateFeeAdjustment;
+        }
+
+        target.updated_at = now;
+        updatedFee = JSON.parse(JSON.stringify(target));
+      }
+    }, 'ORDER_STATUS_CHANGED', { feeId, params });
+
+    return { success: true, data: updatedFee };
+  }
+
   // ============ Generic Table Methods (R01, R02, R03) ============
 
   private static readonly TABLE_KEY_MAP: Record<string, keyof MockDatabaseSnapshot> = {
@@ -1873,15 +1974,20 @@ class MockDataStore {
     return { success: true };
   }
 
-  public receiveReturnDock(returnId: string): { success: boolean; error?: string } {
+  public receiveReturnDock(
+    returnId: string,
+    receivedLines?: Array<{ item_id?: string; product_id?: string; received_qty: number }>,
+    actorRole?: TenantRole,
+    actorId?: string
+  ): { success: boolean; error?: string; discrepancyCount?: number } {
     const ret = this.state.returns.find(r => r.id === returnId);
     if (!ret) return { success: false, error: 'Không tìm thấy yêu cầu đổi trả' };
     if (ret.status === 'received' || ret.status === 'qc_passed' || ret.status === 'qc_failed' || ret.status === 'refunded') {
       return { success: false, error: 'Kiện hàng đã được tiếp nhận trước đó' };
     }
 
-    const items = this.state.returnItems.filter(i => i.return_id === returnId);
     const now = new Date().toISOString();
+    let totalMissing = 0;
 
     this.mutate(draft => {
       const targetRet = draft.returns.find(r => r.id === returnId);
@@ -1890,33 +1996,66 @@ class MockDataStore {
         targetRet.updated_at = now;
       }
 
-      for (const item of items) {
+      for (const item of draft.returnItems.filter(i => i.return_id === returnId)) {
+        const line = receivedLines?.find(l => (l.item_id && l.item_id === item.id) || (l.product_id && l.product_id === item.product_id));
+        const actualQty = line !== undefined ? Number(line.received_qty) : item.quantity;
+        const missingQty = Math.max(0, item.quantity - actualQty);
+        totalMissing += missingQty;
+
+        item.received_qty = actualQty;
+        item.missing_qty = missingQty;
+
         const inv = draft.inventory5State.find(i => i.product_id === item.product_id);
-        if (inv) {
-          inv.physical += item.quantity;
-          inv.pending_qc = (inv.pending_qc || 0) + item.quantity;
-          inv.unavailable = inv.pending_qc + (inv.damaged || 0);
+        if (inv && actualQty > 0) {
+          inv.physical += actualQty;
+          inv.pending_qc = (inv.pending_qc || 0) + actualQty;
+          inv.unavailable = (inv.pending_qc || 0) + (inv.damaged || 0);
           inv.available = Math.max(0, inv.physical - inv.reserved - inv.unavailable);
           inv.sellable = inv.available;
         }
 
-        draft.stockLedger.unshift({
-          id: `sl_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-          tenant_id: draft.activeTenantId,
-          product_id: item.product_id,
-          warehouse_id: 'wh_north_01',
-          transaction_type: 'inbound',
-          quantity: item.quantity,
-          reference_type: 'return',
-          reference_id: returnId,
-          notes: `Tiếp nhận kiện hàng hoàn tại dock kho — Chờ kiểm định QC (+${item.quantity} sp)`,
-          balance_after: inv?.physical || 0,
-          created_at: now
+        if (actualQty > 0) {
+          draft.stockLedger.unshift({
+            id: `sl_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            tenant_id: draft.activeTenantId,
+            product_id: item.product_id,
+            warehouse_id: 'wh_north_01',
+            transaction_type: 'inbound',
+            quantity: actualQty,
+            reference_type: 'return',
+            reference_id: returnId,
+            notes: `Tiếp nhận kiện hàng hoàn tại dock kho — Chờ kiểm định QC (+${actualQty} sp${missingQty > 0 ? `, thiếu ${missingQty} sp` : ''})`,
+            balance_after: inv?.physical || 0,
+            created_at: now
+          });
+        }
+      }
+
+      if (totalMissing > 0 && targetRet) {
+        targetRet.has_discrepancy = true;
+        targetRet.missing_items_count = totalMissing;
+
+        // W-E2: Generate Manager task for discrepancy tracking in customerComplaints
+        if (!draft.customerComplaints) draft.customerComplaints = [];
+        draft.customerComplaints.unshift({
+          id: `task_discrepancy_${Date.now()}`,
+          order_id: targetRet.order_id,
+          customer_id: targetRet.customer_id || null,
+          raw_content: `[Biên bản kiểm đếm kho] Kiện hàng hoàn ${targetRet.return_number} thiếu ${totalMissing} sản phẩm so với khai báo ban đầu. Cần Manager đối soát với sàn / đơn vị vận chuyển.`,
+          redacted_content: null,
+          sentiment: 'negative',
+          urgency_score: 9,
+          issue_category: 'Return Discrepancy',
+          suggested_reply: null,
+          status: 'open',
+          analyzed_at: null,
+          created_at: now,
+          updated_at: now
         });
       }
-    }, 'RETURN_INSPECTED', { returnId, step: 'dock_received' });
+    }, 'RETURN_INSPECTED', { returnId, receivedLines, totalMissing });
 
-    return { success: true };
+    return { success: true, discrepancyCount: totalMissing };
   }
 
   public getInventory5State(): SkuInventory5State[] {

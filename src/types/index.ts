@@ -607,6 +607,11 @@ export interface OrderFeeBreakdown {
   created_at: string;
   updated_at: string;
   order?: Order;
+  discrepancy_reason?: 'NONE' | 'WEIGHT_MISMATCH' | 'COMMISSION_RATE_DIFF' | 'VOUCHER_UNEXPECTED' | 'LATE_COMPENSATION' | 'OTHER' | null;
+  discrepancy_amount?: number;
+  late_fee_adjustment?: number;
+  reconciled_by?: string | null;
+  reconciled_at?: string | null;
 }
 
 export interface ReturnRequest {
@@ -623,6 +628,8 @@ export interface ReturnRequest {
   reason: string | null;
   carrier_deadline_date?: string | null;
   evidence_media_id?: string | null;
+  has_discrepancy?: boolean;
+  missing_items_count?: number;
   is_refund_without_return?: boolean;
   rma_branch?: RmaBranch;
   exchange_order_id?: string;
@@ -754,6 +761,10 @@ export interface ReturnItem {
   quantity: number;
   condition?: string;
   qc_notes?: string;
+  received_qty?: number;
+  missing_qty?: number;
+  qc_pass_qty?: number;
+  qc_fail_qty?: number;
   [key: string]: any;
 }
 export type PickingWave = FulfillmentWave;

@@ -92,3 +92,27 @@ Tenant (Doanh nghiệp sở hữu)
 
 - **Scope Shop:** Người dùng được gán shop nào chỉ xem và xử lý đơn hàng thuộc shop đó; không có tình trạng rò rỉ đơn giữa hai shop trên cùng một sàn thương mại điện tử.
 - **Scope Kho:** Thao tác nhận hàng và chuyển kho kiểm tra nghiêm ngặt `warehouse_id`. Nhân viên kho W1 không thể xác nhận nhận hàng thay cho kho W2.
+
+---
+
+## 5. Bảo Vệ Ở Cấp Lệnh Thực Thi (Command-Level Authorization & Rejections)
+
+Hệ thống không chỉ ẩn nút trên giao diện người dùng (UI level) mà còn kiểm soát nghiêm ngặt ở tầng lệnh nghiệp vụ (`mockStore` command level). Bất kỳ lệnh gọi trực tiếp nào vượt quyền đều bị chặn và ném lỗi xác thực:
+
+1. **Nhân viên Kho (`warehouse`) gọi lệnh `markDeliveredWithPOD`:**
+   - **Cơ chế:** Kiểm tra vai trò người gọi `actorRole === 'warehouse'`.
+   - **Xử lý:** Lệnh bị từ chối tuyệt đối.
+   - **Thông điệp lỗi:** `"Command rejected: Nhân viên kho chỉ bàn giao bưu tá, không có thẩm quyền kết luận giao hàng thành công (POD)"`.
+   - **Minh chứng:** `src/mock/store.ts` (phương thức `markDeliveredWithPOD`), kiểm chứng tự động tại `src/tests/uatRemediationAudit.test.ts` (Lines 79-93).
+
+2. **Quản trị kỹ thuật (`admin`) gọi lệnh `refundOrder`:**
+   - **Cơ chế:** Kiểm tra vai trò người gọi `actorRole === 'admin'`. Quyền hạn kỹ thuật (Technical Admin) tách biệt hoàn toàn với quyền duyệt tài chính (Financial Approval).
+   - **Xử lý:** Lệnh bị từ chối, chỉ cho phép `owner` hoặc `manager`.
+   - **Thông điệp lỗi:** `"Command rejected: Quyền hạn kỹ thuật Admin không được phép duyệt hoàn tiền / giao dịch tài chính (Cần vai trò Quản lý / Chủ shop)"`.
+   - **Minh chứng:** `src/mock/store.ts` (phương thức `refundOrder`), kiểm chứng tự động tại `src/tests/uatRemediationAudit.test.ts` (Lines 94-98).
+
+3. **Nhân viên Kho (`warehouse`) hoặc Người xem (`viewer`) gọi lệnh `reconcileFeeBreakdown`:**
+   - **Cơ chế:** Kiểm tra quyền `hasPermission(actorRole, 'finance:reconcile')`.
+   - **Xử lý:** Bị từ chối nếu không sở hữu capability `finance:reconcile`.
+   - **Thông điệp lỗi:** `"Command rejected: Quyền hạn bị từ chối đối với thao tác đối soát phí sàn"`.
+   - **Minh chứng:** `src/mock/store.ts` (phương thức `reconcileFeeBreakdown`), kiểm chứng tự động tại `src/tests/uatRemediationAudit.test.ts` (Lines 99-103).
