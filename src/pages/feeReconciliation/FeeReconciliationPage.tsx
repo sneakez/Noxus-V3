@@ -18,12 +18,14 @@ interface FeeReconciliationPageProps {
 export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
   const toast = useToast();
   const { activeRole } = useAuth();
-  const currentRole = activeRole ?? 'owner';
+  const currentRole = activeRole;
   const [fees, setFees] = useState<OrderFeeBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFee, setSelectedFee] = useState<OrderFeeBreakdown | null>(null);
   const [discrepancyReason, setDiscrepancyReason] = useState<'WEIGHT_MISMATCH' | 'COMMISSION_RATE_DIFF' | 'VOUCHER_UNEXPECTED' | 'LATE_COMPENSATION' | 'OTHER'>('WEIGHT_MISMATCH');
   const [discrepancyNote, setDiscrepancyNote] = useState('');
+  const [transactionId, setTransactionId] = useState('');
+  const [adjustmentKind, setAdjustmentKind] = useState<'fee' | 'credit' | 'compensation'>('credit');
   const [lateFee, setLateFee] = useState<number>(0);
 
   async function load() {
@@ -43,7 +45,7 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
     !search || f.order?.order_number?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalFees = filtered.reduce((s, f) => s + Number(f.commission_fee) + Number(f.transaction_fee) + Number(f.voucher_co_fund_fee) + Number(f.weight_penalty_fee), 0);
+  const totalFees = filtered.reduce((s, f) => s + Number(f.commission_fee) + Number(f.transaction_fee) + Number(f.voucher_co_fund_fee) + Number(f.weight_penalty_fee) + Number(f.actual_shipping_fee), 0);
   const totalPayout = filtered.reduce((s, f) => s + Number(f.net_payout), 0);
   const unreconciled = filtered.filter((f) => !f.is_reconciled).length;
   const discrepancies = filtered.filter((f) => {
@@ -56,7 +58,9 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
     setSelectedFee(f);
     setDiscrepancyReason(f.discrepancy_reason as any || (Number(f.weight_penalty_fee) > 0 ? 'WEIGHT_MISMATCH' : 'NONE'));
     setDiscrepancyNote(f.discrepancy_note || '');
-    setLateFee(f.late_fee_adjustment || 0);
+    setLateFee(0);
+    setTransactionId(crypto.randomUUID());
+    setAdjustmentKind('credit');
   }
 
   async function handleConfirmReconciliation() {
@@ -67,7 +71,8 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
     }
 
     const res = mockStore.reconcileFeeBreakdown(selectedFee.id, {
-      actorRole: currentRole,
+      transactionId,
+      adjustmentKind,
       discrepancyReason,
       discrepancyNote: discrepancyNote.trim() || undefined,
       lateFeeAdjustment: Number(lateFee) || 0
@@ -88,7 +93,7 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
       toast('Quyền hạn bị từ chối: Bạn không có quyền đối soát phí sàn', 'error');
       return;
     }
-    const res = mockStore.reconcileFeeBreakdown(id, { actorRole: currentRole });
+    const res = mockStore.reconcileFeeBreakdown(id, {});
     if (!res.success) {
       toast('Đối soát thất bại: ' + res.error, 'error');
       return;
@@ -167,20 +172,9 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
                       )}
                     </td>
                     <td className="px-3 py-3">
-                      {!f.is_reconciled ? (
-                        <button
-                          onClick={() => reconcile(f.id)}
-                          disabled={!hasPermission(currentRole, 'finance:reconcile')}
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-40 disabled:cursor-not-allowed hover:underline"
-                        >
-                          Xác nhận đối soát
-                        </button>
-                      ) : (
-                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                          <CheckCircle size={13} />
-                          Đã đối soát
-                        </span>
-                      )}
+                      <button data-fee={f.id} onClick={() => openReconcileModal(f)} disabled={!hasPermission(currentRole, 'finance:reconcile')} className="text-sm text-teal-700 underline disabled:opacity-40">
+                        {f.is_reconciled ? 'Mở lại / điều chỉnh mới' : 'Đối soát & điều chỉnh'}
+                      </button>
                     </td>
                   </tr>
                 );
@@ -198,6 +192,13 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
           title="Đối Soát Phí & Xử Lý Chênh Lệch / Phí Muộn"
         >
           <div className="space-y-4 text-xs">
+            <label className="block">Loại điều chỉnh
+              <select aria-label="Loại điều chỉnh" value={adjustmentKind} onChange={e => setAdjustmentKind(e.target.value as typeof adjustmentKind)} className="w-full border rounded p-2">
+                <option value="fee">Phí tăng (số âm, giảm tiền nhận)</option><option value="credit">Hoàn phí (số dương)</option><option value="compensation">Bồi thường (số dương, tách doanh thu)</option>
+              </select>
+            </label>
+            <p>Điều chỉnh đã ghi: {formatCurrency(selectedFee.late_fee_adjustment || 0)}. Nhập 0 nếu chỉ lưu kết quả đối chiếu.</p>
+            {(selectedFee.adjustments || []).map(a => <p key={a.id}>{a.created_at} · {a.kind} · {formatCurrency(a.amount)} · {a.reason} · {a.actor_id}</p>)}
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-slate-500">Mã đơn hàng:</span>
@@ -236,6 +237,7 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Ghi chú giải trình chênh lệch:</label>
               <textarea
+                aria-label="Lý do điều chỉnh"
                 value={discrepancyNote}
                 onChange={(e) => setDiscrepancyNote(e.target.value)}
                 placeholder="Nhập ghi chú giải trình lý do lệch phí hoặc bằng chứng đối soát..."
@@ -247,6 +249,7 @@ export function FeeReconciliationPage({ search }: FeeReconciliationPageProps) {
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Điều chỉnh phí phát sinh muộn / Bồi hoàn sau (+/- VND):</label>
               <input
+                aria-label="Khoản điều chỉnh mới"
                 type="number"
                 value={lateFee}
                 onChange={(e) => setLateFee(Number(e.target.value))}

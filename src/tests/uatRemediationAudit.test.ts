@@ -54,7 +54,9 @@ describe('Audit Remediation & UAT Verification Suite (R01 - R28 & Roles)', () =>
     const initialCommission = beforeFee.commission_fee; // 65,000
 
     // Reconcile fee with discrepancy reason and late compensation adjustment (+5000 VND)
+    mockStore.setActiveRole('manager');
     const res = mockStore.reconcileFeeBreakdown(feeId, {
+      transactionId: 'uat-fee-credit',
       actorRole: 'manager',
       actorId: 'usr_manager_01',
       discrepancyReason: 'WEIGHT_MISMATCH',
@@ -78,7 +80,8 @@ describe('Audit Remediation & UAT Verification Suite (R01 - R28 & Roles)', () =>
 
   it('Command-Level Authorization: Warehouse cannot mark delivered, Admin cannot refund, Warehouse cannot reconcile fees', () => {
     // 1. Warehouse calling markDeliveredWithPOD directly is rejected at command level
-    const podRes = mockStore.markDeliveredWithPOD('ord_shopee_01', {
+    mockStore.setActiveRole('warehouse');
+    const podRes = mockStore.markDeliveredWithPOD('ord_90214', {
       tracking_code: 'SPX-VN-123456',
       carrier_name: 'Shopee Xpress',
       recipient_name: 'Nguyễn Văn A',
@@ -92,11 +95,13 @@ describe('Audit Remediation & UAT Verification Suite (R01 - R28 & Roles)', () =>
     expect(podRes.error).toContain('Command rejected: Nhân viên kho chỉ bàn giao bưu tá');
 
     // 2. Admin calling refundOrder directly is rejected at command level (A-E5)
-    const refundRes = mockStore.refundOrder('ord_shopee_01', 500000, 'admin');
+    mockStore.setActiveRole('admin');
+    const refundRes = mockStore.refundOrder('ord_90214', 500000, 'admin');
     expect(refundRes.success).toBe(false);
     expect(refundRes.error).toContain('Command rejected: Quyền hạn kỹ thuật Admin không được phép duyệt hoàn tiền');
 
     // 3. Warehouse calling reconcileFeeBreakdown directly is rejected at command level
+    mockStore.setActiveRole('warehouse');
     const reconRes = mockStore.reconcileFeeBreakdown('fee_001', { actorRole: 'warehouse' });
     expect(reconRes.success).toBe(false);
     expect(reconRes.error).toContain('Command rejected: Quyền hạn bị từ chối');
@@ -119,7 +124,7 @@ describe('Audit Remediation & UAT Verification Suite (R01 - R28 & Roles)', () =>
       draft.returns.push({
         id: returnId,
         return_number: 'RMA-WE2-001',
-        order_id: 'ord_shopee_01',
+        order_id: 'ord_90214',
         return_type: 'customer_return',
         status: 'pending',
         refund_amount: 500000,
@@ -170,8 +175,9 @@ describe('Audit Remediation & UAT Verification Suite (R01 - R28 & Roles)', () =>
     const initialPhysical = before!.physical;
     const initialInTransit = before!.in_transit || 0;
 
+    // Use a real destination warehouse; the old test silently accepted a nonexistent warehouse.
     // Dispatch 2 units
-    const dispatchRes = mockStore.transferStock(sku, 'wh_north_01', 'wh_central_01', 2, 'dispatch');
+    const dispatchRes = mockStore.transferStock(sku, 'wh_north_01', 'wh_danang_01', 2, 'dispatch');
     expect(dispatchRes.success).toBe(true);
 
     const afterDispatch = mockStore.getInventory5State().find(i => i.sku === sku);
@@ -179,12 +185,13 @@ describe('Audit Remediation & UAT Verification Suite (R01 - R28 & Roles)', () =>
     expect(afterDispatch!.in_transit).toBe(initialInTransit + 2);
 
     // Receive 2 units
-    const receiveRes = mockStore.transferStock(sku, 'wh_north_01', 'wh_central_01', 2, 'receive');
+    const receiveRes = mockStore.transferStock(sku, 'wh_north_01', 'wh_danang_01', 2, 'receive');
     expect(receiveRes.success).toBe(true);
 
     const afterReceive = mockStore.getInventory5State().find(i => i.sku === sku);
     expect(afterReceive!.in_transit).toBe(initialInTransit);
-    expect(afterReceive!.physical).toBe(initialPhysical);
+    expect(afterReceive!.physical).toBe(initialPhysical - 2);
+    expect(mockStore.getInventory5State().find(i => i.sku === sku && i.warehouse_id === 'wh_danang_01')!.physical).toBe(2);
   });
 
   it('R26 & R27: Finance role disabled by default; Viewer role disallowed in allowed pages', () => {

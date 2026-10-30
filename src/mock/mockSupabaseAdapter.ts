@@ -194,7 +194,7 @@ export class MockQueryBuilder {
         const wh = snap.warehouses.find(w => w.id === inv.warehouse_id) || snap.warehouses[0];
         return {
           id: `inv_${inv.product_id}_${inv.warehouse_id}`,
-          tenant_id: snap.activeTenantId,
+          tenant_id: wh?.tenant_id,
           warehouse_id: wh?.id || 'wh_north_01',
           product_id: prod?.id || inv.product_id,
           physical_qty: inv.physical,
@@ -241,7 +241,7 @@ export class MockQueryBuilder {
     // 5. Return Requests / Returns
     if (this.table === 'return_requests' || this.table === 'returns') {
       return snap.returns.map(r => {
-        const rawOrd = snap.orders.find(o => o.id === r.order_id) || snap.orders[0];
+        const rawOrd = snap.orders.find(o => o.id === r.order_id);
         const ord = rawOrd ? this.normalizeOrder(rawOrd as unknown as Record<string, unknown>, snap) : null;
         return {
           ...r,
@@ -276,6 +276,13 @@ export class MockQueryBuilder {
           warehouse: wh
         };
       });
+    }
+
+    if (this.table === 'purchase_orders') {
+      return (snap.purchaseOrders || []).map(po => ({ ...po,
+        warehouse: snap.warehouses.find(w => w.id === po.warehouse_id),
+        purchase_order_items: (snap.purchaseOrderItems || []).filter(i => i.po_id === po.id).map(i => ({ ...i, product: snap.products.find(p => p.id === i.product_id) }))
+      }));
     }
 
     // 7. Channel SKU Mappings (With Product join)
@@ -388,24 +395,7 @@ export class MockQueryBuilder {
           };
         });
       }
-      return snap.orders.map(o => {
-        const norm = this.normalizeOrder(o as unknown as Record<string, unknown>, snap);
-        const orderTotal = Number(norm.total || 0);
-        return {
-          id: `fee_${norm.id}`,
-          order_id: norm.id,
-          order: norm,
-          commission_fee: Math.round(orderTotal * 0.05),
-          transaction_fee: Math.round(orderTotal * 0.02),
-          voucher_co_fund_fee: 15000,
-          estimated_shipping_fee: 35000,
-          actual_shipping_fee: 35000,
-          weight_penalty_fee: 0,
-          net_payout: Math.round(orderTotal * 0.93 - 50000),
-          is_reconciled: norm.status === 'delivered',
-          created_at: norm.placed_at || new Date().toISOString()
-        };
-      });
+      return []; // No fabricated fee rows when source evidence is missing.
     }
 
     // 14. Margin Config
@@ -428,7 +418,7 @@ export class MockQueryBuilder {
   }
 
   private applyFilters(rows: Record<string, unknown>[]): Record<string, unknown>[] {
-    let result = rows;
+    let result = rows.filter(row => mockStore.canReadTableRow(this.table, row));
     const snap = mockStore.getSnapshot();
 
     for (const f of this.filters) {
@@ -565,10 +555,12 @@ export class MockQueryBuilder {
     }
 
     let inserted: Record<string, unknown>[] | null = null;
+    let insertError: { message: string; code: string } | null = null;
     const executeInsert = async () => {
       if (inserted === null) {
         await mockStore.delay(20);
-        inserted = mockStore.insertTable(table, items);
+        try { inserted = mockStore.insertTable(table, items); }
+        catch (e) { inserted = []; insertError = { message: (e as Error).message, code: '42501' }; }
       }
       return inserted;
     };
@@ -577,15 +569,15 @@ export class MockQueryBuilder {
       select: (_fields?: string) => builder,
       single: async () => {
         const rows = await executeInsert();
-        return { data: rows[0] || null, error: null };
+        return { data: rows[0] || null, error: insertError };
       },
       maybeSingle: async () => {
         const rows = await executeInsert();
-        return { data: rows[0] || null, error: null };
+        return { data: rows[0] || null, error: insertError };
       },
       then: async (onfulfilled?: any, onrejected?: any) => {
         const rows = await executeInsert();
-        return Promise.resolve({ data: rows, error: null }).then(onfulfilled, onrejected);
+        return Promise.resolve({ data: rows, error: insertError }).then(onfulfilled, onrejected);
       }
     };
     return builder;
@@ -630,16 +622,8 @@ export class MockQueryBuilder {
           }
           return true;
         };
-        mockStore.updateTable(table, predicate, payload);
-
-        // Special handling for return_requests: if status changed to 'received', trigger dock receipt
-        if ((table === 'return_requests' || table === 'returns') && payload.status === 'received') {
-          for (const f of updateFilters) {
-            if (f.op === 'eq' && f.col === 'id' && typeof f.val === 'string') {
-              mockStore.receiveReturnDock(f.val);
-            }
-          }
-        }
+        try { mockStore.updateTable(table, predicate, payload); }
+        catch (e) { return { data: null, error: { message: (e as Error).message, code: '42501' } }; }
 
         return { data: [payload], error: null };
       },
@@ -681,7 +665,8 @@ export class MockQueryBuilder {
           }
           return true;
         };
-        mockStore.deleteTable(table, predicate);
+        try { mockStore.deleteTable(table, predicate); }
+        catch (e) { return { data: null, error: { message: (e as Error).message, code: '42501' } }; }
         return { data: null, error: null };
       },
       then: async (onfulfilled?: any, onrejected?: any) => {
@@ -702,6 +687,19 @@ export const mockSupabaseClient = {
       async then(resolve: (val: { data: unknown; error: { code?: string; message: string } | null }) => void) {
         await mockStore.delay(25);
         const snap = mockStore.getSnapshot();
+        if (!mockStore.getExecutionContext() || (params.p_tenant_id && params.p_tenant_id !== snap.activeTenantId)) { resolve({ data: null, error: { message: 'Session hoặc tenant không hợp lệ', code: '42501' } }); return; }
+        snap.orders = mockStore.getOrders(); snap.inventory5State = mockStore.getInventory5State();
+        if (fnName === 'admin_create_user' || fnName === 'admin_update_profile') {
+          const result = fnName === 'admin_create_user'
+            ? mockStore.createDemoUser(String(params.p_email || ''), String(params.p_full_name || ''), params.p_role as import('@/types').TenantRole)
+            : mockStore.updateDemoUser(String(params.p_user_id || ''), params.p_role as import('@/types').TenantRole, params.p_is_active === true);
+          resolve({ data: result.success ? result : null, error: result.success ? null : { message: result.error || 'Không có quyền' } }); return;
+        }
+        if (fnName === 'verify_inventory_consistency') {
+          if (mockStore.authorize('inventory:view', { tenant_id: snap.activeTenantId })) { resolve({ data: null, error: { message: 'Không có quyền xem tồn' } }); return; }
+          const issues = snap.inventory5State.filter(i => [i.physical, i.reserved, i.available, i.pending_qc, i.damaged].some(n => n < 0) || i.available !== i.physical - i.reserved - i.pending_qc - i.damaged || i.available !== i.sellable).map(i => ({ product_id: i.product_id, sku: i.sku, issue: 'Vi phạm bất biến tồn 5 trạng thái' }));
+          resolve({ data: issues, error: null }); return;
+        }
 
         // 1. Dashboard Metrics (Fully Computed from Valid Orders)
         if (fnName === 'get_dashboard_metrics') {
@@ -839,7 +837,7 @@ export const mockSupabaseClient = {
 
         // 6. Audit Chain Verification
         if (fnName === 'verify_audit_chain') {
-          resolve({ data: { valid: true, audited_records: snap.auditLogs.length || 128 }, error: null });
+          resolve({ data: null, error: { message: 'Mock lưu lịch sử thao tác, chưa triển khai chuỗi băm', code: '42883' } });
           return;
         }
 
@@ -904,53 +902,42 @@ export const mockSupabaseClient = {
 
         if (fnName === 'process_return_restock_atomic') {
           const res = mockStore.inspectReturnQC(params.p_return_id as string, params.p_is_good !== false);
-          resolve({ data: { success: res.success }, error: null });
+          resolve({ data: res.success ? { success: true } : null, error: res.success ? null : { message: res.error || 'QC bị từ chối' } });
           return;
         }
 
         if (fnName === 'post_journal_entry_atomic') {
-          resolve({ data: { success: true, entry_id: `je_${Date.now()}` }, error: null });
+          resolve({ data: null, error: { message: 'Dùng business command postJournalEntry với bút toán cân đối', code: '42883' } });
           return;
         }
 
-        resolve({ data: { success: true }, error: null });
+        resolve({ data: null, error: { message: `RPC ${fnName} chưa được triển khai trong mock`, code: '42883' } });
       }
     };
   },
   auth: {
     async getSession() {
       const snap = mockStore.getSnapshot();
-      const user = {
-        id: snap.profiles[0]?.id || 'usr_owner_01',
-        email: snap.profiles[0]?.email || 'owner@nexusoms.io'
-      };
-      return {
-        data: {
-          session: {
-            user,
-            access_token: 'mock-prototype-token',
-            expires_at: 9999999999
-          }
-        },
-        error: null
-      };
+      const ctx = mockStore.getExecutionContext();
+      const profile = snap.profiles.find(p => p.id === ctx?.userId);
+      return { data: { session: ctx && profile ? { user: { id: profile.id, email: profile.email }, access_token: 'mock-prototype-token', expires_at: 9999999999 } : null }, error: null };
     },
     async signInWithPassword({ email }: { email: string }) {
-      await mockStore.delay(50);
-      return { data: { user: { id: 'usr_owner_01', email } }, error: null };
+      const result = mockStore.signInDemoUser(email);
+      return { data: { user: result.success ? { id: result.userId, email } : null }, error: result.success ? null : { message: result.error } };
     },
     async signUp({ email }: { email: string }) {
       await mockStore.delay(50);
       return { data: { user: { id: `usr_${Date.now()}`, email } }, error: null };
     },
     async signOut() {
+      mockStore.signOutDemoUser();
       await mockStore.delay(30);
       return { error: null };
     },
     onAuthStateChange(cb: (event: string, session: unknown) => void) {
-      cb('SIGNED_IN', {
-        user: { id: 'usr_owner_01', email: 'owner@nexusoms.io' }
-      });
+      const ctx = mockStore.getExecutionContext();
+      cb(ctx ? 'SIGNED_IN' : 'SIGNED_OUT', ctx ? { user: { id: ctx.userId } } : null);
       return { data: { subscription: { unsubscribe() {} } } };
     }
   }

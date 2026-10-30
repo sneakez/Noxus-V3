@@ -21,7 +21,7 @@ describe('Unified RBAC Permission Registry — Dream Terus (Terus Tech)', () => 
     expect(hasPermission('admin', 'settings:manage')).toBe(true);
     expect(hasPermission('admin', 'users:manage')).toBe(true);
     expect(hasPermission('admin', 'integrations:manage')).toBe(true);
-    expect(hasPermission('admin', 'orders:delete')).toBe(true);
+    expect(hasPermission('admin', 'orders:delete')).toBe(false);
     // Separation of duties: Admin cannot approve finance exceptions or budgets
     expect(hasPermission('admin', 'finance:approve')).toBe(false);
     expect(hasPermission('admin', 'growth:budget_approve')).toBe(false);
@@ -76,8 +76,8 @@ describe('Unified RBAC Permission Registry — Dream Terus (Terus Tech)', () => 
   });
 
   it('viewer (R7) has read-only access and no mutate permissions', () => {
-    expect(hasPermission('viewer', 'orders:view')).toBe(true);
-    expect(hasPermission('viewer', 'inventory:view')).toBe(true);
+    expect(hasPermission('viewer', 'orders:view')).toBe(false);
+    expect(hasPermission('viewer', 'inventory:view')).toBe(false);
     expect(hasPermission('viewer', 'orders:create')).toBe(false);
     expect(hasPermission('viewer', 'inventory:mutate')).toBe(false);
     expect(hasPermission('viewer', 'finance:manage')).toBe(false);
@@ -98,17 +98,12 @@ describe('Unified RBAC Permission Registry — Dream Terus (Terus Tech)', () => 
     expect(warehousePages).not.toContain('orderEconomics');
     expect(warehousePages).not.toContain('settings');
 
-    const financePages = getAllowedPagesForRole('finance');
-    expect(financePages).toContain('orderEconomics');
-    expect(financePages).toContain('skuEconomics');
-    expect(financePages).toContain('channelEconomics');
-    expect(financePages).toContain('cashWorkingCapital');
-    expect(financePages).toContain('feeReconciliation');
-    expect(financePages).not.toContain('fulfillment');
+    // Finance is optional and disabled in the prototype's default configuration.
+    expect(getAllowedPagesForRole('finance')).toEqual([]);
 
     const growthPages = getAllowedPagesForRole('growth');
     expect(growthPages).toContain('marketingAnalytics');
-    expect(growthPages).toContain('customerAnalytics');
+    expect(growthPages).not.toContain('customerAnalytics'); // optional, unaudited cohort workspace hidden
     expect(growthPages).toContain('skuEconomics');
     expect(growthPages).toContain('channelEconomics');
     expect(growthPages).not.toContain('settings');

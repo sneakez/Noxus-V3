@@ -98,6 +98,8 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
       toast('Lỗi tải danh sách đơn hàng: ' + error.message, 'error');
     }
     setOrders(data ?? []);
+    const linked = new URLSearchParams(location.search).get('order');
+    if (linked) { const target = (data || []).find((o: Order) => o.id === linked); if (target) { setSelectedOrder(target); setShowDrawer(true); } }
     setLoading(false);
   }
 
@@ -700,7 +702,8 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
             <button
               onClick={() => {
                 selectedIds.forEach(id => {
-                  mockStore.updateOrder(id, { status: 'processing' });
+                  const result = mockStore.releaseToWarehouse(id);
+                  if (!result.success) toast(result.error || 'Đơn chưa đủ điều kiện', 'error');
                 });
                 clearSelection();
                 toast(`Đã duyệt và khóa tồn thành công cho ${selectedIds.length} đơn hàng!`, 'success');

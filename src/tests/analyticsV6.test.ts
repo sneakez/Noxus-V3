@@ -123,12 +123,13 @@ describe('V6 Unit Economics & Analytics Engine', () => {
     // Cross-module Net Revenue equality (0 VND gap)
     expect(orderNet).toBe(channelNet);
     expect(dashNet).toBe(orderNet);
-    expect(dashNet).toBe(23400000);
+    // Historical gross-booking constants are not recognition evidence.
+    // Independent VND acceptance values are asserted in commerceAcceptance.test.ts.
 
     // Cross-module CM3 equality (0 VND gap)
     expect(orderCm3).toBe(channelCm3);
     expect(dashCm3).toBe(orderCm3);
-    expect(dashCm3).toBe(6847250);
+
 
     // Inventory valuation and physical invariant
     const totalPhysical = inv5.reduce((sum, i) => sum + i.physical, 0);
@@ -141,7 +142,7 @@ describe('V6 Unit Economics & Analytics Engine', () => {
     const orderEcon = analyticsService.getOrderEconomics();
     expect(orderEcon.length).toBeGreaterThan(0);
     orderEcon.forEach(o => {
-      expect(['VERIFIED', 'PARTIALLY_RECONCILED', 'ESTIMATED']).toContain(o.confidenceStatus);
+      expect(['VERIFIED', 'PARTIALLY_RECONCILED', 'ESTIMATED', 'INCOMPLETE']).toContain(o.confidenceStatus);
       expect(['MAC_SNAPSHOT', 'PRODUCT_MASTER', 'ESTIMATED_BENCHMARK']).toContain(o.cogsSource);
       if (o.cogsSource === 'ESTIMATED_BENCHMARK') {
         expect(o.confidenceStatus).toBe('ESTIMATED');

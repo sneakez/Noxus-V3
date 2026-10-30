@@ -58,15 +58,8 @@ const ROLE_PERMISSIONS: Record<TenantRole, readonly Permission[]> = {
 
   // R2 — System Administrator: Systems, integrations, users (no financial approvals)
   admin: [
-    'orders:view', 'orders:create', 'orders:manage', 'orders:cancel', 'orders:delete',
-    'inventory:view', 'inventory:receive', 'inventory:move', 'inventory:mutate',
-    'products:view', 'products:manage', 'warehouses:manage',
-    'purchasing:view', 'purchasing:create',
-    'finance:view', 'finance:manage',
-    'growth:view',
-    'analytics:view', 'audit:view',
-    'users:manage', 'integrations:manage', 'settings:manage',
-    'simulator:access', 'webhooks:manage',
+    'orders:view', 'inventory:view', 'products:view', 'audit:view',
+    'users:manage', 'integrations:manage', 'settings:manage', 'simulator:access', 'webhooks:manage',
   ],
 
   // R3 — Operations / Commerce Manager: Multi-channel orders, fulfillment, RMA, inventory
@@ -107,12 +100,7 @@ const ROLE_PERMISSIONS: Record<TenantRole, readonly Permission[]> = {
   ],
 
   // R7 — Read-only Analyst: Authorized reports and analytics
-  viewer: [
-    'orders:view',
-    'products:view',
-    'inventory:view',
-    'analytics:view',
-  ],
+  viewer: [],
 };
 
 export function hasPermission(role: TenantRole | null | undefined, permission: Permission): boolean {
@@ -121,11 +109,10 @@ export function hasPermission(role: TenantRole | null | undefined, permission: P
   return Boolean(permissions && permissions.includes(permission));
 }
 
-export function getAllowedPagesForRole(role: TenantRole | null | undefined): string[] {
+function getRolePages(role: TenantRole | null | undefined): string[] {
   if (!role) return ['dashboard'];
   switch (role) {
     case 'owner':
-    case 'admin':
       return [
         // 01 Command Center
         'dashboard', 'operationsAnalytics',
@@ -145,6 +132,9 @@ export function getAllowedPagesForRole(role: TenantRole | null | undefined): str
         'bufferRules', 'routingRules', 'channelMapping', 'syncMonitor', 'complaints', 'automationRules',
         'webhooks', 'flowGuide',
       ];
+
+    case 'admin':
+      return ['dashboard', 'orders', 'channelConnections', 'settings', 'auditTrail', 'channelMapping', 'syncMonitor', 'webhooks', 'flowGuide'];
 
     case 'manager':
       return [
@@ -169,6 +159,7 @@ export function getAllowedPagesForRole(role: TenantRole | null | undefined): str
       ];
 
     case 'finance':
+      if (!ENABLE_FINANCE_ROLE) return [];
       return [
         'dashboard', 'orders',
         'orderEconomics', 'skuEconomics', 'channelEconomics', 'cashWorkingCapital', 'pricingCalculator',
@@ -191,4 +182,10 @@ export function getAllowedPagesForRole(role: TenantRole | null | undefined): str
     default:
       return ['dashboard', 'flowGuide'];
   }
+}
+
+// Optional legacy workspaces are hidden until their own complete acceptance is run.
+export const OPTIONAL_PAGES = new Set(['operationsAnalytics', 'inventoryAnalytics', 'cashWorkingCapital', 'customerAnalytics', 'salesAnalytics', 'founderExecution', 'marginControl', 'salesVelocity', 'revenueReport', 'transfers', 'batches', 'ledger', 'ownerValidation', 'businessRules', 'simulator', 'automationRules', 'webhooks', 'bufferRules', 'routingRules']);
+export function getAllowedPagesForRole(role: TenantRole | null | undefined): string[] {
+  return getRolePages(role).filter(page => !OPTIONAL_PAGES.has(page));
 }

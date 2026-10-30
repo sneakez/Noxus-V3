@@ -15,6 +15,8 @@ export interface Tenant {
 }
 
 export interface TenantMembership {
+  shop_ids?: string[];
+  warehouse_ids?: string[];
   id: string;
   tenant_id: string;
   user_id: string;
@@ -262,6 +264,7 @@ export interface BundleComponent {
 }
 
 export interface ChannelSkuMapping {
+  tenant_id?: string;
   id: string;
   channel: Channel;
   channel_shop_id?: string | null;
@@ -415,6 +418,16 @@ export interface StockTransferItem {
 }
 
 export interface Order {
+  raw_source_status?: string;
+  cancellation_requested?: boolean;
+  carrier_accepted_at?: string;
+  tracking_number?: string;
+  packaging_cost?: number;
+  ads_spend?: number;
+  ads_credit?: number;
+  source_ads_revenue?: number;
+  refunded_amount?: number;
+  settlement_status?: 'pending' | 'reconciled';
   tenant_id?: string;
   shop_id?: string | null;
   total_amount?: number;
@@ -593,6 +606,7 @@ export interface JournalLine {
 }
 
 export interface OrderFeeBreakdown {
+  adjustments?: Array<{ id: string; amount: number; kind: 'fee' | 'credit' | 'compensation'; reason: string; actor_id: string; source: string; created_at: string }>;
   id: string;
   order_id: string;
   commission_fee: number;
@@ -615,6 +629,7 @@ export interface OrderFeeBreakdown {
 }
 
 export interface ReturnRequest {
+  warehouse_id?: string;
   tenant_id?: string;
   customer_id?: string | null;
   maker_by?: string | null;

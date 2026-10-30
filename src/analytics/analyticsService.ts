@@ -1,3 +1,4 @@
+import { commerceOrderMetrics } from '@/mock/commerceMetrics';
 import { mockStore } from '@/mock/store';
 import {
   safeDivide,
@@ -35,8 +36,11 @@ class AnalyticsService {
     let prevStart: Date;
     let prevEnd: Date;
 
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const vn = new Date(now.getTime() + 7 * 3600000);
+    const year = vn.getUTCFullYear(), month = vn.getUTCMonth(), day = vn.getUTCDate();
+    const vnDate = (y: number, m: number, d: number, end = false) => new Date(Date.UTC(y, m, d, end ? 23 : 0, end ? 59 : 0, end ? 59 : 0, end ? 999 : 0) - 7 * 3600000);
+    const todayStart = vnDate(year, month, day);
+    const todayEnd = vnDate(year, month, day, true);
 
     if (period === 'today') {
       currentStart = todayStart;
@@ -52,27 +56,27 @@ class AnalyticsService {
       currentStart = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
       currentEnd = todayEnd;
       prevStart = new Date(now.getTime() - 14 * 24 * 3600 * 1000);
-      prevEnd = currentStart;
+      prevEnd = new Date(currentStart.getTime() - 1);
     } else if (period === 'last_30_days') {
       currentStart = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
       currentEnd = todayEnd;
       prevStart = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
-      prevEnd = currentStart;
+      prevEnd = new Date(currentStart.getTime() - 1);
     } else if (period === 'this_month') {
-      currentStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      currentStart = vnDate(year, month, 1);
       currentEnd = todayEnd;
-      prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
-      prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      prevStart = vnDate(year, month - 1, 1);
+      prevEnd = vnDate(year, month, 0, true);
     } else if (period === 'last_month') {
-      currentStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
-      currentEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-      prevStart = new Date(now.getFullYear(), now.getMonth() - 2, 1, 0, 0, 0, 0);
-      prevEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59, 999);
+      currentStart = vnDate(year, month - 1, 1);
+      currentEnd = vnDate(year, month, 0, true);
+      prevStart = vnDate(year, month - 2, 1);
+      prevEnd = vnDate(year, month - 1, 0, true);
     } else {
       currentStart = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
       currentEnd = todayEnd;
       prevStart = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
-      prevEnd = currentStart;
+      prevEnd = new Date(currentStart.getTime() - 1);
     }
 
     const current = orders.filter(o => {
@@ -93,110 +97,19 @@ class AnalyticsService {
    * Get Order Economics for all or filtered orders
    */
   public getOrderEconomics(tenantId?: string): OrderUnitEconomics[] {
-    const orders = mockStore.getOrders(tenantId);
-    const products = mockStore.getProducts();
-
-    return orders.map(order => {
-      const orderItems = mockStore.getOrderWithCustomer(order.id)?.items || [];
-      
-      // Calculate COGS strictly from order items (MAC snapshot) or product master
-      let totalCogs = 0;
-      let cogsSource: 'MAC_SNAPSHOT' | 'PRODUCT_MASTER' | 'ESTIMATED_BENCHMARK' = 'MAC_SNAPSHOT';
-      let hasEstimatedFallback = false;
-
-      if (orderItems.length > 0) {
-        orderItems.forEach(item => {
-          const prod = products.find(p => p.id === item.product_id);
-          const mac = (item as any).unit_cost_mac_snapshot;
-          if (mac !== undefined && mac !== null && mac > 0) {
-            totalCogs += mac * (item.quantity || 1);
-          } else if (prod && (prod.moving_avg_cost ?? prod.cost ?? (prod as any)?.cost_price)) {
-            cogsSource = 'PRODUCT_MASTER';
-            totalCogs += ((prod.moving_avg_cost ?? prod.cost ?? (prod as any).cost_price) || 0) * (item.quantity || 1);
-          } else {
-            hasEstimatedFallback = true;
-          }
-        });
-      } else {
-        hasEstimatedFallback = true;
-      }
-
-      // If order items were empty, fallback to estimated 48% COGS
-      if (totalCogs === 0 && order.total > 0) {
-        totalCogs = Math.round(order.total * 0.48);
-        cogsSource = 'ESTIMATED_BENCHMARK';
-        hasEstimatedFallback = true;
-      }
-
-      const grossSales = order.subtotal || order.total || 0;
-      const discounts = order.discount || 0;
-      const returnsRefunds = order.payment_status === 'refunded' ? order.total : order.payment_status === 'partially_paid' ? 0 : 0;
-      const shippingSubsidies = order.shipping > 0 ? 0 : 15000;
-      const returnCosts = returnsRefunds > 0 ? 25000 : 0;
-
-      // RMA & Return Accounting Policy:
-      // If goods are restocked to sellable in good condition or order was cancelled prior to shipping:
-      // COGS is reversed back to inventory asset (totalCogs = 0), avoiding false damage loss write-off.
-      // If goods were damaged / scrapped upon return inspection, COGS is retained as inventory loss.
-      const rmas = mockStore.getReturns().filter(r => r.order_id === order.id);
-      const returnItems = (mockStore as any).state?.returnItems?.filter((ri: any) => rmas.some(r => r.id === ri.return_id)) || [];
-      const hasDamagedScrap = returnItems.some((ri: any) => ri.disposition === 'scrap');
-      const isRestockedGood = order.status === 'cancelled' || (rmas.length > 0 && !hasDamagedScrap);
-
-      if (isRestockedGood && returnsRefunds >= grossSales && grossSales > 0) {
-        totalCogs = 0;
-      }
-
-      // Dynamic marketing allocation based on ecommerce acquisition benchmarks (~8%)
-      const channelAdRate = 0.08;
-      const attributedMarketing = Math.round(grossSales * channelAdRate);
-
-      const contrib = calculateOrderContribution({
-        grossSales,
-        discounts,
-        returnsRefunds: Number(returnsRefunds ?? 0),
-        cogs: totalCogs,
-        channel: order.channel || 'website',
-        shippingSubsidies,
-        returnCosts,
-        attributedMarketing
-      });
-
-      const fixedOverheadEstimate = Math.round(contrib.netRevenue * 0.05); // 5% rent & tech SaaS
-
-      return {
-        orderId: order.id,
-        orderNumber: order.order_number,
-        channel: order.channel || 'website',
-        placedAt: order.placed_at || order.created_at,
-        orderStatus: (order.order_status || order.status) as string,
-        grossSales,
-        discounts,
-        returnsRefunds,
-        netRevenue: contrib.netRevenue,
-        cogs: contrib.cogs,
-        cm1: contrib.cm1,
-        cm1Margin: contrib.cm1Margin,
-        marketplaceFees: contrib.marketplaceFees,
-        paymentFees: contrib.paymentFees,
-        fulfillmentCosts: contrib.fulfillmentCosts,
-        shippingSubsidies: contrib.shippingSubsidies,
-        returnCosts: contrib.returnCosts,
-        cm2: contrib.cm2,
-        cm2Margin: contrib.cm2Margin,
-        attributedMarketingCosts: contrib.attributedMarketingCosts,
-        cm3: contrib.cm3,
-        cm3Margin: contrib.cm3Margin,
-        fixedOverheadEstimate,
-        netProfitEstimate: contrib.cm3 - fixedOverheadEstimate,
-        attributionType: hasEstimatedFallback ? 'ESTIMATED' : 'ACTUAL',
-        confidenceStatus: hasEstimatedFallback
-          ? 'ESTIMATED'
-          : (order.delivery_status === 'delivered' || order.status === 'delivered' || (order.order_status as string) === 'delivered' || (order.order_status as string) === 'completed')
-          ? 'VERIFIED'
-          : 'PARTIALLY_RECONCILED',
-        cogsSource
-      };
+    const state = mockStore.getSnapshot();
+    return mockStore.getOrders(tenantId).map(order => {
+      const m = commerceOrderMetrics(state, order);
+      const cm1 = m.sales - m.cogs, cm2 = cm1 - m.fees - m.packaging + m.compensation;
+      const margin = (n: number) => m.sales ? n / m.sales * 100 : 0;
+      return { orderId: order.id, orderNumber: order.order_number, channel: order.channel, placedAt: order.placed_at,
+        orderStatus: order.status, grossSales: order.total, discounts: order.discount || 0,
+        returnsRefunds: order.refunded_amount || (order.payment_status === 'refunded' ? order.total : 0),
+        netRevenue: m.sales, compensation: m.compensation, adsCredit: m.adsCredit, cogs: m.cogs, cm1, cm1Margin: margin(cm1), marketplaceFees: m.fees, paymentFees: 0,
+        fulfillmentCosts: m.packaging, shippingSubsidies: 0, returnCosts: 0, cm2, cm2Margin: margin(cm2),
+        attributedMarketingCosts: m.netAds, cm3: m.contribution, cm3Margin: margin(m.contribution),
+        fixedOverheadEstimate: 0, netProfitEstimate: m.contribution, attributionType: 'SIMULATED',
+        confidenceStatus: m.finalized && order.ads_spend !== undefined ? 'VERIFIED' : 'INCOMPLETE', cogsSource: 'MAC_SNAPSHOT' };
     });
   }
 
@@ -208,42 +121,35 @@ class AnalyticsService {
     const orders = mockStore.getOrders(tenantId);
     const inv5 = mockStore.getInventory5State();
 
-    // Map sales by product
-    const salesMap = new Map<string, { unitsSold: number; totalGross: number; totalDiscounts: number; totalCogs: number }>();
-    
+    // Allocate order economics across products by line value; sums match order P&L.
+    // This is a blended allocation, not campaign/item attribution.
+    const salesMap = new Map<string, { unitsSold: number; totalGross: number; totalCogs: number; fees: number; packaging: number; contribution: number }>();
+    const state = mockStore.getSnapshot();
     orders.forEach(o => {
-      const items = mockStore.getOrderWithCustomer(o.id)?.items || [];
+      const items = state.orderItems.filter(i => i.order_id === o.id);
+      const value = items.reduce((sum, i) => sum + i.line_total, 0);
+      const m = commerceOrderMetrics(state, o);
       items.forEach(it => {
-        const prodId = it.product_id;
-        const cur = salesMap.get(prodId) || { unitsSold: 0, totalGross: 0, totalDiscounts: 0, totalCogs: 0 };
-        const prod = products.find(p => p.id === prodId);
-        const cost = prod?.moving_avg_cost ?? prod?.cost ?? (prod as any)?.cost_price ?? 0;
-        cur.unitsSold += it.quantity || 1;
-        cur.totalGross += (it.unit_price || 0) * (it.quantity || 1);
-        cur.totalCogs += cost * (it.quantity || 1);
-        salesMap.set(prodId, cur);
+        const cur = salesMap.get(it.product_id) || { unitsSold: 0, totalGross: 0, totalCogs: 0, fees: 0, packaging: 0, contribution: 0 };
+        const weight = value ? it.line_total / value : 0;
+        if (o.status === 'delivered') cur.unitsSold += it.quantity;
+        cur.totalGross += m.sales * weight; cur.totalCogs += m.cogs * weight;
+        cur.fees += m.fees * weight; cur.packaging += m.packaging * weight; cur.contribution += m.contribution * weight;
+        salesMap.set(it.product_id, cur);
       });
     });
 
     const skus: SkuUnitEconomics[] = products.map(p => {
       const cogs = p.moving_avg_cost ?? p.cost ?? (p as any)?.cost_price ?? 0;
-      const sales = salesMap.get(p.id) || {
-        unitsSold: Math.max(2, Math.round(p.stock * 0.15)),
-        totalGross: (p.price || 500000) * Math.max(2, Math.round(p.stock * 0.15)),
-        totalDiscounts: 0,
-        totalCogs: cogs * Math.max(2, Math.round(p.stock * 0.15))
-      };
-
-      const asp = p.price || 0;
-      const avgFees = Math.round(asp * 0.095); // Blended marketplace fee ~9.5%
-      const avgFulfillment = 18000;
-      const cmPerUnit = asp - cogs - avgFees - avgFulfillment;
-      const cmPercent = safeDivide(cmPerUnit, asp) * 100;
-
-      const inv = inv5.find(i => i.product_id === p.id || i.sku === p.sku);
-      const physicalStock = inv?.physical ?? p.stock ?? 0;
+      const sales = salesMap.get(p.id) || { unitsSold: 0, totalGross: 0, totalCogs: 0, fees: 0, packaging: 0, contribution: 0 };
+      const asp = sales.unitsSold ? sales.totalGross / sales.unitsSold : p.price || 0;
+      const avgFees = sales.unitsSold ? sales.fees / sales.unitsSold : 0;
+      const avgFulfillment = sales.unitsSold ? sales.packaging / sales.unitsSold : 0;
+      const cmPerUnit = sales.unitsSold ? sales.contribution / sales.unitsSold : 0;
+      const cmPercent = safeDivide(sales.contribution, sales.totalGross) * 100;
+      const physicalStock = inv5.filter(i => i.product_id === p.id).reduce((sum, i) => sum + i.physical, 0);
       const stockValue = physicalStock * cogs;
-      const totalContribution = sales.unitsSold * cmPerUnit;
+      const totalContribution = sales.contribution;
       const stockRoi = safeDivide(totalContribution, stockValue) * 100;
 
       // Sell-through rate
@@ -383,7 +289,7 @@ class AnalyticsService {
 
     // Totals
     const netRevenueCurr = orderEconCurrent.reduce((sum, o) => sum + o.netRevenue, 0);
-    const netRevenuePrev = orderEconPrev.reduce((sum, o) => sum + o.netRevenue, 0) || Math.round(netRevenueCurr * 0.88);
+    const netRevenuePrev = orderEconPrev.reduce((sum, o) => sum + o.netRevenue, 0);
 
     // POD Separation: Recognized Revenue under approved FOB Destination policy
     // Only orders with delivered status / verified POD are recognized in official Có 511.
@@ -578,90 +484,21 @@ class AnalyticsService {
    * Marketing Analytics Performance
    */
   public getMarketingPerformance(): MarketingCampaignPerformance[] {
+    const state = mockStore.getSnapshot();
     const orders = mockStore.getOrders();
-
-    const campaignDefs = [
-      {
-        campaignId: 'camp_01',
-        name: 'Chiến dịch Meta Flash Sale Đầu Tháng',
-        channel: 'website' as Channel,
-        platform: 'Facebook/Meta' as const,
-        baseAdSpend: 2400000,
-        impressions: 48000,
-        clicks: 1920,
-        cpc: 1250,
-      },
-      {
-        campaignId: 'camp_02',
-        name: 'TikTok Video KOC Review Công Nghệ',
-        channel: 'tiktok' as Channel,
-        platform: 'TikTok Ads' as const,
-        baseAdSpend: 3500000,
-        impressions: 120000,
-        clicks: 4800,
-        cpc: 729,
-      },
-      {
-        campaignId: 'camp_03',
-        name: 'Shopee In-App Search Ads Khóa Tồn',
-        channel: 'shopee' as Channel,
-        platform: 'Shopee In-App' as const,
-        baseAdSpend: 1800000,
-        impressions: 34000,
-        clicks: 1360,
-        cpc: 1323,
-      },
-      {
-        campaignId: 'camp_04',
-        name: 'KOC Booking Livestream Mega Sale',
-        channel: 'tiktok' as Channel,
-        platform: 'KOC Booking' as const,
-        baseAdSpend: 2000000,
-        impressions: 65000,
-        clicks: 2200,
-        cpc: 909,
-      }
-    ];
-
-    return campaignDefs.map(def => {
-      const channelOrders = orders.filter(o => o.channel === def.channel);
-      const validOrders = channelOrders.filter(o => o.status !== 'cancelled');
-      const refundedOrders = channelOrders.filter(o => o.payment_status === 'refunded');
-
-      const grossRev = channelOrders.reduce((s, o) => s + (o.total || 0), 0);
-      const refundRev = refundedOrders.reduce((s, o) => s + (o.total || 0), 0);
-      const attributedRevenue = Math.max(0, grossRev - refundRev);
-
-      const adSpend = def.baseAdSpend;
-      const conversions = Math.max(1, validOrders.length || Math.round(def.clicks * 0.02));
-      const cpa = adSpend > 0 ? Math.round(adSpend / conversions) : 0;
-      
-      const roas = adSpend > 0 ? Number((attributedRevenue / adSpend).toFixed(2)) : 0;
-      const cogs = Math.round(attributedRevenue * 0.45);
-      const channelFees = Math.round(attributedRevenue * 0.10);
-      const cmAfterAds = attributedRevenue - cogs - channelFees - adSpend;
-
-      const status: 'PROFITABLE' | 'OPTIMIZING' | 'LOSS_MAKING' = 
-        cmAfterAds > 500000 ? 'PROFITABLE' : cmAfterAds >= -500000 ? 'OPTIMIZING' : 'LOSS_MAKING';
-
-      return {
-        campaignId: def.campaignId,
-        name: def.name,
-        channel: def.channel,
-        platform: def.platform,
-        adSpend,
-        impressions: def.impressions,
-        clicks: def.clicks,
-        cpc: def.cpc,
-        conversions,
-        cpa,
-        attributedRevenue,
-        roas,
-        cogs,
-        cmAfterAds,
-        status,
-        attributionType: 'ESTIMATED' as const
-      };
+    return [...new Set(orders.map(o => o.shop_id || o.channel))].map(shop => {
+      const cohort = orders.filter(o => (o.shop_id || o.channel) === shop);
+      const metrics = cohort.map(o => commerceOrderMetrics(state, o));
+      const adSpend = metrics.reduce((s, m) => s + m.adsSpend, 0);
+      const attributedRevenue = metrics.reduce((s, m) => s + m.sales, 0);
+      const cmAfterAds = metrics.reduce((s, m) => s + m.contribution, 0);
+      return { campaignId: shop, name: `Nhóm shop ${shop} · nguồn demo, chưa có attribution campaign`, channel: cohort[0].channel,
+        platform: (cohort[0].channel === 'tiktok' ? 'TikTok Ads' : cohort[0].channel === 'shopee' ? 'Shopee In-App' : cohort[0].channel === 'lazada' ? 'Lazada Ads' : 'Unknown') as MarketingCampaignPerformance['platform'],
+        adSpend, impressions: 0, clicks: 0, cpc: 0, conversions: cohort.filter(o => o.status === 'delivered').length,
+        cpa: cohort.filter(o => o.status === 'delivered').length ? adSpend / cohort.filter(o => o.status === 'delivered').length : 0,
+        attributedRevenue, roas: adSpend ? attributedRevenue / adSpend : 0,
+        cogs: metrics.reduce((s, m) => s + m.cogs, 0), cmAfterAds,
+        status: cmAfterAds >= 0 ? 'PROFITABLE' : 'LOSS_MAKING', attributionType: 'ESTIMATED' };
     });
   }
 

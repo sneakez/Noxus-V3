@@ -1,3 +1,4 @@
+import { hasPermission } from '@/lib/permissions';
 import { useEffect, useState } from 'react';
 import {
   User,
@@ -141,7 +142,7 @@ export function OrderDetailDrawer({
       return;
     }
     if (newStatus === 'cancelled') {
-      const ok = window.confirm('Xác nhận hủy đơn hàng #' + order.order_number + '? Thao tác này sẽ giải phóng toàn bộ tồn kho đã khóa và hoàn tiền cho khách.');
+      const ok = window.confirm('Xác nhận hủy đơn hàng #' + order.order_number + '? Thao tác này sẽ giải phóng toàn bộ tồn kho đã khóa theo kết quả hủy. Hoàn tiền được theo dõi riêng.');
       if (!ok) return;
     }
 
@@ -159,43 +160,12 @@ export function OrderDetailDrawer({
     const oldStatus = order.status;
     const now = new Date().toISOString();
 
-    if (newStatus === 'shipped') {
-      const trackingNumber = `SPX-VN-${Date.now().toString().slice(-6)}`;
-      mockStore.dispatchOrder(order.id, trackingNumber);
-      await supabase.from('orders').update({
-        status: 'shipped',
-        fulfillment_status: 'dispatched',
-        delivery_status: 'in_transit',
-        shipped_at: now,
-        notes: (order.notes ? order.notes + ' | ' : '') + `Vận đơn: ${trackingNumber}`
-      }).eq('id', order.id);
-    } else if (newStatus === 'cancelled') {
-      const { error: cancelErr } = await supabase.rpc('cancel_order_atomic', {
-        p_order_id: order.id,
-        p_tenant_id: activeTenant!.id,
-        p_reason: 'Hủy đơn hàng bởi người dùng',
-      });
-      if (cancelErr) {
-        toast('Hủy đơn thất bại: ' + cancelErr.message, 'error');
-        setUpdating(false);
-        return;
-      }
-    } else {
-      const updates: Record<string, unknown> = {
-        status: newStatus,
-        fulfillment_status: newStatus === 'processing' ? 'allocated' : 'unfulfilled',
-        updated_at: now
-      };
-      await supabase.from('orders').update(updates).eq('id', order.id);
-    }
-
-    await supabase.from('order_status_log').insert({
-      tenant_id: activeTenant!.id,
-      order_id: order.id,
-      from_status: oldStatus,
-      to_status: newStatus,
-      created_at: now
-    });
+    const result = newStatus === 'shipped'
+      ? mockStore.dispatchOrder(order.id, `DEMO-${order.order_number}`)
+      : newStatus === 'cancelled' ? mockStore.cancelOrderAtomic(order.id, 'Sàn demo xác nhận hủy')
+      : newStatus === 'processing' ? mockStore.releaseToWarehouse(order.id)
+      : { success: false, error: 'Chuyển trạng thái không hợp lệ; dùng hàng chờ công việc' };
+    if (!result.success) { toast(result.error || 'Không thể chuyển trạng thái', 'error'); setUpdating(false); return; }
 
     toast(`Đã cập nhật trạng thái đơn: ${ORDER_STATUS_LABELS[newStatus]}`, 'success');
     setUpdating(false);
@@ -223,29 +193,12 @@ export function OrderDetailDrawer({
       signature_verified: podSignature,
       notes: podNotes,
       source: podSource,
-      submitted_by: podSource === 'carrier_webhook_verified' ? 'CARRIER_WEBHOOK_API' : `${(activeRole || 'owner').toUpperCase()} (Demo Thủ Công)`,
+      submitted_by: mockStore.getExecutionContext()?.userId || 'unauthenticated',
       verified_at: now
     };
 
-    mockStore.markDeliveredWithPOD(order.id, podData);
-    await supabase.from('orders').update({
-      status: 'delivered',
-      delivery_status: 'delivered',
-      fulfillment_status: 'fulfilled',
-      delivered_at: now,
-      pod_evidence: podData,
-      revenue_recognized: true,
-      revenue_recognized_at: now
-    }).eq('id', order.id);
-
-    await supabase.from('order_status_log').insert({
-      tenant_id: activeTenant!.id,
-      order_id: order.id,
-      from_status: order.status,
-      to_status: 'delivered',
-      note: `Xác thực POD thành công [${podTracking}] — Ghi nhận Doanh thu Có 511 [ASSUMPTION: FOB Destination]`,
-      created_at: now
-    });
+    const result = mockStore.markDeliveredWithPOD(order.id, podData);
+    if (!result.success) { toast(result.error || 'Sự kiện bị từ chối', 'error'); setUpdating(false); return; }
 
     toast('✓ Xác thực POD thành công: Đơn hàng hoàn tất & Ghi nhận Doanh thu Có 511 [ASSUMPTION]', 'success');
     setShowPodModal(false);
@@ -253,22 +206,6 @@ export function OrderDetailDrawer({
     handleUpdated();
   }
 
-  async function updatePayment(newPayment: PaymentStatus) {
-    if (!order) return;
-    setUpdating(true);
-    const { error } = await supabase
-      .from('orders')
-      .update({ payment_status: newPayment })
-      .eq('id', order.id);
-
-    if (error) {
-      toast('Cập nhật thanh toán thất bại', 'error');
-    } else {
-      toast(`Trang thai thanh toan: ${PAYMENT_STATUS_LABELS[newPayment]}`, 'success');
-      handleUpdated();
-    }
-    setUpdating(false);
-  }
 
   async function handleDelete() {
     if (!order) return;
@@ -300,13 +237,7 @@ export function OrderDetailDrawer({
         subtitle={`Đặt hàng ${formatDateTime(order.placed_at)}`}
         footer={
           <>
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="btn-ghost text-rose-600 hover:bg-rose-50"
-            >
-              <Trash2 size={16} />
-              Xóa
-            </button>
+
             <div className="flex-1" />
             <button onClick={onClose} className="btn-secondary">
               Đóng
@@ -485,7 +416,7 @@ export function OrderDetailDrawer({
                   <div className="flex flex-wrap gap-2.5">
                     {order.status === 'pending' && (
                       <>
-                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'manager') && (
+                        {hasPermission(activeRole, 'orders:manage') && (
                           <button
                             disabled={updating}
                             onClick={() => updateStatus('processing')}
@@ -494,7 +425,7 @@ export function OrderDetailDrawer({
                             ✓ Xác nhận đơn & Giữ tồn kho
                           </button>
                         )}
-                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'manager') && (
+                        {hasPermission(activeRole, 'orders:manage') && (
                           <button
                             disabled={updating}
                             onClick={() => updateStatus('cancelled')}
@@ -508,7 +439,7 @@ export function OrderDetailDrawer({
 
                     {order.status === 'processing' && (
                       <>
-                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'warehouse') && (
+                        {(hasPermission(activeRole, 'inventory:move') && order.fulfillment_status === 'packed') && (
                           <button
                             disabled={updating}
                             onClick={() => updateStatus('shipped')}
@@ -517,7 +448,7 @@ export function OrderDetailDrawer({
                             📦 Đóng gói & Xuất kho (Dispatch)
                           </button>
                         )}
-                        {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'manager') && (
+                        {hasPermission(activeRole, 'orders:manage') && (
                           <button
                             disabled={updating}
                             onClick={() => updateStatus('cancelled')}
@@ -531,7 +462,7 @@ export function OrderDetailDrawer({
 
                     {order.status === 'shipped' && (
                       <div className="w-full space-y-2">
-                        {activeRole === 'warehouse' ? (
+                        {!hasPermission(activeRole, 'orders:manage') ? (
                           <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-start gap-2.5">
                             <Truck size={16} className="text-blue-600 shrink-0 mt-0.5" />
                             <div>
@@ -809,25 +740,7 @@ export function OrderDetailDrawer({
                     {PAYMENT_STATUS_LABELS[order.payment_status]}
                   </span>
                 </div>
-                {(activeRole === 'owner' || activeRole === 'admin' || activeRole === 'finance') && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {(['unpaid', 'paid', 'partially_paid', 'refunded'] as PaymentStatus[]).map((p) => (
-                      <button
-                        key={p}
-                        disabled={updating || p === order.payment_status}
-                        onClick={() => updatePayment(p)}
-                        className={cn(
-                          'px-2.5 py-1 rounded-md text-xs font-medium border transition-all',
-                          p === order.payment_status
-                            ? 'bg-ink-900 text-white border-ink-900 shadow-sm opacity-90 cursor-default'
-                            : 'border-ink-200 text-ink-600 hover:border-ink-300 hover:bg-ink-50'
-                        )}
-                      >
-                        {PAYMENT_STATUS_LABELS[p]}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <p className="text-xs text-ink-500">Thanh toán nhận từ sự kiện nguồn; hoàn tiền và đối soát theo dõi riêng trong Công việc & bàn giao.</p>
               </div>
             </div>
                 {/* Items */}

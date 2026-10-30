@@ -707,6 +707,7 @@ function OrderPnLDrawer({
               </div>
             </div>
 
+            {!!order.compensation && <div className="flex justify-between px-2 text-teal-800 text-xs"><span>Bồi thường riêng, không phải doanh thu:</span><strong>+{formatCurrency(order.compensation)}</strong></div>}
             {/* Step 8: CM2 [Milestone 2] */}
             <div className="flex items-center justify-between py-1.5 px-2 bg-blue-50/70 rounded border border-blue-200 text-blue-900 font-bold">
               <span className="font-sans text-xs">8. Lợi nhuận đóng góp biến đổi (Lãi CM2):</span>

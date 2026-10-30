@@ -1,3 +1,6 @@
+import { useAuth } from '@/providers/AuthProvider';
+import { hasPermission } from '@/lib/permissions';
+import { POReceiptModal } from './POReceiptModal';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ShoppingCart,
@@ -52,11 +55,14 @@ const STATUS_OPTIONS: { value: POStatus; label: string }[] = [
 ];
 
 export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
+  const { activeRole } = useAuth();
+  const canCreate = hasPermission(activeRole, 'purchasing:create');
   const [orders, setOrders] = useState<POWithItems[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [receivingId, setReceivingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -108,15 +114,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
     load();
   }
 
-  async function handleReceivePO(poId: string) {
-    const res = mockStore.receivePurchaseOrder(poId);
-    if (!res.success) {
-      toast('Lỗi nhận hàng: ' + (res.error || 'Thao tác không thành công'), 'error');
-      return;
-    }
-    toast('✓ Đã nhận hàng vào kho thành công! Tồn kho khả dụng và vật lý đã được cộng.', 'success');
-    load();
-  }
+  async function handleReceivePO(poId: string) { setReceivingId(poId); }
 
   if (loading) return <FullPageSpinner label="Đang tải danh sách đơn mua hàng (PO)..." />;
 
@@ -140,6 +138,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
           </p>
         </div>
         <button
+          disabled={!canCreate}
           onClick={() => setShowForm(true)}
           className="btn-primary flex items-center gap-2 shadow-sm shrink-0"
         >
@@ -268,7 +267,8 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
             }
             action={
               !search && statusFilter === 'all' ? (
-                <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
+                <button disabled={!canCreate}
+          onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
                   <Plus size={16} />
                   <span>Tạo đơn PO mới</span>
                 </button>
@@ -292,6 +292,8 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
                 className="overflow-hidden border border-slate-200/90 hover:border-slate-300 hover:shadow-md transition-all duration-200 bg-white rounded-xl"
               >
                 <div
+                  role="button" tabIndex={0} aria-expanded={isOpen}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(p => ({ ...p, [po.id]: !isOpen })); } }}
                   onClick={() => setExpanded((p) => ({ ...p, [po.id]: !isOpen }))}
                   className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-slate-50/60 transition-colors cursor-pointer select-none"
                 >
@@ -450,6 +452,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
                         {po.status === 'draft' && (
                           <button
                             type="button"
+                            disabled={!canCreate}
                             onClick={() => handleConfirmOrder(po.id)}
                             className="btn-primary text-xs py-2 px-3.5 bg-blue-600 hover:bg-blue-700 font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                           >
@@ -483,6 +486,7 @@ export function PurchaseOrdersPage({ search }: PurchaseOrdersPageProps) {
         </div>
       )}
 
+      {receivingId && <POReceiptModal poId={receivingId} onClose={() => setReceivingId(null)} onSaved={() => { setReceivingId(null); toast('Đã lưu đợt nhận, tồn và giá vốn đã cập nhật', 'success'); load(); }}/>}
       {/* Modal: Create PO */}
       <POFormModal
         open={showForm}
@@ -560,47 +564,14 @@ function POFormModal({ open, warehouses, products, onClose, onSaved }: FormProps
       return;
     }
     const validLines = lines.filter((l) => l.product_id && l.quantity > 0 && l.unit_cost >= 0);
-    if (validLines.length === 0) {
+    if (validLines.length === 0 || validLines.length !== lines.length) {
       toast('Vui lòng thêm ít nhất một mặt hàng hợp lệ', 'error');
       return;
     }
     setSaving(true);
     const number = `PO-${Date.now().toString().slice(-8)}`;
-    const { data: po, error: poErr } = await supabase
-      .from('purchase_orders')
-      .insert({
-        po_number: number,
-        warehouse_id: warehouseId,
-        supplier_name: supplier.trim(),
-        lead_time_days: Number(leadTime) || 7,
-        status: 'draft',
-        expected_arrival_date: expectedDate || null,
-        total_amount: total,
-        notes: notes.trim() || null,
-      })
-      .select()
-      .single();
-
-    if (poErr) {
-      toast('Tạo đơn PO thất bại: ' + poErr.message, 'error');
-      setSaving(false);
-      return;
-    }
-
-    const items = validLines.map((l) => ({
-      po_id: po.id,
-      product_id: l.product_id,
-      quantity: l.quantity,
-      unit_cost: l.unit_cost,
-      received_qty: 0,
-    }));
-
-    const { error: iErr } = await supabase.from('purchase_order_items').insert(items);
-    if (iErr) {
-      toast('Đơn PO đã tạo nhưng thêm sản phẩm thất bại: ' + iErr.message, 'error');
-      setSaving(false);
-      return;
-    }
+    const result = mockStore.createPurchaseOrder({ po_number: number, warehouse_id: warehouseId, supplier_name: supplier.trim(), lead_time_days: Number(leadTime) || 7, expected_arrival_date: expectedDate || null, notes: notes.trim() || null }, validLines);
+    if (!result.success) { toast(result.error || 'Không tạo được PO', 'error'); setSaving(false); return; }
 
     toast(`Đã tạo đơn mua hàng ${number} thành công`, 'success');
     setSaving(false);

@@ -1,118 +1,41 @@
-# NOXUS — Ma Trận Phân Quyền & Phạm Vi Vai Trò (Role & Permission Matrix)
+# Ma trận role, session và scope
 
-**Ngày ban hành:** 30/10/2026 (Asia/Ho_Chi_Minh)  
-**Baseline Git Commit:** `b891421eecf1efb6670af93912a04b2a7154a766`  
-**Refactor Branch:** `refactor/prototype-marketplace-e2e`  
-**Mục tiêu:** Định nghĩa quyền truy cập route, hành động (action), câu lệnh (command), và phạm vi dữ liệu (scope) cho toàn bộ các vai trò trong hệ sinh thái Noxus OMS.
+Ngày 30/10/2026. Phiên bản/evidence theo [PROTOTYPE_ACCEPTANCE.md](PROTOTYPE_ACCEPTANCE.md).
 
----
+## Quyền thực thi
 
-## 1. Nguyên Tắc Thiết Kế Phân Quyền
+| Hành động | Owner | Manager | Warehouse | Growth | Admin |
+|---|---|---|---|---|---|
+| Xem đơn trong scope | Có | Có | Có | Có, phục vụ phân tích | Có, chẩn đoán |
+| Map SKU / giữ tồn / giao kho / hủy | Có | Có | Không | Không | Không |
+| Nhặt / kiểm SKU-serial / đóng gói / in nhãn demo / bàn giao | Có | Có theo capability | Có | Không | Không |
+| Nhận hoàn / QC / báo ngoại lệ | Có | Có theo capability | Có, theo kho | Không | Không |
+| Xác nhận kết quả giao từ mô phỏng sàn | Có | Có | Không | Không | Không qua command nghiệp vụ |
+| Refund / nguồn phí / Ads credit / đối soát | Có | Có | Không | Không | Không |
+| Phân tích contribution / đề xuất | Có | Xem và tiếp nhận | Không | Có | Không |
+| Kết nối mock / retry nguồn đơn | Có | Xem và xử lý mapping | Không | Không | Có |
+| Tài khoản / scope | Có | Không | Không | Không | Có kỹ thuật; không tự cấp Owner/Manager |
+| Tạo PO / đặt PO | Có | Có | Không | Không | Không |
+| Nhận PO | Có | Có | Có | Không | Không |
 
-1. **Định danh theo Người dùng (`user_id`), không chỉ theo Tên vai trò:** Mọi thao tác ghi vết (audit trail), phê duyệt, nhận hàng, đổi trạng thái đều ghi nhận `user_id` thực tế của người thực hiện, ngăn chặn việc giả lập danh tính.
-2. **Không vượt rào bằng vai trò Chủ shop (Owner No-Bypass Invariant):** Quyền Owner dù toàn quyền quản trị vẫn không thể phá vỡ các bất biến nghiệp vụ (như không thể tạo tồn kho âm, không thể cộng trùng 2 lần khi nhận hàng hoàn, không thể xác nhận giao hàng cho đơn đã hủy).
-3. **Phân định rõ ranh giới Kho và Hãng vận chuyển / Sàn:** Nhân viên Kho (`warehouse`) chỉ có trách nhiệm và thẩm quyền đối với việc nhặt hàng, đóng gói và bàn giao cho bưu tá (`shipped`). Trạng thái giao thành công (`delivered`) và xác nhận POD thuộc thẩm quyền của hãng vận chuyển/sàn hoặc người quản lý (`owner`/`manager`).
-4. **Đối soát tài chính không ép buộc kế toán:** Vai trò Kế toán (`finance`) được cấu hình tùy chọn và tắt mặc định (`ENABLE_FINANCE_ROLE = false`). Quyền đối soát phí sàn (`finance:reconcile`) được cấp trực tiếp cho Quản lý vận hành (`manager`) và Chủ shop (`owner`).
-5. **Loại bỏ vai trò Người xem (`viewer`):** Loại bỏ hoàn toàn khỏi bộ chọn vai trò đang hoạt động. Các tài khoản legacy gán viewer sẽ bị từ chối truy cập các trang vận hành.
+Finance tùy chọn, `ENABLE_FINANCE_ROLE=false`; không nằm trong luồng bắt buộc. Viewer legacy không có quyền/trang. Các trang nâng cao chưa nghiệm thu bị lọc bởi `OPTIONAL_PAGES` cho mọi role.
 
----
+## Context thống nhất
 
-## 2. Bảng Phân Quyền Nghiệp Vụ Theo Hành Động (Action Matrix)
+`getExecutionContext()` yêu cầu `activeUserId`, membership đang active đúng tenant/role và profile active. `setActiveRole` là **bộ chuyển tài khoản demo rõ ràng**, chọn user thuộc membership; đây không phải cơ chế bảo mật production. Đăng nhập mock khớp email thực trong danh sách profile; email lạ không trở thành Owner.
 
-| Nghiệp vụ / Thao tác | Owner (Chủ shop) | Manager (Vận hành) | Warehouse (Kho) | Growth (Marketing) | Admin (Hệ thống) | Finance (Tùy chọn - OFF) |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Xem danh sách đơn hàng** | Toàn bộ shop | Theo shop được giao | Các đơn cần xử lý kho | Xem phân tích (ẩn PII) | Toàn bộ để chẩn đoán | Xem đơn đối soát |
-| **Duyệt / Khóa tồn đơn hàng** | ✓ | ✓ | ✗ | ✗ | ✗ (Không duyệt nghiệp vụ) | ✗ |
-| **Hủy đơn & Giải phóng tồn** | ✓ | ✓ | ✗ (Chỉ báo lỗi thiếu hàng) | ✗ | ✗ | ✗ |
-| **Tạo đợt nhặt hàng (Wave Picking)** | ✓ | ✓ | ✓ (Thực thi) | ✗ | ✗ | ✗ |
-| **Đóng gói & Bàn giao bưu tá (Dispatch)** | ✓ | ✓ | ✓ (Nhiệm vụ chính) | ✗ | ✗ | ✗ |
-| **Xác nhận POD / Đơn giao thành công** | ✓ (Mô phỏng) | ✓ (Mô phỏng) | ✗ **(BỊ CHẶN TUYỆT ĐỐI)** | ✗ | ✓ (Mô phỏng) | ✗ |
-| **Tạo & Duyệt đơn mua hàng (PO)** | ✓ | ✓ | ✗ (Chỉ xem để nhận) | ✗ | ✗ | ✗ |
-| **Nhận hàng PO vào kho** | ✓ | ✓ | ✓ (Kiểm đếm thực tế) | ✗ | ✗ | ✗ |
-| **Nhận kiện hoàn tại Dock (Pending QC)** | ✓ | ✓ | ✓ (Quét vận đơn hoàn) | ✗ | ✗ | ✗ |
-| **Kiểm tra QC hàng hoàn (Pass / Fail)** | ✓ | ✓ | ✓ (Phân loại chất lượng) | ✗ | ✗ | ✗ |
-| **Chuyển kho (Xuất / Nhận transfer)** | ✓ | ✓ | ✓ (Tại kho phụ trách) | ✗ | ✗ | ✗ |
-| **Điều chỉnh tồn kho ngoài giao dịch** | ✓ (Duyệt lý do) | Đề xuất (Kiểm duyệt) | Ghi nhận chênh lệch kiểm kê | ✗ | ✗ | ✗ |
-| **Đối soát phí sàn (Reconcile Fees)** | ✓ | ✓ (Scope reconcile) | ✗ | ✗ | ✗ | ✓ (Nếu bật) |
-| **Xem báo cáo P&L, CM1, CM2, CM3** | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ |
-| **Xem & Tối ưu chiến dịch Ads / ROAS** | ✓ | Xem tổng quan | ✗ | ✓ (Nhiệm vụ chính) | ✗ | ✗ |
-| **Cấu hình kết nối sàn (Channel Mappings)** | ✓ | ✓ | Xem | Xem | ✓ (Cấu hình kỹ thuật) | ✗ |
-| **Quản trị người dùng & Phân quyền** | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ |
+`actorRole`/`actorId` trong payload cũ không cấp quyền, không đổi người ghi audit. `authorize()` kiểm capability và tenant/shop/warehouse, cả quan hệ đơn gốc của fee/return. Các command kho, đơn, tiền và cấu hình kiểm context tại lớp thực thi. Thiếu context bị từ chối.
 
----
+`shop_ids` và `warehouse_ids` trên membership là scope; không khai báo nghĩa là toàn tenant. Owner/Admin cấu hình ở Công việc & bàn giao → Tài khoản demo & phạm vi được giao. Scope không có dữ liệu thì queue rỗng; không fallback sang kho/shop khác. Người được phân công phải có membership hợp lệ trong phạm vi.
 
-## 3. Danh Mục Trang Được Phép Truy Cập (Route Matrix)
+Generic insert/update/delete/mutateTable không được đổi kho, tiền, các dòng giao dịch hoặc vòng đời đơn để đi vòng command. Các bảng tài chính/tồn/chứng từ bị khóa generic mutation; metadata được phép vẫn kiểm quyền và scope. Adapter trả lỗi khi command thất bại hoặc RPC chưa triển khai. Các getter chứng từ trọng yếu trả bản sao.
 
-Hàm `getAllowedPagesForRole(role)` thực thi kiểm soát truy cập route như sau:
+Audit ghi `userId` thật của session, thời điểm và nguồn; không gọi lịch sử client mock là chuỗi SHA-256 bất biến.
 
-### 3.1. Chủ Shop (`owner`) & Quản Trị Hệ Thống (`admin`)
-- **Chỉ huy & Điều hành:** `dashboard`, `operationsAnalytics`, `founderExecution`.
-- **Vận hành thương mại:** `orders`, `fulfillment`, `returns`, `customers`.
-- **Sản phẩm & Tồn kho:** `products`, `inventory`, `purchaseOrders`, `transfers`, `stockLedger`, `batches`, `warehouses`.
-- **Kiểm soát tài chính:** `orderEconomics`, `skuEconomics`, `channelEconomics`, `cashWorkingCapital`, `pricingCalculator`, `ledger`, `feeReconciliation`, `marginControl`, `salesVelocity`, `revenueReport`.
-- **Tăng trưởng & Marketing:** `marketingAnalytics`, `customerAnalytics`, `salesAnalytics`, `inventoryAnalytics`.
-- **Cấu hình kỹ thuật & Thử nghiệm:** `channelConnections`, `settings`, `auditTrail`, `ownerValidation`, `businessRules`, `simulator`, `bufferRules`, `routingRules`, `channelMapping`, `syncMonitor`, `complaints`, `automationRules`, `webhooks`, `flowGuide`.
+## Bằng chứng thực thi
 
-### 3.2. Quản Lý Vận Hành (`manager`)
-- **Giám sát & Vận hành:** `dashboard`, `operationsAnalytics`, `orders`, `fulfillment`, `returns`, `customers`.
-- **Hàng hóa & Kho bãi:** `products`, `inventory`, `purchaseOrders`, `transfers`, `stockLedger`, `batches`, `warehouses`.
-- **Kinh tế đơn & Đối soát:** `orderEconomics`, `skuEconomics`, `channelEconomics`, `feeReconciliation`, `pricingCalculator`, `salesVelocity`, `revenueReport`.
-- **Phân tích nghiệp vụ:** `marketingAnalytics`, `customerAnalytics`, `salesAnalytics`, `inventoryAnalytics`, `founderExecution`.
-- **Quy tắc & Khiếu nại:** `channelConnections`, `auditTrail`, `ownerValidation`, `businessRules`, `simulator`, `bufferRules`, `routingRules`, `channelMapping`, `syncMonitor`, `complaints`, `automationRules`, `flowGuide`.
-
-### 3.3. Nhân Viên Kho (`warehouse`)
-- **Trang làm việc:** `dashboard`, `operationsAnalytics`.
-- **Thực thi đơn:** `orders` (chỉ xem thông tin giao nhận), `fulfillment` (wave picking & packing).
-- **Xử lý hàng:** `returns` (tiếp nhận kiện và kiểm tra QC), `inventory` (tra cứu vị trí kệ và trạng thái 5 tầng), `purchaseOrders` (nhận hàng PO), `transfers` (xuất/nhận chuyển kho), `batches`, `warehouses`, `stockLedger`, `flowGuide`.
-- **Bị ẩn hoàn toàn:** Toàn bộ các trang tài chính (`feeReconciliation`, `orderEconomics`, `skuEconomics`, `ledger`), marketing, cấu hình sàn, và quản trị hệ thống.
-
-### 3.4. Chuyên Viên Tăng Trưởng (`growth`)
-- **Trang làm việc:** `dashboard`, `orders` (ẩn PII khách hàng), `products`, `inventory`.
-- **Phân tích hiệu quả:** `marketingAnalytics`, `customerAnalytics`, `salesAnalytics`, `inventoryAnalytics`, `skuEconomics`, `channelEconomics`, `pricingCalculator`, `founderExecution`, `flowGuide`.
-- **Bị ẩn hoàn toàn:** Các trang thao tác xuất nhập kho, xác nhận đơn, duyệt PO, đối soát thanh toán chi tiết.
-
-### 3.5. Người Xem Bị Loại Bỏ (`viewer`)
-- **Chính sách:** Trả về mảng rỗng `[]`. Mọi thao tác mutation từ URL hoặc command API đều bị từ chối với thông báo yêu cầu quản trị viên cấp vai trò hợp lệ.
-
----
-
-## 4. Kiểm Soát Phạm Vi Dữ Liệu (Scope Hierarchy)
-
-```
-Tenant (Doanh nghiệp sở hữu)
-  └── Channel (Kênh bán: TikTok Shop, Shopee, Lazada, Website)
-        └── Shop Identity (Shop ID: ví dụ shop_tiktok_vn_01)
-              └── Warehouse Location (Kho: wh_north_01, wh_central_01)
-                    └── Inventory 5-State Bucket
-                          ├── Physical (Tổng tồn vật lý)
-                          ├── Available / Sellable (Khả dụng bán)
-                          ├── Reserved (Đang khóa theo đơn)
-                          └── Unavailable (Chờ kiểm tra QC / Hư hỏng)
-```
-
-- **Scope Shop:** Người dùng được gán shop nào chỉ xem và xử lý đơn hàng thuộc shop đó; không có tình trạng rò rỉ đơn giữa hai shop trên cùng một sàn thương mại điện tử.
-- **Scope Kho:** Thao tác nhận hàng và chuyển kho kiểm tra nghiêm ngặt `warehouse_id`. Nhân viên kho W1 không thể xác nhận nhận hàng thay cho kho W2.
-
----
-
-## 5. Bảo Vệ Ở Cấp Lệnh Thực Thi (Command-Level Authorization & Rejections)
-
-Hệ thống không chỉ ẩn nút trên giao diện người dùng (UI level) mà còn kiểm soát nghiêm ngặt ở tầng lệnh nghiệp vụ (`mockStore` command level). Bất kỳ lệnh gọi trực tiếp nào vượt quyền đều bị chặn và ném lỗi xác thực:
-
-1. **Nhân viên Kho (`warehouse`) gọi lệnh `markDeliveredWithPOD`:**
-   - **Cơ chế:** Kiểm tra vai trò người gọi `actorRole === 'warehouse'`.
-   - **Xử lý:** Lệnh bị từ chối tuyệt đối.
-   - **Thông điệp lỗi:** `"Command rejected: Nhân viên kho chỉ bàn giao bưu tá, không có thẩm quyền kết luận giao hàng thành công (POD)"`.
-   - **Minh chứng:** `src/mock/store.ts` (phương thức `markDeliveredWithPOD`), kiểm chứng tự động tại `src/tests/uatRemediationAudit.test.ts` (Lines 79-93).
-
-2. **Quản trị kỹ thuật (`admin`) gọi lệnh `refundOrder`:**
-   - **Cơ chế:** Kiểm tra vai trò người gọi `actorRole === 'admin'`. Quyền hạn kỹ thuật (Technical Admin) tách biệt hoàn toàn với quyền duyệt tài chính (Financial Approval).
-   - **Xử lý:** Lệnh bị từ chối, chỉ cho phép `owner` hoặc `manager`.
-   - **Thông điệp lỗi:** `"Command rejected: Quyền hạn kỹ thuật Admin không được phép duyệt hoàn tiền / giao dịch tài chính (Cần vai trò Quản lý / Chủ shop)"`.
-   - **Minh chứng:** `src/mock/store.ts` (phương thức `refundOrder`), kiểm chứng tự động tại `src/tests/uatRemediationAudit.test.ts` (Lines 94-98).
-
-3. **Nhân viên Kho (`warehouse`) hoặc Người xem (`viewer`) gọi lệnh `reconcileFeeBreakdown`:**
-   - **Cơ chế:** Kiểm tra quyền `hasPermission(actorRole, 'finance:reconcile')`.
-   - **Xử lý:** Bị từ chối nếu không sở hữu capability `finance:reconcile`.
-   - **Thông điệp lỗi:** `"Command rejected: Quyền hạn bị từ chối đối với thao tác đối soát phí sàn"`.
-   - **Minh chứng:** `src/mock/store.ts` (phương thức `reconcileFeeBreakdown`), kiểm chứng tự động tại `src/tests/uatRemediationAudit.test.ts` (Lines 99-103).
+- `handoverRegression.test.ts`: Warehouse + payload Manager bị chặn, dữ liệu không đổi.
+- `commerceAcceptance.test.ts`: direct command, CRUD bypass, user thiếu context, Viewer, Admin sửa tiền, tenant/shop/kho ngoài scope; user CRUD và đăng nhập không fallback.
+- UI chính: Warehouse mở deep link phí bị chặn; Owner/Manager lưu đối soát.
+- UI edge: Owner cấp scope kho khác → Warehouse không thấy việc/tồn ngoài kho; xóa scope hợp lệ rồi nhận PO.
+- Kiểm tra route chỉ là lớp UI; các test command ở trên vẫn bắt buộc.

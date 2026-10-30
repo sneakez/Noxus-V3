@@ -105,7 +105,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'TỔNG QUAN',
     items: [
-      { id: 'dashboard', label: 'Tổng quan', icon: SquaresFour },
+      { id: 'dashboard', label: 'Công việc & bàn giao', icon: SquaresFour },
       { id: 'operationsAnalytics', label: 'Vận hành kho', icon: Pulse },
     ],
   },
@@ -243,11 +243,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
       .filter((group) => group.items.length > 0);
   }, [allowedPages]);
 
-  useEffect(() => {
-    if (!allowedPages.has(current)) {
-      onNavigate('dashboard');
-    }
-  }, [allowedPages, current, onNavigate]);
+
 
   return (
     <>
@@ -443,10 +439,10 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
             >
               <div className="px-2 py-1.5 text-[10px] font-bold text-teal-300 uppercase tracking-wider border-b border-slate-700/60 mb-1 flex items-center justify-between">
                 <span>Chuyển Đổi Vai Trò</span>
-                <span className="text-slate-400 font-mono">7 ROLES</span>
+                <span className="text-slate-400 font-mono">5 ROLES</span>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-0.5">
-                {ALL_ROLES.map((r) => {
+                {ALL_ROLES.filter(r => r.id !== 'viewer' && (r.id !== 'finance' || ENABLE_FINANCE_ROLE)).map((r) => {
                   const isCurrent = currentRole === r.id;
                   return (
                     <button

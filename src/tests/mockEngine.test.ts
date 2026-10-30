@@ -107,6 +107,8 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     expect(afterOrderStock.available).toBe(afterOrderStock.physical - afterOrderStock.reserved - (afterOrderStock.unavailable || (afterOrderStock.damaged || 0)));
 
     // Dispatch Order
+    expect(mockStore.prepareOrder(orderRes.orderId!, 'pick', ['NX-AIR-PRO']).success).toBe(true);
+    expect(mockStore.prepareOrder(orderRes.orderId!, 'pack').success).toBe(true);
     const dispatchRes = mockStore.dispatchOrder(orderRes.orderId!, 'TRACK-999');
     expect(dispatchRes.success).toBe(true);
 
@@ -172,6 +174,8 @@ describe('Centralized Mock Data Engine & Workflows', () => {
     if (!item) return;
     const beforeStock = mockStore.getInventory5State().find(i => i.product_id === item.product_id)!;
 
+    expect(mockStore.prepareOrder(processingOrder.id, 'pick', [item.product_sku]).success).toBe(true);
+    expect(mockStore.prepareOrder(processingOrder.id, 'pack').success).toBe(true);
     const res = mockStore.dispatchOrder(processingOrder.id, 'SPX-VN-902148');
     expect(res.success).toBe(true);
 
@@ -181,22 +185,23 @@ describe('Centralized Mock Data Engine & Workflows', () => {
   });
 
   it('inspectReturnQC adds to available if good, moves to damaged if bad', () => {
-    const ret = mockStore.getReturns()[0];
+    const ret = mockStore.getReturns().find(r => r.id === 'ret_005')!;
     const snap = mockStore.getSnapshot();
     const retItem = snap.returnItems.find(i => i.return_id === ret.id)!;
     const invBefore = snap.inventory5State.find(i => i.product_id === retItem.product_id)!;
     const availBefore = invBefore.available;
 
-    // Test QC Good
-    mockStore.inspectReturnQC(ret.id, true);
+    // Physical receipt is required before QC.
+    expect(mockStore.receiveReturnDock(ret.id).success).toBe(true);
+    expect(mockStore.inspectReturnQC(ret.id, true).success).toBe(true);
     const invAfterGood = mockStore.getInventory5State().find(i => i.product_id === retItem.product_id)!;
     expect(invAfterGood.available).toBe(availBefore + retItem.quantity);
 
-    // Test QC Bad on another return
+    // A completed inspection cannot be replayed with a different outcome.
     const damagedBefore = invAfterGood.damaged;
-    mockStore.inspectReturnQC(ret.id, false);
+    expect(mockStore.inspectReturnQC(ret.id, false).success).toBe(false);
     const invAfterBad = mockStore.getInventory5State().find(i => i.product_id === retItem.product_id)!;
-    expect(invAfterBad.damaged).toBe(damagedBefore + retItem.quantity);
+    expect(invAfterBad.damaged).toBe(damagedBefore);
   });
 
   it('postJournalEntry enforces Debit == Credit balance rule', () => {
@@ -248,15 +253,16 @@ describe('Centralized Mock Data Engine & Workflows', () => {
   it('verifies end-to-end RMA multi-stage lifecycle and double-entry refund', () => {
     mockStore.resetToDefaultSeed();
     const snapBefore = mockStore.getSnapshot();
-    const rma = snapBefore.returns[0];
+    const rma = snapBefore.returns.find(r => r.id === 'ret_005')!;
     expect(rma).toBeDefined();
 
     // 1. QC Restock
-    const invBefore = snapBefore.inventory5State.find(i => i.product_id === 'prod_mouse_pro')!;
+    const invBefore = snapBefore.inventory5State.find(i => i.product_id === 'prod_kb_wave')!;
+    expect(mockStore.receiveReturnDock(rma.id).success).toBe(true);
     const qcRes = mockStore.inspectReturnQC(rma.id, true);
     expect(qcRes.success).toBe(true);
 
-    const invAfter = mockStore.getInventory5State().find(i => i.product_id === 'prod_mouse_pro')!;
+    const invAfter = mockStore.getInventory5State().find(i => i.product_id === 'prod_kb_wave')!;
     expect(invAfter.physical).toBe(invBefore.physical + 1);
     expect(invAfter.available).toBe(invBefore.available + 1);
     expect(invAfter.available).toBe(invAfter.physical - invAfter.reserved - (invAfter.unavailable || (invAfter.damaged || 0)));

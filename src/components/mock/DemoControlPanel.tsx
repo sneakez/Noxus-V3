@@ -148,7 +148,7 @@ export function DemoControlPanel() {
                   <Users size={12} /> 1. Chuyển vai trò (Role Switcher)
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  {roles.map(r => {
+                  {roles.filter(r => r.id !== 'viewer' && (r.id !== 'finance' || ENABLE_FINANCE_ROLE)).map(r => {
                     const isActive = activeRole === r.id;
                     return (
                       <button

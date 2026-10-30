@@ -9,6 +9,8 @@ export type DataConfidenceStatus = 'VERIFIED' | 'PARTIALLY_RECONCILED' | 'ESTIMA
 
 // ============ Unit Economics Core ============
 export interface OrderUnitEconomics {
+  compensation?: number;
+  adsCredit?: number;
   orderId: string;
   orderNumber: string;
   channel: Channel;
@@ -133,7 +135,7 @@ export interface MarketingCampaignPerformance {
   campaignId: string;
   name: string;
   channel: Channel;
-  platform: 'Facebook/Meta' | 'TikTok Ads' | 'Shopee In-App' | 'KOC Booking' | 'Google Ads';
+  platform: 'Facebook/Meta' | 'TikTok Ads' | 'Shopee In-App' | 'Lazada Ads' | 'Unknown' | 'KOC Booking' | 'Google Ads';
   adSpend: number;
   impressions: number;
   clicks: number;

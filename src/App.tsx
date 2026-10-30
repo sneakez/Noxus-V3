@@ -1,3 +1,6 @@
+import { mockStore } from '@/mock/store';
+import { WorkQueuePage } from '@/pages/workQueue/WorkQueuePage';
+import { getAllowedPagesForRole } from '@/lib/permissions';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -85,7 +88,7 @@ interface PageMeta {
 
 const PAGE_META: Record<PageId, PageMeta> = {
   // Overview
-  dashboard: { title: 'Bảng điều hành kinh doanh', subtitle: 'Tổng quan doanh thu quản trị, dòng đóng góp lợi nhuận (CM1, CM2, CM3)', searchPlaceholder: 'Tìm kiếm nhanh...' },
+  dashboard: { title: 'Công việc & bàn giao', subtitle: 'Theo dõi đầu việc theo role, hàng và tiền', searchPlaceholder: 'Tìm kiếm nhanh...' },
   
   // Sales
   orders: { title: 'Quản trị đơn hàng', subtitle: 'Theo dõi tiến trình từ đặt hàng, giữ kho, đóng gói đến đối soát POD', searchPlaceholder: 'Tìm mã đơn, khách hàng...' },
@@ -148,7 +151,7 @@ const PAGE_META: Record<PageId, PageMeta> = {
 };
 
 function AuthenticatedWorkspace() {
-  const { session, activeTenant } = useAuth();
+  const { session, activeTenant, activeRole } = useAuth();
   const [page, setPage] = useState<PageId>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -161,6 +164,8 @@ function AuthenticatedWorkspace() {
   });
 
   const [search, setSearch] = useState('');
+  const [, setRevision] = useState(0);
+  useEffect(() => mockStore.subscribe(() => setRevision(r => r + 1)), []);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -176,6 +181,7 @@ function AuthenticatedWorkspace() {
     setSearch('');
   };
 
+  const allowed = getAllowedPagesForRole(activeRole).includes(page);
   const meta = PAGE_META[page] || PAGE_META.dashboard;
 
   return (
@@ -183,7 +189,7 @@ function AuthenticatedWorkspace() {
       <Sidebar
         current={page}
         onNavigate={handleNavigate}
-        stats={{ pendingOrders: 3, lowStock: 2 }}
+        stats={{ pendingOrders: mockStore.getOrders().filter(o => o.status === 'pending').length, lowStock: mockStore.getInventory5State().filter(i => i.available <= i.safety_stock).length }}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />
@@ -200,9 +206,9 @@ function AuthenticatedWorkspace() {
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-transparent">
           <ErrorBoundary>
-            <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu..." />}>
+            {!allowed ? <div className="p-8" role="alert"><h1 className="text-xl font-semibold">Không có quyền truy cập trang này</h1><p>Chuyển về công việc trong phạm vi tài khoản.</p><button className="border rounded p-2 mt-3" onClick={() => handleNavigate('dashboard')}>Mở công việc</button></div> : <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu..." />}>
               {/* Overview */}
-              {page === 'dashboard' && <ExecutiveAnalyticsDashboard onNavigate={(p) => handleNavigate(p as PageId)} />}
+              {page === 'dashboard' && <WorkQueuePage />}
               
               {/* Sales */}
               {page === 'orders' && <OrdersPage search={search} onNavigate={(p) => handleNavigate(p as PageId)} />}
@@ -211,7 +217,7 @@ function AuthenticatedWorkspace() {
 
               {/* Operations & WMS */}
               {page === 'inventory' && <InventoryPage search={search} />}
-              {page === 'fulfillment' && <FulfillmentPage search={search} />}
+              {page === 'fulfillment' && <WorkQueuePage focus="warehouse" />}
               {page === 'inventoryAnalytics' && <InventoryAnalyticsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
               {page === 'transfers' && <TransfersPage search={search} />}
               {page === 'batches' && <BatchesPage search={search} />}
@@ -223,7 +229,7 @@ function AuthenticatedWorkspace() {
               {page === 'products' && <ProductsPage search={search} />}
 
               {/* After-sales */}
-              {page === 'returns' && <ReturnsPage search={search} onNavigate={(p) => handleNavigate(p as PageId)} />}
+              {page === 'returns' && <WorkQueuePage focus="returns" />}
 
               {/* Unit Economics */}
               {page === 'orderEconomics' && <OrderEconomicsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
@@ -251,7 +257,7 @@ function AuthenticatedWorkspace() {
               {/* Legacy routes preserved */}
               {page === 'complaints' && <ComplaintsPage search={search} />}
               {page === 'channelMapping' && <ChannelMappingPage search={search} />}
-              {page === 'syncMonitor' && <SyncMonitorPage search={search} />}
+              {page === 'syncMonitor' && <WorkQueuePage focus="sync" />}
               {page === 'ledger' && <LedgerPage search={search} />}
               {page === 'feeReconciliation' && <FeeReconciliationPage search={search} />}
               {page === 'marginControl' && <MarginControlPage />}
@@ -262,7 +268,7 @@ function AuthenticatedWorkspace() {
               {page === 'bufferRules' && <BufferRulesPage search={search} />}
               {page === 'routingRules' && <RoutingRulesPage search={search} />}
               {page === 'flowGuide' && <FlowGuidePage />}
-            </Suspense>
+            </Suspense>}
           </ErrorBoundary>
         </main>
       </div>
@@ -346,9 +352,12 @@ function AppRouter() {
 }
 
 export function App() {
+  const [storageError, setStorageError] = useState('');
+  useEffect(() => { const listener = (e: Event) => setStorageError((e as CustomEvent<string>).detail); window.addEventListener('nexus-storage-error', listener); return () => window.removeEventListener('nexus-storage-error', listener); }, []);
   return (
     <ToastProvider>
       <AuthProvider>
+        {storageError && <p role="alert" className="fixed top-0 left-0 right-0 z-[100] bg-rose-100 text-rose-900 p-4">{storageError}</p>}
         <AppRouter />
         {/* Global Demo Control Panel for quick testing and resets */}
         <DemoControlPanel />

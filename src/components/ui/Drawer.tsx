@@ -39,7 +39,7 @@ export function Drawer({
         className="absolute inset-0 bg-ink-950/50 backdrop-blur-sm animate-backdrop"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-2xl bg-white shadow-2xl shadow-ink-950/20 flex flex-col animate-slide-in h-full overflow-hidden">
+      <div role="dialog" aria-modal="true" aria-label={title} className="relative w-full max-w-2xl bg-white shadow-2xl shadow-ink-950/20 flex flex-col animate-slide-in h-full overflow-hidden">
         <div className="flex items-start justify-between p-6 border-b border-ink-100 bg-gradient-to-r from-brand-50/30 to-transparent shrink-0">
           <div>
             <h2 className="text-lg font-semibold text-ink-900 tracking-tight">{title}</h2>

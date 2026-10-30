@@ -8,12 +8,13 @@ function getRelativeDate(daysAgo: number, hour = 10, minute = 30): string {
 }
 
 export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   snapshotId: 'SNAPSHOT-V6.2-20261029-DIGITAL-AUDIT',
   stateRevision: 0,
   lastUpdated: new Date().toISOString(),
   activeTenantId: 'tenant_flagship',
   activeRole: 'owner',
+  activeUserId: 'usr_owner_01',
 
   // ============ Tenants ============
   tenants: [
@@ -45,6 +46,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
 
   // ============ Memberships ============
   memberships: [
+    { id: 'mship_growth', tenant_id: 'tenant_flagship', user_id: 'usr_growth_01', role: 'growth', status: 'active', created_at: '2026-01-10T08:00:00Z', updated_at: '2026-10-30T00:00:00Z' },
     {
       id: 'mship_owner',
       tenant_id: 'tenant_flagship',
@@ -103,6 +105,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
 
   // ============ Profiles ============
   profiles: [
+    { id: 'usr_growth_01', email: 'growth@nexusoms.io', full_name: 'Nhân viên Growth', role: 'manager', is_active: true, created_at: '2026-01-10T08:00:00Z', updated_at: '2026-10-30T00:00:00Z' },
     {
       id: 'usr_owner_01',
       email: 'owner@nexusoms.io',
@@ -2259,7 +2262,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       name: 'Đồng bộ đơn hàng ERP MISA',
       target_url: 'https://api.erp-misa-mock.internal/v1/orders/webhook',
       event_types: ['order.created', 'order.delivered', 'return.completed'],
-      secret: 'whsec_misa_live_90214',
+      secret: 'mock_webhook_secret_not_for_production_1',
       is_active: true,
       max_retries: 3,
       created_at: '2026-01-10T08:00:00Z',
@@ -2270,7 +2273,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
       name: 'Cập nhật điểm thành viên CRM HubSpot',
       target_url: 'https://api.crm-mock.internal/v2/customer/loyalty',
       event_types: ['order.delivered'],
-      secret: 'whsec_crm_live_44812',
+      secret: 'mock_webhook_secret_not_for_production_2',
       is_active: true,
       max_retries: 3,
       created_at: '2026-01-15T08:00:00Z',
@@ -2302,7 +2305,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
   orderFeeBreakdowns: [
     {
       id: 'fee_001',
-      order_id: 'ord_shopee_01',
+      order_id: 'ord_90214',
       commission_fee: 45000,
       transaction_fee: 25000,
       voucher_co_fund_fee: 10000,
@@ -2317,7 +2320,7 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
     },
     {
       id: 'fee_002',
-      order_id: 'ord_tiktok_01',
+      order_id: 'ord_44812',
       commission_fee: 65000,
       transaction_fee: 30000,
       voucher_co_fund_fee: 15000,
@@ -2400,3 +2403,16 @@ export const INITIAL_MOCK_DATABASE: MockDatabaseSnapshot = {
     }
   ]
 };
+
+// Seed relationships must resolve to real shops; never infer tenant from a role.
+for (const order of INITIAL_MOCK_DATABASE.orders) {
+  order.shop_id ||= INITIAL_MOCK_DATABASE.channelConnections?.find(c => c.channel === order.channel)?.shop_id;
+}
+
+for (const key of ['channelConnections', 'channelSkuMappings', 'syncLogs', 'customerComplaints', 'outboundWebhooks', 'webhookDeliveryLogs', 'bufferRules', 'routingRules', 'orderAutomationRules', 'pickingWaves', 'purchaseOrders', 'purchaseOrderItems'] as const) {
+  for (const row of INITIAL_MOCK_DATABASE[key] || []) Object.assign(row, { tenant_id: 'tenant_flagship' });
+}
+
+for (const order of INITIAL_MOCK_DATABASE.orders) {
+  if (order.status === 'processing') order.fulfillment_status ||= 'allocated';
+}

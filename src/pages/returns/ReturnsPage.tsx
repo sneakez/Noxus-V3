@@ -215,10 +215,10 @@ export function ReturnsPage({ search = '', onNavigate }: ReturnsPageProps) {
   }
 
   async function handleReceive(id: string, e?: React.MouseEvent) {
-    if (e) e.stopPropagation();
-    const { error } = await supabase.from('return_requests').update({ status: 'received' }).eq('id', id);
-    if (error) { toast('Cập nhật thất bại', 'error'); return; }
-    toast('✓ Đã nhận kiện hàng tại dock kho — Chờ kiểm định QC', 'success');
+    e?.stopPropagation();
+    const result = mockStore.receiveReturnDock(id);
+    if (!result.success) { toast(result.error || 'Không thể nhận hàng', 'error'); return; }
+    toast('Đã lưu thực nhận; kiểm tra QC trước khi bán lại', 'success');
     load();
   }
 
@@ -229,10 +229,7 @@ export function ReturnsPage({ search = '', onNavigate }: ReturnsPageProps) {
       toast('Kiểm định QC thất bại: ' + (res.error || ''), 'error');
       return;
     }
-    await supabase.from('return_requests').update({
-      status: isGood ? 'qc_passed' : 'qc_failed',
-      approval_status: 'pending'
-    }).eq('id', id);
+
 
     toast(
       isGood

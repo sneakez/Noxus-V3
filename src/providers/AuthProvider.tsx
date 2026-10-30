@@ -48,13 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setActiveRole(currRole);
     setMemberships(snap.memberships);
 
-    const activeProfile = snap.profiles.find(p => p.email.includes(currRole)) || snap.profiles[0];
+    const activeProfile = snap.profiles.find(p => p.id === snap.activeUserId);
     setProfile(activeProfile || null);
+    if (!activeProfile || !mockStore.getExecutionContext()) { setSession(null); setLoading(false); return; }
 
     setSession({
       user: {
-        id: activeProfile?.id || 'usr_owner_01',
-        email: activeProfile?.email || 'owner@nexusoms.io',
+        id: activeProfile.id,
+        email: activeProfile.email,
         app_metadata: {},
         user_metadata: { full_name: activeProfile?.full_name },
         aud: 'authenticated',
@@ -184,15 +185,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     if (isMockMode()) {
-      // Determine role from demo email or default to owner
-      let targetRole: TenantRole = 'owner';
-      if (email.includes('admin')) targetRole = 'admin';
-      else if (email.includes('manager')) targetRole = 'manager';
-      else if (email.includes('kho') || email.includes('warehouse')) targetRole = 'warehouse';
-      else if (email.includes('ketoan') || email.includes('finance')) targetRole = 'finance';
-      else if (email.includes('viewer')) targetRole = 'viewer';
-
-      mockStore.setActiveRole(targetRole);
+      const result = mockStore.signInDemoUser(email);
+      if (!result.success) return { error: result.error || 'Không đăng nhập được tài khoản demo' };
       syncFromMockStore();
       return { error: null };
     }
@@ -261,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signOut() {
     if (isMockMode()) {
+      mockStore.signOutDemoUser();
       setSession(null);
       setProfile(null);
       setActiveTenant(null);

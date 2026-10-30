@@ -250,6 +250,16 @@ export interface ScenarioValidationResult {
 
 // ============ Database Snapshot Structure ============
 export interface MockDatabaseSnapshot {
+  marketplaceEvents?: Array<{ id: string; tenant_id: string; shop_id: string; status: 'pending' | 'failed' | 'processed'; error?: string; order: Order; items: OrderItem[] }>;
+  sourceVersions?: Record<string, number>;
+  activeUserId?: string | null;
+  returnReceipts?: Array<{
+    id: string; return_id: string; warehouse_id: string; actor_id: string; created_at: string;
+    lines: Array<{ item_id: string; quantity: number; pass_qty: number; fail_qty: number; serials?: string[]; wrong_serial?: boolean }>;
+  }>;
+  processedCommands?: Record<string, string>;
+  handoffAssignments?: Record<string, { assignee_id: string | null; history: Array<{ actor_id: string; assignee_id: string | null; at: string }> }>;
+  growthRecommendations?: Array<{ id: string; tenant_id: string; order_id: string; reason: string; actor_id: string; status: 'open' | 'accepted' | 'dismissed'; created_at: string }>;
   schemaVersion: number;
   snapshotId?: string;
   stateRevision?: number;
