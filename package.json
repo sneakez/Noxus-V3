@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:ui": "node scripts/commerce-ui-uat.mjs",
-    "test:ui:edges": "node scripts/commerce-ui-edges.mjs"
+    "test:ui:edges": "node scripts/commerce-ui-edges.mjs",
+    "test:ui:followup": "node scripts/commerce-ui-followup.mjs",
+    "test:ui:login": "node scripts/commerce-ui-login.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

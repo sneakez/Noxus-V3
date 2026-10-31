@@ -30,7 +30,7 @@ import {
   ORDER_STATUS_COLORS,
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_COLORS,
-  PAYMENT_STATUS_LABELS,
+  orderPaymentLabel,
 } from '@/lib/utils';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -360,7 +360,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
           width: '135px',
           accessor: o => (
             <span className={cn('badge text-xs font-semibold px-2.5 py-1 whitespace-nowrap inline-flex items-center', PAYMENT_STATUS_COLORS[o.payment_status])}>
-              {PAYMENT_STATUS_LABELS[o.payment_status] || o.payment_status}
+              {orderPaymentLabel(o)}
             </span>
           )
         }

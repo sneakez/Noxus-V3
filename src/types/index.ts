@@ -645,6 +645,11 @@ export interface ReturnRequest {
   evidence_media_id?: string | null;
   has_discrepancy?: boolean;
   missing_items_count?: number;
+  receiving_closed?: boolean;
+  receiving_resolution?: string;
+  claim_status?: 'awaiting_compensation' | 'paid' | 'rejected';
+  claim_note?: string;
+  compensation_transaction_id?: string;
   is_refund_without_return?: boolean;
   rma_branch?: RmaBranch;
   exchange_order_id?: string;

@@ -21,6 +21,9 @@ export function WorkQueuePage({ focus }: { focus?: 'returns' | 'warehouse' | 'sy
   const [tracking, setTracking] = useState('');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
+  const [claimTransaction, setClaimTransaction] = useState('');
+  const [closedReturnId, setClosedReturnId] = useState('');
+  const [reopenReason, setReopenReason] = useState('');
   const [shop, setShop] = useState('all');
   const [period, setPeriod] = useState('all');
   const [receive, setReceive] = useState<Record<string, string>>({});
@@ -33,7 +36,7 @@ export function WorkQueuePage({ focus }: { focus?: 'returns' | 'warehouse' | 'sy
   useEffect(() => { const params = new URLSearchParams(location.search); const objectId = params.get('return') || params.get('order'); if (objectId && activeRole) setSelected(workQueue(mockStore.getSnapshot(), activeRole).find(t => t.entityId === objectId || t.orderId === objectId)?.id || null); }, [activeRole, focus]);
   const role = activeRole;
   if (!role) return <p>Chưa có tài khoản thực thi.</p>;
-  const tasks = workQueue(state, role).filter(t => !focus || (focus === 'returns' ? ['return', 'discrepancy'].includes(t.step) : focus === 'warehouse' ? t.step === 'prepare' : t.step === 'sync'));
+  const tasks = workQueue(state, role).filter(t => !focus || (focus === 'returns' ? ['return', 'discrepancy', 'claim', 'returnMonitor'].includes(t.step) : focus === 'warehouse' ? t.step === 'prepare' : t.step === 'sync'));
   const sourceOrder = new URLSearchParams(location.search).get('sourceOrder');
   const lateOrder = mockStore.getOrders().find(o => o.id === sourceOrder);
   if (lateOrder && hasPermission(role, 'orders:manage')) tasks.push({ id: `source:${lateOrder.id}`, entityId: lateOrder.id, orderId: lateOrder.id, group: 'manager', title: `Đơn ${lateOrder.order_number} · nhận sự kiện muộn`, step: 'source', status: 'processing', href: `orders&order=${lateOrder.id}` } as WorkItem);
@@ -60,7 +63,7 @@ export function WorkQueuePage({ focus }: { focus?: 'returns' | 'warehouse' | 'sy
     </div>
     {!tasks.length && <p className="p-5 border rounded-xl bg-white">Không có việc còn mở cho nhóm này.</p>}
     <div className="grid lg:grid-cols-2 gap-5">
-      <div className="space-y-2">{tasks.map(t => <button key={t.id} data-task={t.id} onClick={() => { setSelected(t.id); setMessage(''); setReceive({}); setPass({}); setFail({}); setSerials({}); setScan(''); setTracking(''); setReason(''); setReceiptCommandId(crypto.randomUUID()); setQcCommandId(crypto.randomUUID()); }} className={`w-full text-left p-4 rounded-xl border ${selected === t.id ? 'border-teal-600 bg-teal-50' : 'bg-white border-slate-200'}`}>
+      <div className="space-y-2">{tasks.map(t => <button key={t.id} data-task={t.id} onClick={() => { setSelected(t.id); setMessage(''); setReceive({}); setPass({}); setFail({}); setSerials({}); setScan(''); setTracking(''); setReason(''); setClaimTransaction(''); setReceiptCommandId(crypto.randomUUID()); setQcCommandId(crypto.randomUUID()); }} className={`w-full text-left p-4 rounded-xl border ${selected === t.id ? 'border-teal-600 bg-teal-50' : 'bg-white border-slate-200'}`}>
         <span className="block font-semibold">{t.title}</span><span className="block text-xs mt-2 text-slate-600">Nhóm nhận: {t.group} · {t.status} · {state.handoffAssignments?.[t.id]?.assignee_id || 'Chưa phân công'}{t.due ? ` · Hạn demo: ${new Date(t.due).toLocaleString('vi-VN')}` : ''}</span>
       </button>)}</div>
       {task && <section className="border rounded-xl p-5 bg-white space-y-4 self-start" data-testid="task-detail">
@@ -72,7 +75,13 @@ export function WorkQueuePage({ focus }: { focus?: 'returns' | 'warehouse' | 'sy
             <option value="">Chưa phân công · nhóm {task.group} nhận</option>{state.memberships.filter(m => m.tenant_id === order.tenant_id && m.status === 'active' && m.role === task.group).map(m => <option key={m.id} value={m.user_id}>{m.user_id}</option>)}
           </select><span className="text-xs">{state.handoffAssignments?.[task.id]?.history.length || 0} lần phân công; lịch sử được giữ.</span>
         </label>}
-        {task.step === 'sync' && <div className="space-y-3">
+        {manage && order && ['monitor', 'returnMonitor', 'discrepancy'].includes(task.step) && <label className="block text-sm">{task.step === 'monitor' ? 'Nhân viên chuẩn bị hàng' : 'Nhân viên nhận hàng hoàn'}
+          <select aria-label="Phân công kho" className="border rounded p-2 w-full" value={state.handoffAssignments?.[(task.step === 'monitor' ? `warehouse:${order.id}` : `return:${task.entityId}`)]?.assignee_id || ''} onChange={e => run(mockStore.assignHandoff((task.step === 'monitor' ? `warehouse:${order.id}` : `return:${task.entityId}`), order.id, e.target.value || null))}>
+            <option value="">Nhóm kho nhận · chưa phân công</option>{state.memberships.filter(m => m.tenant_id === order.tenant_id && m.status === 'active' && m.role === 'warehouse' && (!m.shop_ids || m.shop_ids.includes(order.shop_id!)) && (!m.warehouse_ids || m.warehouse_ids.includes(order.assigned_warehouse_id!))).map(m => <option key={m.id} value={m.user_id}>{m.user_id}</option>)}
+          </select>
+          <span>{state.handoffAssignments?.[(task.step === 'monitor' ? `warehouse:${order.id}` : `return:${task.entityId}`)]?.history.length || 0} lần phân công kho</span>
+        </label>}
+        {task.step === 'sync'  && <div className="space-y-3">
           <p className="text-sm">Kết nối đúng shop trước khi retry; replay không tạo thêm đơn.</p>
           <button className={button} onClick={() => {
             const event = state.marketplaceEvents!.find(e => e.id === task.entityId)!;
@@ -104,10 +113,15 @@ export function WorkQueuePage({ focus }: { focus?: 'returns' | 'warehouse' | 'sy
         </div>}
         {task.step === 'monitor' && order?.hold_reason && <><p className="text-sm text-rose-700">{order.hold_reason}</p><button className={button} onClick={() => run(mockStore.updateOrder(order.id, { hold_reason: null, notes: `Vận hành đã kiểm chứng ngoại lệ: ${order.hold_reason}` }))}>Đã xử lý bằng chứng · cho kho làm tiếp</button></>}
         {manage && order && ['pending', 'processing'].includes(order.status) && <div className="flex flex-wrap gap-2">
-          <button className={button} onClick={() => run(mockStore.requestCancellation(order.id))}>Ghi nhận yêu cầu hủy</button>
+          <button className={button} disabled={order.cancellation_requested} onClick={() => run(mockStore.requestCancellation(order.id))}>Ghi nhận yêu cầu hủy</button>
           <button className={button} onClick={() => run(mockStore.cancelOrderAtomic(order.id, 'Sàn mô phỏng xác nhận hủy trước bàn giao'))}>Sàn demo xác nhận hủy</button>
         </div>}
-        {task.step === 'return' && <div className="space-y-3">{lines.map(i => <div key={i.id} className="border-t pt-3 text-sm">
+        {manage && order?.cancellation_requested && <div className="space-y-2">
+          <label className="block text-sm">Lý do kết quả hủy<input aria-label="Lý do kết quả hủy" className="border rounded p-2 w-full" value={reason} onChange={e => setReason(e.target.value)}/></label>
+          <button className={button} onClick={() => run(mockStore.resolveCancellation(order.id, 'rejected', reason))}>Sàn từ chối hủy · tiếp tục kho</button>
+          <button className={button} onClick={() => run(mockStore.resolveCancellation(order.id, 'withdrawn', reason))}>Khách rút yêu cầu hủy</button>
+        </div>}
+        {task.step === 'return'  && <div className="space-y-3">{lines.map(i => <div key={i.id} className="border-t pt-3 text-sm">
           <p>{i.sku || i.product_id} · dự kiến {i.quantity} · nhận {i.received_qty || 0} · đạt {i.qc_pass_qty || 0} · lỗi {i.qc_fail_qty || 0}</p>
           <label>Nhận đợt này<input aria-label={`Nhận ${i.id}`} type="number" min="0" className="border rounded p-2 w-full" value={receive[i.id!] || ''} onChange={e => setReceive({ ...receive, [i.id!]: e.target.value })}/></label>
           <label>QC đạt<input aria-label={`Đạt ${i.id}`} type="number" min="0" className="border rounded p-2 w-full" value={pass[i.id!] || ''} onChange={e => setPass({ ...pass, [i.id!]: e.target.value })}/></label>
@@ -117,13 +131,24 @@ export function WorkQueuePage({ focus }: { focus?: 'returns' | 'warehouse' | 'sy
           <button className={button} onClick={() => { const result = mockStore.receiveReturnDock(task.entityId, lines.map(i => ({ item_id: i.id, received_qty: Number(receive[i.id!] || 0), serials: serials[i.id!] ? serials[i.id!].split(',').map(s => s.trim()) : undefined })), undefined, undefined, { receiptId: receiptCommandId }); run(result); if (result.success) { setReceive({}); setSerials({}); setReceiptCommandId(crypto.randomUUID()); } }}>Lưu thực nhận</button>
           <button className={button} onClick={() => { const result = mockStore.inspectReturnQC(task.entityId, true, lines.map(i => ({ item_id: i.id, pass_qty: Number(pass[i.id!] || 0), fail_qty: Number(fail[i.id!] || 0) })), undefined, undefined, { inspectionId: qcCommandId }); run(result); if (result.success) { setPass({}); setFail({}); setQcCommandId(crypto.randomUUID()); } }}>Lưu kết quả QC</button>
         </div>}
-        {manage && order && ['carrier', 'settlement', 'discrepancy', 'source'].includes(task.step) && <div className="space-y-3 border-t pt-3">
+        {manage && order && ['carrier', 'settlement', 'discrepancy', 'claim', 'source'].includes(task.step) && <div className="space-y-3 border-t pt-3">
           <p className="text-xs text-slate-600">Sự kiện sàn mô phỏng · dùng số thực tế của fixture, không phải chính sách sàn.</p>
           {order.status === 'shipped' && <div className="flex flex-wrap gap-2"><button className={button} onClick={() => source('carrier_accepted')}>Sàn xác nhận tiếp nhận</button><button className={button} onClick={() => source('delivered')}>Sàn báo giao thành công</button><button className={button} onClick={() => source('failed')}>Sàn báo giao thất bại</button></div>}
           <label className="block text-sm">Số tiền nguồn (VND)<input aria-label="Số tiền nguồn" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="border rounded p-2 w-full"/></label>
           <div className="flex flex-wrap gap-2"><button className={button} onClick={() => run(mockStore.recordSourceFees(order.id, Number(amount), crypto.randomUUID()))}>Nhận phí sàn thực tế</button><button className={button} onClick={() => source('refund')}>Nhận sự kiện refund</button><button className={button} onClick={() => source('ads_credit')}>Nhận Ads credit</button></div>
           {state.orderFeeBreakdowns?.find(f => f.order_id === order.id) && <button className={button} onClick={() => run(mockStore.reconcileFeeBreakdown(state.orderFeeBreakdowns!.find(f => f.order_id === order.id)!.id))}>Chốt đối soát khoản đã đủ</button>}
           {task.step === 'discrepancy' && <><p className="text-sm">{state.customerComplaints?.find(c => c.id === `task_discrepancy_${task.entityId}`)?.raw_content}</p><label className="text-sm">Kết quả xử lý / bằng chứng<input aria-label="Kết quả khiếu nại" value={reason} onChange={e => setReason(e.target.value)} className="border rounded p-2 w-full"/></label><button className={button} onClick={() => { if (!reason.trim()) return setMessage('Cần ghi kết quả và bằng chứng'); try { mockStore.updateTable('customer_complaints', c => c.id === `task_discrepancy_${task.entityId}`, { status: 'closed', suggested_reply: reason }); setMessage('Đã lưu kết quả; khoản tiền vẫn cần đối soát riêng.'); } catch(e) { setMessage((e as Error).message); } }}>Chốt xử lý chênh lệch</button></>}
+        </div>}
+        {manage && ['discrepancy', 'claim', 'returnMonitor'].includes(task.step) && <div className="space-y-3 border-t pt-3">
+          <p>Phần hàng: {state.returns.find(r => r.id === task.entityId)?.receiving_closed ? 'Đã chốt thực nhận' : 'Còn chờ hàng'} · Khiếu nại: {({ awaiting_compensation: 'Chờ bồi thường', paid: 'Đã nhận bồi thường', rejected: 'Không được bồi thường' } as Record<string, string>)[state.returns.find(r => r.id === task.entityId)?.claim_status || ''] || 'Chưa mở yêu cầu bồi thường'}</p>
+          {['claim', 'returnMonitor'].includes(task.step) && <label className="block">Bằng chứng / kết quả<input aria-label="Kết quả khiếu nại" value={reason} onChange={e => setReason(e.target.value)} className="border rounded p-2 w-full"/></label>}
+          <button className={button} onClick={() => run(mockStore.resolveReturnReceiving(task.entityId, true, reason))}>Chốt thực nhận · xác nhận phần thiếu</button>
+          <button className={button} onClick={() => run(mockStore.resolveReturnReceiving(task.entityId, false, reason))}>Mở lại nhận hàng đến muộn</button>
+          <button className={button} onClick={() => run(mockStore.resolveReturnClaim(task.entityId, 'awaiting_compensation', reason))}>Theo dõi chờ bồi thường</button>
+          <label className="block">Mã giao dịch bồi thường đã ghi nhận<select aria-label="Giao dịch bồi thường" value={claimTransaction} onChange={e => setClaimTransaction(e.target.value)} className="border rounded p-2 w-full"><option value="">Chọn giao dịch của đơn này</option>{state.orderFeeBreakdowns?.filter(f => f.order_id === order?.id).flatMap(f => f.adjustments || []).filter(a => a.kind === 'compensation').map(a => <option key={a.id} value={a.id}>{formatCurrency(a.amount)} · {a.reason} · {a.id}</option>)}</select></label>
+          <button className={button} onClick={() => run(mockStore.resolveReturnClaim(task.entityId, 'paid', reason, claimTransaction))}>Xác nhận đã nhận bồi thường</button>
+          <button className={button} onClick={() => run(mockStore.resolveReturnClaim(task.entityId, 'rejected', reason))}>Đóng yêu cầu · không được bồi thường</button>
+          <p className="text-xs">Chốt phần hàng không cộng tồn và không đóng khoản tiền đang chờ. Ghi giao dịch bồi thường tại Đối soát trước khi xác nhận đã nhận.</p>
         </div>}
         {task.step === 'recommendation' && <div className="flex gap-2"><button className={button} onClick={() => run(mockStore.resolveGrowthRecommendation(task.entityId, 'accepted'))}>Tiếp nhận đề xuất</button><button className={button} onClick={() => run(mockStore.resolveGrowthRecommendation(task.entityId, 'dismissed'))}>Không triển khai</button></div>}
         {order && <details className="text-xs"><summary>Lịch sử bàn giao và thao tác</summary>{state.auditLogs.filter(a => JSON.stringify(a.details).includes(order.id)).slice(0, 20).map(a => <p key={a.id} className="py-1">{a.created_at} · {a.actor} · {a.action}</p>)}</details>}
@@ -137,9 +162,14 @@ export function WorkQueuePage({ focus }: { focus?: 'returns' | 'warehouse' | 'sy
       <div className="grid sm:grid-cols-3 gap-4 text-sm"><p>Doanh thu giữ lại<br/><strong data-value="sales">{formatCurrency(summary.sales)}</strong></p><p>Ads đã chi / net Ads<br/><strong>{formatCurrency(summary.adsSpend)} / {formatCurrency(summary.netAds)}</strong></p><p>Contribution<br/><strong data-value="contribution">{formatCurrency(summary.contribution)}</strong></p><p>Tỷ lệ giữ lại / net Ads<br/><strong>{summary.retainedRevenueRatio.toFixed(4)}</strong></p><p>Tỷ lệ nguồn giả định / Ads<br/><strong>{summary.sourceRatio.toFixed(4)}</strong></p><p>Bồi thường riêng<br/><strong>{formatCurrency(summary.compensation)}</strong></p></div>
       {!cohort.length && <p>Không có dữ liệu cho bộ lọc này.</p>}
       <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left"><th>Đơn / shop</th><th>Doanh thu</th><th>Giá vốn</th><th>Phí</th><th>Contribution</th><th>Dữ liệu / quyết định</th></tr></thead><tbody>{summary.rows.map(m => <tr key={m.orderId} className="border-t"><td className="py-3"><a className="underline" href={`/app?page=orders&order=${m.orderId}`}>{state.orders.find(o => o.id === m.orderId)?.order_number}</a></td><td>{formatCurrency(m.sales)}</td><td>{formatCurrency(m.cogs)}</td><td>{formatCurrency(m.fees)}</td><td>{formatCurrency(m.contribution)}</td><td>{m.finalized ? 'Phí đã đối soát' : 'Chưa chốt phí'}{role === 'growth' && <button className={button} onClick={() => run(mockStore.createGrowthRecommendation(m.orderId, 'Rà soát hiệu quả Ads / hủy hoàn từ cohort này'))}>Đề xuất rà soát</button>}</td></tr>)}</tbody></table></div>
-      {(state.growthRecommendations || []).filter(r => r.tenant_id === state.activeTenantId).map(r => <p key={r.id} className="text-sm">{r.status} · {r.reason}</p>)}
+      {mockStore.getGrowthRecommendations().map(r => <p key={r.id} className="text-sm">{r.status} · {r.reason}</p>)}
       {manage && <><ReturnRequestForm onResult={run}/><p className="text-sm">Sự kiện muộn: {cohort.map(o => <a key={o.id} className="underline text-teal-700 mr-3" href={`/app?page=dashboard&sourceOrder=${o.id}`}>{o.order_number}</a>)}</p></>}
     </section>}
+    {manage && mockStore.getReturns().some(r => r.receiving_closed) && <details className="bg-white border rounded-xl p-5 space-y-3"><summary>Hàng đến muộn sau khi đã chốt thực nhận</summary>
+      <select aria-label="Phiếu đã chốt thực nhận" className={button} value={closedReturnId} onChange={e => setClosedReturnId(e.target.value)}><option value="">Chọn phiếu</option>{mockStore.getReturns().filter(r => r.receiving_closed).map(r => <option key={r.id} value={r.id}>{r.return_number}</option>)}</select>
+      <input aria-label="Lý do mở lại nhận hàng" className="border rounded p-2" value={reopenReason} onChange={e => setReopenReason(e.target.value)}/>
+      <button className={button} onClick={() => run(mockStore.resolveReturnReceiving(closedReturnId, false, reopenReason))}>Mở lại phiếu nhận hàng</button>
+    </details>}
     {['owner', 'admin'].includes(role) && <ScopeSettings onResult={run}/>}
     <section className="bg-white border rounded-xl p-5 text-sm"><h2 className="font-semibold mb-3">Tồn theo kho</h2>{mockStore.getInventory5State().map(i => <p key={`${i.sku}:${i.warehouse_id}`} data-testid={`inventory-${i.sku}`}>{i.sku} · {i.warehouse_name}: vật lý {i.physical} · giữ {i.reserved} · chờ QC {i.pending_qc} · hỏng {i.damaged} · khả dụng {i.available}</p>)}</section>
   </div>;

@@ -1,10 +1,12 @@
-import puppeteer from 'puppeteer';
+import { launchUatBrowser } from './uat-browser.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 
+const dir = process.env.UAT_OUTPUT_DIR || 'artifacts/uat';
+await fs.mkdir(dir, { recursive: true });
 const base = process.env.UAT_BASE_URL || 'http://127.0.0.1:5174';
-const browser = await puppeteer.launch({ headless: true });
+const browser = await launchUatBrowser();
 const page = await browser.newPage();
 await page.setViewport({ width: 1440, height: 1000 });
 const results = { head: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), workingTree: true, cases: [], errors: [] };
@@ -23,7 +25,7 @@ const role = async r => {
 const report = async (name, expected, actual) => {
   assert.deepEqual(actual, expected, name); results.cases.push({ name, status: 'PASS', expected, actual });
   await new Promise(resolve => setTimeout(resolve, 450)); // wait for modal exit/card entrance before evidence capture
-  await page.screenshot({ path: `artifacts/uat/edge-${results.cases.length}.png`, fullPage: true });
+  await page.screenshot({ path: `${dir}/edge-${results.cases.length}.png`, fullPage: true });
 };
 try {
   await page.goto(`${base}/app`); await page.waitForSelector('[data-testid="work-queue"]');
@@ -68,8 +70,8 @@ try {
   poState = await snap(); await report('PO UI next receipt completes only remaining 3; preserves weighted MAC precision', ['received', 14, 685714], [poState.purchaseOrders[0].status, poState.inventory5State[0].physical, Math.round(poState.products[0].moving_avg_cost)]);
   assert.deepEqual(results.errors, []); results.status = 'PASS';
 } catch (e) {
-  results.status = 'FAIL'; results.failure = String(e); await page.screenshot({ path: 'artifacts/uat/edge-failure.png', fullPage: true }); throw e;
+  results.status = 'FAIL'; results.failure = String(e); await page.screenshot({ path: `${dir}/edge-failure.png`, fullPage: true }); throw e;
 } finally {
-  results.finishedAt = new Date().toISOString(); await fs.writeFile('artifacts/uat/ui-edge-results.json', JSON.stringify(results, null, 2)); await browser.close();
+  results.finishedAt = new Date().toISOString(); await fs.writeFile(`${dir}/ui-edge-results.json`, JSON.stringify(results, null, 2)); await browser.close();
 }
 console.log(JSON.stringify({ status: results.status, cases: results.cases.length }));

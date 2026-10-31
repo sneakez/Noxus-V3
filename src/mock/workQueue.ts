@@ -23,9 +23,12 @@ export function workQueue(state: MockDatabaseSnapshot, role: TenantRole): WorkIt
     }
   }
   for (const ret of state.returns.filter(r => orders.some(o => o.id === r.order_id))) {
+    const physicalOpen = !['rejected', 'cancelled', 'closed', 'completed'].includes(ret.status);
     const lines = state.returnItems.filter(i => i.return_id === ret.id);
-    const outstanding = lines.some(i => (i.received_qty || 0) < i.quantity || (i.received_qty || 0) > (i.qc_pass_qty || 0) + (i.qc_fail_qty || 0));
-    if (outstanding && !ret.is_refund_without_return && ret.status !== 'refunded') add({ id: `return:${ret.id}`, orderId: ret.order_id, entityId: ret.id, group: 'warehouse', title: `${ret.return_number} · nhận thực tế / QC`, step: 'return', status: 'processing', href: `returns&return=${ret.id}` });
+    const outstanding = physicalOpen && lines.some(i => (!ret.receiving_closed && (i.received_qty || 0) < i.quantity) || (i.received_qty || 0) > (i.qc_pass_qty || 0) + (i.qc_fail_qty || 0));
+    if (outstanding && !ret.is_refund_without_return && ret.rma_branch !== 'returnless_refund') add({ id: `return:${ret.id}`, orderId: ret.order_id, entityId: ret.id, group: 'warehouse', title: `${ret.return_number} · nhận thực tế / QC`, step: 'return', status: 'processing', href: `returns&return=${ret.id}` });
+    if (outstanding && !ret.receiving_closed && !ret.is_refund_without_return && ret.rma_branch !== 'returnless_refund' && (!ret.has_discrepancy || state.customerComplaints?.find(c => c.id === `task_discrepancy_${ret.id}`)?.status === 'closed')) add({ id: `returnMonitor:${ret.id}`, orderId: ret.order_id, entityId: ret.id, group: 'manager', title: `${ret.return_number} · theo dõi hàng hoàn`, step: 'returnMonitor', status: 'processing', href: `returns&return=${ret.id}` });
+    if (ret.claim_status === 'awaiting_compensation') add({ id: `claim:${ret.id}`, orderId: ret.order_id, entityId: ret.id, group: 'manager', title: `${ret.return_number} · chờ bồi thường`, step: 'claim', status: 'processing', href: `returns&return=${ret.id}` });
     if (ret.has_discrepancy) {
       const complaint = state.customerComplaints?.find(c => c.id === `task_discrepancy_${ret.id}`);
       if (complaint?.status !== 'closed') add({ id: `discrepancy:${ret.id}`, orderId: ret.order_id, entityId: ret.id, group: 'manager', title: `${ret.return_number} · thiếu/hỏng, kiểm tra bằng chứng`, step: 'discrepancy', status: 'blocked', href: `returns&return=${ret.id}` });

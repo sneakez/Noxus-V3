@@ -30,7 +30,7 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_FLOW,
   PAYMENT_STATUS_COLORS,
-  PAYMENT_STATUS_LABELS,
+  orderPaymentLabel,
   WAVE_STATUS_LABELS,
   WAVE_STATUS_COLORS,
 } from '@/lib/utils';
@@ -292,7 +292,7 @@ export function OrderDetailDrawer({
                 <div className="p-2 rounded-lg bg-white border border-ink-100 shadow-2xs">
                   <span className="text-[10px] text-ink-400 font-semibold block uppercase">4. Thanh toán</span>
                   <span className={cn('badge text-[10px] mt-1 px-1.5 py-0.5', PAYMENT_STATUS_COLORS[order.payment_status])}>
-                    {PAYMENT_STATUS_LABELS[order.payment_status]}
+                    {orderPaymentLabel(order)}
                   </span>
                 </div>
                 <div className="p-2 rounded-lg bg-white border border-ink-100 shadow-2xs col-span-2 sm:col-span-1">
@@ -737,7 +737,7 @@ export function OrderDetailDrawer({
                     Thanh toán & Đối soát
                   </p>
                   <span className={cn('badge text-[11px]', PAYMENT_STATUS_COLORS[order.payment_status])}>
-                    {PAYMENT_STATUS_LABELS[order.payment_status]}
+                    {orderPaymentLabel(order)}
                   </span>
                 </div>
                 <p className="text-xs text-ink-500">Thanh toán nhận từ sự kiện nguồn; hoàn tiền và đối soát theo dõi riêng trong Công việc & bàn giao.</p>

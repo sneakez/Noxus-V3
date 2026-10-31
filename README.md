@@ -5,7 +5,8 @@ React/TypeScript, Ocean UI, dữ liệu mock trong browser. Core cho Owner, Mana
 ## Chạy app
 
 ```powershell
-npm ci
+# Dependencies đã có: kiểm tra npm ls --depth=0; chỉ npm ci khi thiếu hoặc lệch lockfile.
+npm ls --depth=0
 npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
@@ -37,12 +38,13 @@ npm run build
 # Giữ Vite chạy ở port5174 trong terminal khác:
 npm run test:ui
 npm run test:ui:edges
+npm run test:ui:followup
 ```
 
-Puppeteer dùng Chromium đã cài; nếu môi trường chưa có browser, cài bằng `npx puppeteer browsers install chrome`. Có thể đặt `$env:UAT_BASE_URL='http://127.0.0.1:5173'` để dùng port khác. Hai browser script tạo fixture qua UI và đọc DOM/localStorage để kiểm chứng; không thay thế thao tác UI bằng gọi store.
+Puppeteer dùng Chromium đã cài; chỉ khi thiếu browser mới cần `npx puppeteer browsers install chrome`. Có thể đặt `$env:UAT_BASE_URL='http://127.0.0.1:5173'` để dùng port khác, `UAT_CHROMIUM_PATH` để chọn executable, `UAT_OUTPUT_DIR` để tách evidence. Ba browser script tạo fixture qua UI và đọc DOM/localStorage để kiểm chứng; không thay thế thao tác UI bằng gọi store. Giữ server chạy trước khi chạy UAT.
 
-Kết quả hiện tại: 118/118 test, typecheck/build Windows PASS; UI chính14 nhóm và edge8 nhóm PASS. [UAT và evidence](docs/audit/UAT_RESULTS.md), [nghiệm thu/giới hạn](docs/audit/PROTOTYPE_ACCEPTANCE.md), [handoff](docs/audit/E2E_FLOW_MAP.md), [quyền](docs/audit/ROLE_PERMISSION_MATRIX.md), [phản biện/sửa đổi](docs/audit/REMEDIATION_MATRIX.md).
+Kết quả tích hợp ZIP ngày 31/10/2026: xem [báo cáo chạy tại máy này](docs/audit/ZIP_INTEGRATION_RESULTS.md). [Báo cáo patch gốc](docs/audit/BUSINESS_FIX_RESULTS.md) và [prompt hợp nhất](docs/product/BUILD_PROMPT_UNIFIED.md) được giữ làm tài liệu tham khảo. [UAT baseline](docs/audit/UAT_RESULTS.md), [nghiệm thu/giới hạn](docs/audit/PROTOTYPE_ACCEPTANCE.md), [handoff](docs/audit/E2E_FLOW_MAP.md), [quyền](docs/audit/ROLE_PERMISSION_MATRIX.md), [phản biện/sửa đổi](docs/audit/REMEDIATION_MATRIX.md).
 
 Các workspace nâng cao chưa nghiệm thu đã ẩn qua `OPTIONAL_PAGES`: chuyển kho UI, bảo hành/đổi hàng/lô, kế toán, dự báo/analytics nâng cao, OKR và rules/webhooks lab. Core không phụ thuộc các phần này. Không có backend production hay cam kết sổ kế toán/thuế từ prototype.
 
-Branch `refactor/prototype-marketplace-e2e`, base kiểm chứng b70ec985dc7e78ab86e17e579d07242df13269df. Các báo cáo UAT ghi lại base HEAD và working tree tại thời điểm chạy; commit đóng gói xem bằng `git log -1`. Việc push lên nhánh refactor không triển khai hay merge vào main. [Source manifest](artifacts/uat/source-manifest.json) nhận diện chính xác code được kiểm chứng.
+Branch `refactor/prototype-marketplace-e2e`, HEAD nền lần tích hợp ZIP `a5316c937efb882f807f6b7f61a35130f7d06637`, phần tích hợp đang ở working tree chưa commit/push/merge. [Manifest mới](artifacts/business-fix/source-manifest.json) nhận diện source vừa kiểm chứng. [Manifest baseline cũ](artifacts/uat/source-manifest.json) giữ nguyên để đối chiếu lịch sử.

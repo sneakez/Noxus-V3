@@ -63,12 +63,12 @@ const PHASES: Phase[] = [
     color: 'brand',
     description: 'Đăng nhập lần đầu, tạo kho, thêm sản phẩm, nhập tồn kho đầu kỳ',
     role: 'Quản trị viên',
-    loginAs: 'admin@nexusoms.vn / Admin@123',
+    loginAs: 'admin@nexusoms.io / demo',
     steps: [
       {
         num: 1, page: 'Đăng nhập', icon: LayoutDashboard,
         title: 'Đăng nhập bằng tài khoản admin',
-        what: 'Mở trang đăng nhập, nhập admin@nexusoms.vn / Admin@123. Sau khi đăng nhập bạn thấy Dashboard tổng quan.',
+        what: 'Mở trang đăng nhập, nhập admin@nexusoms.io / demo. Sau khi đăng nhập bạn thấy Dashboard tổng quan.',
         why: 'Đây là tài khoản có quyền cao nhất. Chỉ admin mới tạo kho, thêm người dùng, cấu hình webhook.',
         tips: 'Trang đăng nhập hiện 3 tài khoản demo. Admin thấy tất cả 28 trang, manager thấy 22, warehouse thấy 10.',
       },
@@ -110,7 +110,7 @@ const PHASES: Phase[] = [
     color: 'brand',
     description: 'Tạo đơn hàng đầu tiên, gán kho, xuất wave picking, cập nhật trạng thái giao hàng',
     role: 'Admin hoặc Quản lý',
-    loginAs: 'admin@nexusoms.vn hoặc manager@nexusoms.vn',
+    loginAs: 'admin@nexusoms.io hoặc manager@nexusoms.io',
     steps: [
       {
         num: 1, page: 'Đơn hàng', icon: ShoppingCart,
@@ -150,7 +150,7 @@ const PHASES: Phase[] = [
     color: 'sky',
     description: 'Kết nối shop Shopee/TikTok, ánh xạ SKU, cấu hình định tuyến kho, đồng bộ tồn kho',
     role: 'Quản lý',
-    loginAs: 'manager@nexusoms.vn / Manager@123',
+    loginAs: 'manager@nexusoms.io / Manager@123',
     steps: [
       {
         num: 1, page: 'Kết nối kênh', icon: Link2,
@@ -190,7 +190,7 @@ const PHASES: Phase[] = [
     color: 'emerald',
     description: 'Công việc lặp lại mỗi ngày: xử lý đơn, giao hàng, nhập kho, đổi trả',
     role: 'Tất cả vai trò',
-    loginAs: 'warehouse@nexusoms.vn (kho) / manager (vận hành)',
+    loginAs: 'kho@nexusoms.io (kho) / manager (vận hành)',
     steps: [
       {
         num: 1, page: 'Dashboard', icon: LayoutDashboard,
@@ -244,7 +244,7 @@ const PHASES: Phase[] = [
     color: 'amber',
     description: 'Cuối tuần: đối soát phí kênh, báo cáo doanh thu, kiểm tra margin, phân tích vận tốc bán',
     role: 'Quản lý hoặc Admin',
-    loginAs: 'manager@nexusoms.vn / Manager@123',
+    loginAs: 'manager@nexusoms.io / Manager@123',
     steps: [
       {
         num: 1, page: 'Đối soát phí', icon: Receipt,
@@ -291,7 +291,7 @@ const PHASES: Phase[] = [
     color: 'violet',
     description: 'Luật IF-THEN, webhook, audit trail, chaos test, tạo người dùng',
     role: 'Quản trị viên',
-    loginAs: 'admin@nexusoms.vn / Admin@123',
+    loginAs: 'admin@nexusoms.io / demo',
     steps: [
       {
         num: 1, page: 'Luật tự động', icon: Zap,
@@ -565,7 +565,7 @@ export function FlowGuidePage() {
               <ShieldCheck size={18} className="text-rose-600" />
               <h4 className="font-semibold text-rose-800 text-sm">Quản trị viên</h4>
             </div>
-            <code className="text-xs bg-white/80 text-rose-600 px-2 py-1 rounded font-mono block mb-3">admin@nexusoms.vn / Admin@123</code>
+            <code className="text-xs bg-white/80 text-rose-600 px-2 py-1 rounded font-mono block mb-3">admin@nexusoms.io / demo</code>
             <div className="space-y-1.5 text-xs text-rose-600">
               <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard, Đơn hàng, Khách hàng</div>
               <div className="flex items-center gap-2"><Package size={13} /> Sản phẩm, Tồn kho, Chuyển kho, Kho</div>
@@ -580,7 +580,7 @@ export function FlowGuidePage() {
               <Settings size={18} className="text-sky-600" />
               <h4 className="font-semibold text-sky-800 text-sm">Quản lý</h4>
             </div>
-            <code className="text-xs bg-white/80 text-sky-600 px-2 py-1 rounded font-mono block mb-3">manager@nexusoms.vn / Manager@123</code>
+            <code className="text-xs bg-white/80 text-sky-600 px-2 py-1 rounded font-mono block mb-3">manager@nexusoms.io / Manager@123</code>
             <div className="space-y-1.5 text-xs text-sky-600">
               <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard, Đơn hàng, Khách hàng</div>
               <div className="flex items-center gap-2"><Package size={13} /> Sản phẩm, Tồn kho, Chuyển kho, Kho</div>
@@ -595,7 +595,7 @@ export function FlowGuidePage() {
               <Boxes size={18} className="text-emerald-600" />
               <h4 className="font-semibold text-emerald-800 text-sm">Nhân viên kho</h4>
             </div>
-            <code className="text-xs bg-white/80 text-emerald-600 px-2 py-1 rounded font-mono block mb-3">warehouse@nexusoms.vn / Warehouse@123</code>
+            <code className="text-xs bg-white/80 text-emerald-600 px-2 py-1 rounded font-mono block mb-3">kho@nexusoms.io / demo</code>
             <div className="space-y-1.5 text-xs text-emerald-600">
               <div className="flex items-center gap-2"><LayoutDashboard size={13} /> Dashboard</div>
               <div className="flex items-center gap-2"><ShoppingCart size={13} /> Đơn hàng</div>

@@ -322,3 +322,9 @@ export function truncateHash(hash: string, len = 12): string {
   if (!hash) return '—';
   return hash.length > len * 2 ? `${hash.slice(0, len)}...${hash.slice(-len)}` : hash;
 }
+
+/** Refund is distinct from an originally underpaid order; also supports old mock snapshots. */
+export function orderPaymentLabel(order: { payment_status: PaymentStatus; refunded_amount?: number; total: number }): string {
+  if ((order.refunded_amount || 0) > 0) return order.refunded_amount! >= order.total ? 'Đã hoàn tiền toàn bộ' : 'Đã hoàn tiền một phần';
+  return PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status;
+}

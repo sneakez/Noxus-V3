@@ -1,12 +1,12 @@
-import puppeteer from 'puppeteer';
+import { launchUatBrowser } from './uat-browser.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 
 const base = process.env.UAT_BASE_URL || 'http://127.0.0.1:5174';
-const dir = 'artifacts/uat';
+const dir = process.env.UAT_OUTPUT_DIR || 'artifacts/uat';
 await fs.mkdir(dir, { recursive: true });
-const browser = await puppeteer.launch({ headless: true });
+const browser = await launchUatBrowser();
 const evidence = { head: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), workingTree: true, startedAt: new Date().toISOString(), steps: [], errors: [] };
 const page = await browser.newPage();
 page.on('pageerror', e => evidence.errors.push(String(e)));

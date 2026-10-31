@@ -22,12 +22,14 @@ export function inventoryForReceipt(draft: MockDatabaseSnapshot, productId: stri
 export function receiveReturn(draft: MockDatabaseSnapshot, returnId: string, lines: ReceiptLine[] | undefined,
   options: { receiptId?: string; warehouseId?: string }, actorId: string) {
   const ret = draft.returns.find(r => r.id === returnId)!;
+  if (ret.is_refund_without_return || ret.rma_branch === 'returnless_refund') throw Error('Hoàn tiền không nhận hàng: không có thao tác kho');
   if (['rejected', 'cancelled', 'closed', 'completed'].includes(ret.status)) throw Error('Phiếu đã bị từ chối/hủy/đóng; không nhận thêm hàng');
   const order = draft.orders.find(o => o.id === ret.order_id)!;
   const warehouseId = options.warehouseId || ret.warehouse_id || order.assigned_warehouse_id;
   if (!warehouseId) throw Error('Phiếu hoàn chưa được chỉ định kho');
   const items = draft.returnItems.filter(i => i.return_id === returnId);
-  if (!items.length || ret.is_refund_without_return) throw Error('Phiếu không có hàng cần nhận');
+  if (ret.receiving_closed) throw Error('Phần nhận hàng đã chốt; Vận hành phải mở lại khi hàng đến muộn');
+  if (!items.length) throw Error('Phiếu không có hàng cần nhận');
   const id = options.receiptId || commandId();
   draft.returnReceipts ||= [];
   const previous = draft.returnReceipts.find(r => r.id === id);
@@ -78,6 +80,7 @@ export function receiveReturn(draft: MockDatabaseSnapshot, returnId: string, lin
 export function inspectReturn(draft: MockDatabaseSnapshot, returnId: string, good: boolean, lines: QcLine[] | undefined,
   options: { inspectionId?: string; receiptId?: string }, actorId: string) {
   const ret = draft.returns.find(r => r.id === returnId)!;
+  if (ret.is_refund_without_return || ret.rma_branch === 'returnless_refund') throw Error('Hoàn tiền không nhận hàng: không có thao tác kho');
   if (['rejected', 'cancelled', 'closed', 'completed'].includes(ret.status)) throw Error('Phiếu không còn ở bước kiểm hàng');
   const id = options.inspectionId || commandId();
   const signature = JSON.stringify({ returnId, good, lines, receiptId: options.receiptId });

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { Boxes, LogIn, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
+import { isMockMode } from '@/lib/config';
+import { mockStore } from '@/mock/store';
+
+const demoRoleLabels: Record<string, string> = {
+  owner: '👑 Owner', admin: '⚡ Admin', manager: '📊 Manager', warehouse: '📦 Kho', growth: '🚀 Growth',
+};
 
 interface LoginPageProps {
   onNavigate?: (path: string) => void;
@@ -13,6 +19,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const demoAccounts = isMockMode() ? mockStore.getDemoLoginAccounts() : [];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,14 +29,17 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     }
     setLoading(true);
     setError('');
-    const { error: signInError } = await signIn(email, password);
-    if (signInError) {
-      setError(signInError);
-      setLoading(false);
-    } else {
-      if (onNavigate) {
-        onNavigate('/app');
+    try {
+      const { error: signInError } = await signIn(email, password);
+      if (signInError) {
+        setError(signInError);
+      } else {
+        handleNav('/app');
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không đăng nhập được. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -84,19 +94,21 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           </div>
 
           {error && (
-            <div className="mb-4 rounded-xl bg-rose-950/60 border border-rose-800/80 px-4 py-3 text-xs text-rose-300">
+            <div role="alert" className="mb-4 rounded-xl bg-rose-950/60 border border-rose-800/80 px-4 py-3 text-xs text-rose-300">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">Email làm việc</label>
+              <label htmlFor="login-email" className="block text-xs font-medium text-gray-300 mb-1.5">Email làm việc</label>
               <input
+                id="login-email"
+                autoComplete="username"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@nexusoms.vn"
+                placeholder={isMockMode() ? 'admin@nexusoms.io' : 'ban@congty.vn'}
                 className="w-full rounded-xl bg-[#081B2C] border border-[#1E647F]/50 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-wood-aqua"
                 disabled={loading}
               />
@@ -104,7 +116,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-gray-300">Mật khẩu</label>
+                <label htmlFor="login-password" className="block text-xs font-medium text-gray-300">Mật khẩu</label>
                 <button
                   type="button"
                   onClick={() => handleNav('/forgot-password')}
@@ -115,6 +127,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
               </div>
               <div className="relative">
                 <input
+                  id="login-password"
+                  autoComplete="current-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -141,49 +155,26 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             </button>
           </form>
 
-          {/* Quick 1-Click Demo Accounts */}
-          <div className="mt-5 pt-4 border-t border-gray-800">
+          {isMockMode() && <div className="mt-5 pt-4 border-t border-gray-800">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">
               Bấm nhanh để điền tài khoản mẫu:
             </p>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <button
+            <p className="text-xs text-gray-300 mb-3">Chế độ demo: mật khẩu không được xác thực. Nút bên dưới điền sẵn thông tin để bạn thử từng vai trò.</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {demoAccounts.map(account => <button
+                key={`${account.role}:${account.email}`}
                 type="button"
-                onClick={() => {
-                  setEmail('admin@nexusoms.vn');
-                  setPassword('Admin@123');
-                }}
-                className="p-2 rounded-lg bg-[#081B2C] hover:bg-[#123A52] text-metal-mist border border-[#1E647F]/40 hover:text-white transition-colors text-center"
+                data-demo-role={account.role}
+                disabled={loading}
+                onClick={() => { setEmail(account.email); setPassword('demo'); setError(''); }}
+                className="min-w-0 p-2 rounded-lg bg-[#081B2C] hover:bg-[#123A52] text-metal-mist border border-[#1E647F]/40 hover:text-white transition-colors text-center disabled:opacity-50"
               >
-                <div className="font-bold text-wood-aqua">👑 Admin</div>
-                <div className="text-[10px] text-gray-500 truncate">admin@...</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('manager@nexusoms.vn');
-                  setPassword('Manager@123');
-                }}
-                className="p-2 rounded-lg bg-[#081B2C] hover:bg-[#123A52] text-metal-mist border border-[#1E647F]/40 hover:text-white transition-colors text-center"
-              >
-                <div className="font-bold text-cyan-400">📊 Manager</div>
-                <div className="text-[10px] text-gray-500 truncate">manager@...</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('warehouse@nexusoms.vn');
-                  setPassword('Warehouse@123');
-                }}
-                className="p-2 rounded-lg bg-[#081B2C] hover:bg-[#123A52] text-metal-mist border border-[#1E647F]/40 hover:text-white transition-colors text-center"
-              >
-                <div className="font-bold text-amber-400">📦 Kho</div>
-                <div className="text-[10px] text-gray-500 truncate">warehouse@...</div>
-              </button>
+                <div className="font-bold text-wood-aqua">{demoRoleLabels[account.role]}</div>
+                <div className="text-[11px] text-gray-300 break-all">{account.email}</div>
+              </button>)}
             </div>
-          </div>
+            {!demoAccounts.length && <p className="text-xs text-amber-300">Chưa có tài khoản demo hoạt động trong workspace này.</p>}
+          </div>}
 
           {/* Register Prompt */}
           <div className="mt-4 pt-3 border-t border-gray-800 text-center">

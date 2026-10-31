@@ -185,6 +185,16 @@ class MockDataStore {
     this.mutate(draft => { draft.activeUserId = null; }, 'ROLE_SWITCHED', { action: 'signed_out' });
   }
 
+  public getDemoLoginAccounts() {
+    const roles: TenantRole[] = ['owner', 'admin', 'manager', 'warehouse', 'growth'];
+    return roles.flatMap(role => this.state.memberships
+      .filter(m => m.tenant_id === this.state.activeTenantId && m.status === 'active' && m.role === role)
+      .flatMap(m => {
+        const profile = this.state.profiles.find(p => p.id === m.user_id && p.is_active);
+        return profile ? [{ role, email: profile.email, name: profile.full_name }] : [];
+      }));
+  }
+
   public signInDemoUser(email: string): { success: boolean; error?: string; userId?: string } {
     const profile = this.state.profiles.find(p => p.email.toLowerCase() === email.trim().toLowerCase() && p.is_active);
     const membership = this.state.memberships.find(m => m.user_id === profile?.id && m.tenant_id === this.state.activeTenantId && m.status === 'active');
@@ -1199,7 +1209,7 @@ class MockDataStore {
         const prevReturnedQty = this.state.returnItems
           .filter(ri => {
             const rma = this.state.returns.find(r => r.id === ri.return_id);
-            return rma && rma.order_id === params.orderId && ri.product_id === item.productId && rma.status !== 'rejected';
+            return rma && rma.order_id === params.orderId && ri.product_id === item.productId && !rma.is_refund_without_return && rma.rma_branch !== 'returnless_refund' && !['rejected', 'cancelled'].includes(rma.status);
           })
           .reduce((sum, ri) => sum + ri.quantity, 0);
 
@@ -1289,6 +1299,7 @@ class MockDataStore {
         return_type: 'customer_rma',
         refund_amount: params.refundAmount,
         rma_branch: params.rmaBranch,
+        is_refund_without_return: isReturnless,
         approval_status: params.refundAmount < 1000000 ? 'maker_approved' : 'pending',
         maker_checker_rule: params.refundAmount < 1000000 ? 'Maker duyệt đơn < 1M' : 'Bắt buộc Checker duyệt (Đơn >= 1M)',
         created_at: now,
@@ -2227,6 +2238,55 @@ class MockDataStore {
     return { success: true };
   }
 
+  public resolveCancellation(orderId: string, result: 'rejected' | 'withdrawn', reason: string): { success: boolean; error?: string } {
+    const order = this.state.orders.find(o => o.id === orderId);
+    const error = this.authorize('orders:cancel', order);
+    if (error) return { success: false, error };
+    if (!['rejected', 'withdrawn'].includes(result) || !reason.trim()) return { success: false, error: 'Cần kết quả và lý do từ nguồn' };
+    if (!order!.cancellation_requested || !['pending', 'processing'].includes(order!.status)) return { success: false, error: 'Không có yêu cầu hủy đang chờ trước bàn giao' };
+    this.mutate(draft => {
+      draft.orders.find(o => o.id === orderId)!.cancellation_requested = false;
+    }, 'ORDER_STATUS_CHANGED', { orderId, action: 'cancellation_resolved', result, reason });
+    return { success: true };
+  }
+
+  public resolveReturnReceiving(returnId: string, closed: boolean, note: string): { success: boolean; error?: string } {
+    const ret = this.state.returns.find(r => r.id === returnId);
+    const error = this.authorize('orders:manage', ret);
+    if (error) return { success: false, error };
+    if (!note.trim() || ret!.is_refund_without_return || ret!.rma_branch === 'returnless_refund') return { success: false, error: 'Cần lý do cho phiếu có hàng vật lý' };
+    const lines = this.state.returnItems.filter(i => i.return_id === returnId);
+    if (closed && lines.some(i => (i.received_qty || 0) > (i.qc_pass_qty || 0) + (i.qc_fail_qty || 0))) return { success: false, error: 'Phải QC hết hàng đã nhận trước khi chốt' };
+    this.mutate(draft => {
+      const target = draft.returns.find(r => r.id === returnId)!;
+      target.receiving_closed = closed; target.receiving_resolution = note.trim(); target.updated_at = new Date().toISOString();
+    }, 'ORDER_STATUS_CHANGED', { returnId, orderId: ret!.order_id, action: 'return_receiving_resolved', closed, note });
+    return { success: true };
+  }
+
+  public resolveReturnClaim(returnId: string, status: 'awaiting_compensation' | 'paid' | 'rejected', note: string, transactionId?: string): { success: boolean; error?: string } {
+    const ret = this.state.returns.find(r => r.id === returnId);
+    const error = this.authorize('finance:reconcile', ret);
+    if (error) return { success: false, error };
+    if (!['awaiting_compensation', 'paid', 'rejected'].includes(status) || !note.trim()) return { success: false, error: 'Cần trạng thái và bằng chứng xử lý khiếu nại' };
+    if (status === 'paid') {
+      const adjustment = this.state.orderFeeBreakdowns?.filter(f => f.order_id === ret!.order_id).flatMap(f => f.adjustments || []).find(a => a.id === transactionId && a.kind === 'compensation' && a.amount > 0);
+      if (!adjustment || this.state.returns.some(r => r.id !== returnId && r.compensation_transaction_id === transactionId)) return { success: false, error: 'Cần giao dịch bồi thường của đúng đơn, chưa gắn phiếu khác' };
+    }
+    this.mutate(draft => {
+      const target = draft.returns.find(r => r.id === returnId)!;
+      target.claim_status = status; target.claim_note = note.trim();
+      target.compensation_transaction_id = status === 'paid' ? transactionId : undefined;
+      target.updated_at = new Date().toISOString();
+    }, 'ORDER_STATUS_CHANGED', { returnId, orderId: ret!.order_id, action: 'return_claim_resolved', status, transactionId, note });
+    return { success: true };
+  }
+
+  public getGrowthRecommendations() {
+    const ids = new Set(this.getOrders().map(o => o.id));
+    return structuredClone((this.state.growthRecommendations || []).filter(r => r.tenant_id === this.state.activeTenantId && ids.has(r.order_id)));
+  }
+
   public recordSourceEvent(orderId: string, event: { id: string; version: number; type: 'carrier_accepted' | 'delivered' | 'failed' | 'refund' | 'ads_credit'; amount?: number }): { success: boolean; error?: string } {
     const order = this.state.orders.find(o => o.id === orderId);
     const error = this.authorize('finance:reconcile', order);
@@ -2237,7 +2297,8 @@ class MockDataStore {
     const dimension = ['delivered', 'failed', 'carrier_accepted'].includes(event.type) ? 'delivery' : event.type;
     const versionKey = `${orderId}:${dimension}`;
     if (!event.id || !Number.isSafeInteger(event.version) || event.version <= 0) return { success: false, error: 'Thiếu mã/thứ tự sự kiện' };
-    if (event.version <= (this.state.sourceVersions?.[versionKey] || 0)) return { success: true };
+    // Delivery snapshots are ordered; distinct financial transactions are additive, even when late.
+    if (dimension === 'delivery' && event.version <= (this.state.sourceVersions?.[versionKey] || 0)) return { success: true };
     if (dimension === 'delivery' && event.type !== 'failed' && ['delivery_failed', 'returned_to_sender'].includes(order!.delivery_status || '')) return { success: false, error: 'Luồng giao đã thất bại/hoàn về; không được nhảy sang giao thành công hoặc tiếp nhận' };
     if (dimension === 'delivery' && order!.status !== 'shipped') return { success: false, error: 'Sự kiện giao hàng yêu cầu đơn đã bàn giao' };
     if (['refund', 'ads_credit'].includes(event.type) && (!Number.isSafeInteger(event.amount) || event.amount! <= 0)) return { success: false, error: 'Số tiền sự kiện không hợp lệ' };
@@ -2246,7 +2307,7 @@ class MockDataStore {
     this.mutate(draft => {
       const target = draft.orders.find(o => o.id === orderId)!;
       draft.processedCommands ||= {}; draft.sourceVersions ||= {};
-      draft.processedCommands[key] = signature; draft.sourceVersions[versionKey] = event.version;
+      draft.processedCommands[key] = signature; draft.sourceVersions[versionKey] = Math.max(draft.sourceVersions[versionKey] || 0, event.version);
       target.raw_source_status = `DEMO_${event.type.toUpperCase()}`;
       if (event.type === 'carrier_accepted') { target.carrier_accepted_at = new Date().toISOString(); target.delivery_status = 'in_transit'; }
       if (event.type === 'delivered') { target.status = 'delivered'; target.delivery_status = 'delivered'; target.fulfillment_status = 'fulfilled'; target.revenue_recognized = true; target.delivered_at = new Date().toISOString(); }
@@ -2293,8 +2354,8 @@ class MockDataStore {
     const error = this.authorize('orders:manage', order);
     if (error) return { success: false, error };
     const [kind, entityId] = key.split(':');
-    const groups: Record<string, TenantRole> = { release: 'manager', warehouse: 'warehouse', monitor: 'manager', carrier: 'manager', settlement: 'manager', return: 'warehouse', discrepancy: 'manager', recommendation: 'manager' };
-    const linked = ['return', 'discrepancy'].includes(kind) ? this.state.returns.some(r => r.id === entityId && r.order_id === orderId) : kind === 'recommendation' ? this.state.growthRecommendations?.some(r => r.id === entityId && r.order_id === orderId) : entityId === orderId;
+    const groups: Record<string, TenantRole> = { release: 'manager', warehouse: 'warehouse', monitor: 'manager', carrier: 'manager', settlement: 'manager', return: 'warehouse', discrepancy: 'manager', claim: 'manager', returnMonitor: 'manager', recommendation: 'manager' };
+    const linked = ['return', 'discrepancy', 'claim', 'returnMonitor'].includes(kind) ? this.state.returns.some(r => r.id === entityId && r.order_id === orderId) : kind === 'recommendation' ? this.state.growthRecommendations?.some(r => r.id === entityId && r.order_id === orderId) : entityId === orderId;
     if (!groups[kind] || !linked) return { success: false, error: 'Công việc không thuộc đơn trong phạm vi' };
     if (assigneeId && !this.state.memberships.some(m => m.user_id === assigneeId && m.role === groups[kind] && m.tenant_id === order!.tenant_id && m.status === 'active' && (!m.shop_ids || m.shop_ids.includes(order!.shop_id!)) && (!m.warehouse_ids || m.warehouse_ids.includes(order!.assigned_warehouse_id!)))) return { success: false, error: 'Người nhận ngoài phạm vi' };
     this.mutate(draft => {
