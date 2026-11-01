@@ -1,5 +1,6 @@
 # UAT — triển khai 30/10, kiểm chứng đóng gói 31/10/2026
 
+> Báo cáo lịch sử trước phục hồi Ocean. Trạng thái mới nhất: [OCEAN_RESTORE_RESULTS.md](OCEAN_RESTORE_RESULTS.md).
 > Đây là bằng chứng baseline trước tích hợp ZIP. Kết quả mới nhất: [tích hợp và UAT followup ngày 31/10/2026](ZIP_INTEGRATION_RESULTS.md).
 
 Branch `refactor/prototype-marketplace-e2e`; HEAD `b70ec985dc7e78ab86e17e579d07242df13269df` + working tree chưa commit. Dấu vân tay source: [manifest](../../artifacts/uat/source-manifest.json). Ngày/giờ JSON là UTC; UI vận hành theo Asia/Ho_Chi_Minh.

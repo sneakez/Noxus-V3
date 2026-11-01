@@ -1,5 +1,6 @@
 # Tích hợp NexusOMS-fix (1).zip — 31/10/2026
 
+> Báo cáo lịch sử trước phục hồi Ocean. Trạng thái mới nhất: [OCEAN_RESTORE_RESULTS.md](OCEAN_RESTORE_RESULTS.md).
 Repo `D:\Noxus-V3`, nhánh `refactor/prototype-marketplace-e2e`, HEAD nền `a5316c937efb882f807f6b7f61a35130f7d06637`. Thay đổi hiện tại chưa commit, push, merge hoặc deploy. Giờ người dùng: Asia/Ho_Chi_Minh; timestamps evidence lưu UTC. Source hash: `2800a1e94c91501f3d7f33d8d7d64efa6534c90be8f91fa3adfb255461653976`.
 
 ## Đối chiếu và tích hợp

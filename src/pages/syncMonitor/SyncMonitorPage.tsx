@@ -5,12 +5,21 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDateTime } from '@/lib/utils';
 import type { SyncLog } from '@/types';
+import { mockStore } from '@/mock/store';
+import { useAuth } from '@/providers/AuthProvider';
+import { hasPermission } from '@/lib/permissions';
+import { useToast } from '@/components/ui/Toast';
 
 interface SyncMonitorPageProps {
   search: string;
 }
 
 export function SyncMonitorPage({ search }: SyncMonitorPageProps) {
+  const { activeRole } = useAuth();
+  const toast = useToast();
+  const [, refresh] = useState(0);
+  useEffect(() => mockStore.subscribe(() => { refresh(n => n + 1); load(); }), []);
+  const events = (mockStore.getSnapshot().marketplaceEvents || []).filter(e => !mockStore.authorize('integrations:manage', e));
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +51,12 @@ export function SyncMonitorPage({ search }: SyncMonitorPageProps) {
 
   return (
     <div className="p-6 space-y-6">
+      <section className="card p-4 space-y-3" data-testid="source-events"><h2 className="text-lg font-semibold">Sự kiện đơn nguồn mô phỏng</h2>{events.map(e => <div key={e.id} data-source-event={e.id} className="border-t pt-3 flex flex-wrap gap-3 items-center">
+        <p className="flex-1">{e.order.order_number} · {e.shop_id} · {e.status}</p>
+        {hasPermission(activeRole, 'integrations:manage') && <><button className="btn-secondary" onClick={() => { try { const count = mockStore.updateTable('channel_connections', c => c.shop_id === e.shop_id && c.tenant_id === e.tenant_id, { status: 'connected' }); toast(count ? 'Đã kết nối shop demo' : 'Không tìm thấy kết nối shop', count ? 'success' : 'error'); } catch (err) { toast((err as Error).message, 'error'); } }}>Kết nối lại shop demo</button>
+          <button className="btn-primary" onClick={() => { const r = mockStore.retryMarketplaceEvent(e.id); toast(r.success ? 'Đã nhập đơn, bàn giao Vận hành' : r.error || 'Không thể retry', r.success ? 'success' : 'error'); }}>Retry sự kiện nguồn</button></>}
+        <a href={`/app?page=orders&order=${e.order.id}`} className="text-blue-700 underline text-sm">Mở đơn nguồn</a>
+      </div>)}</section>
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-ink-900">Nhật ký đồng bộ ({filtered.length})</h2>
         <button onClick={load} className="btn-secondary text-sm"><RefreshCw size={14} /> Lam moi</button>

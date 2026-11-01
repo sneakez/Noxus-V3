@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -39,19 +40,19 @@ export function Modal({
   const maxWidth =
     size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : size === 'xl' ? 'max-w-5xl' : size === '2xl' ? 'max-w-6xl' : size === 'full' ? 'max-w-7xl' : 'max-w-xl';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 !m-0" style={{ margin: 0 }}>
       <div
         className="absolute inset-0 bg-ink-950/50 backdrop-blur-sm animate-backdrop"
         onClick={onClose}
       />
-      <div
+      <div role="dialog" aria-modal="true" aria-label={title}
         className={cn(
           'relative w-full bg-white rounded-2xl shadow-2xl shadow-ink-950/20 border border-ink-200/80 animate-scale-in max-h-[90vh] flex flex-col overflow-hidden',
           maxWidth
         )}
       >
-        <div className="flex items-start justify-between p-6 border-b border-ink-100 bg-gradient-to-r from-ink-50/50 to-transparent">
+        <div className="flex items-start justify-between p-6 shrink-0 border-b border-ink-100 bg-gradient-to-r from-ink-50/50 to-transparent">
           <div>
             <h2 className="text-lg font-semibold text-ink-900 tracking-tight">{title}</h2>
             {subtitle && (
@@ -67,11 +68,11 @@ export function Modal({
         </div>
         <div className="p-6 overflow-y-auto flex-1">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-ink-100 bg-ink-50/50">
+          <div className="flex items-center justify-end gap-3 p-6 shrink-0 border-t border-ink-100 bg-ink-50/50">
             {footer}
           </div>
         )}
       </div>
-    </div>
+    </div>, document.body
   );
 }

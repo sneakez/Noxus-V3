@@ -38,6 +38,7 @@ import type { TenantRole } from '@/types';
 
 export type PageId =
   // 1. Command Center
+  | 'workQueue'
   | 'dashboard'
   | 'operationsAnalytics'
   // 2. Commerce Operations
@@ -105,7 +106,8 @@ const navGroups: NavGroup[] = [
   {
     label: 'TỔNG QUAN',
     items: [
-      { id: 'dashboard', label: 'Công việc & bàn giao', icon: SquaresFour },
+      { id: 'dashboard', label: 'Tổng quan', icon: SquaresFour },
+      { id: 'workQueue', label: 'Công việc & bàn giao', icon: ClipboardText },
       { id: 'operationsAnalytics', label: 'Vận hành kho', icon: Pulse },
     ],
   },
@@ -125,6 +127,9 @@ const navGroups: NavGroup[] = [
       { id: 'inventory', label: 'Quản lý kho', icon: Warehouse },
       { id: 'purchaseOrders', label: 'Nhập hàng', icon: ClipboardText },
       { id: 'transfers', label: 'Chuyển kho', icon: ArrowsLeftRight },
+      { id: 'batches', label: 'Lô hàng', icon: Package },
+      { id: 'warehouses', label: 'Danh sách kho', icon: Warehouse },
+      { id: 'inventoryAnalytics', label: 'Phân tích tồn kho', icon: ChartBar },
       { id: 'stockLedger', label: 'Sổ thẻ kho', icon: BookOpenText },
     ],
   },
@@ -135,6 +140,11 @@ const navGroups: NavGroup[] = [
       { id: 'skuEconomics', label: 'Lợi nhuận SKU', icon: Percent },
       { id: 'channelEconomics', label: 'Hiệu quả kênh', icon: ChartBar },
       { id: 'cashWorkingCapital', label: 'Dòng tiền', icon: Wallet },
+      { id: 'feeReconciliation', label: 'Đối soát phí', icon: Receipt },
+      { id: 'ledger', label: 'Sổ kế toán', icon: BookOpenText },
+      { id: 'marginControl', label: 'Kiểm soát biên lợi nhuận', icon: Percent },
+      { id: 'salesVelocity', label: 'Tốc độ bán', icon: ChartLineUp },
+      { id: 'revenueReport', label: 'Báo cáo doanh thu', icon: ChartBar },
       { id: 'pricingCalculator', label: 'Định giá bán', icon: Calculator },
     ],
   },
@@ -157,6 +167,17 @@ const navGroups: NavGroup[] = [
     items: [
       { id: 'channelConnections', label: 'Kết nối sàn', icon: PlugsConnected },
       { id: 'settings', label: 'Cấu hình', icon: Gear },
+      { id: 'channelMapping', label: 'Ánh xạ SKU', icon: Package },
+      { id: 'syncMonitor', label: 'Nhật ký đồng bộ', icon: ArrowsLeftRight },
+      { id: 'complaints', label: 'Khiếu nại khách hàng', icon: Users },
+      { id: 'bufferRules', label: 'Tồn kho an toàn', icon: Warehouse },
+      { id: 'routingRules', label: 'Định tuyến kho', icon: ArrowsLeftRight },
+      { id: 'automationRules', label: 'Quy tắc tự động', icon: Gear },
+      { id: 'webhooks', label: 'Webhooks', icon: PlugsConnected },
+      { id: 'ownerValidation', label: 'Kiểm chứng Owner', icon: ShieldCheck },
+      { id: 'businessRules', label: 'Quy tắc nghiệp vụ', icon: ClipboardText },
+      { id: 'simulator', label: 'Mô phỏng', icon: Pulse },
+      { id: 'flowGuide', label: 'Hướng dẫn vận hành', icon: BookOpenText },
       { id: 'auditTrail', label: 'Nhật ký duyệt', icon: ShieldCheck },
     ],
   },
@@ -335,7 +356,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
                   if (!isCollapsed) {
                     return (
                       <button
-                        key={item.id}
+                        data-nav={item.id} key={item.id}
                         onClick={() => {
                           onNavigate(item.id);
                           onMobileClose();
@@ -381,7 +402,7 @@ export function Sidebar({ current, onNavigate, stats, mobileOpen, onMobileClose 
 
                   // 2. Collapsed Mini Menu Item View (Centered Icon with Hover Tooltip)
                   return (
-                    <div key={item.id} className="relative group flex justify-center">
+                    <div data-nav={item.id} key={item.id} className="relative group flex justify-center">
                       <button
                         type="button"
                         onClick={() => {

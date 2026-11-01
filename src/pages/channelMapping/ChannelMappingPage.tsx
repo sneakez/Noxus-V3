@@ -1,3 +1,6 @@
+import { mockStore } from '@/mock/store';
+import { useAuth } from '@/providers/AuthProvider';
+import { hasPermission } from '@/lib/permissions';
 import { useEffect, useMemo, useState } from 'react';
 import { Link2, Plus, Trash2, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -22,6 +25,9 @@ const CHANNELS: Channel[] = ['website', 'shopee', 'tiktok', 'lazada', 'other_dig
 
 export function ChannelMappingPage({ search }: ChannelMappingPageProps) {
   const toast = useToast();
+  const { activeRole } = useAuth();
+  const [, revise] = useState(0);
+  const heldOrders = mockStore.getOrders().filter(o => o.hold_reason === 'SKU chưa map');
   const [mappings, setMappings] = useState<MappingRow[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,11 +98,12 @@ export function ChannelMappingPage({ search }: ChannelMappingPageProps) {
             {mappings.length} mapping(s) · link internal products to channel SKUs
           </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary">
+        <button disabled={!hasPermission(activeRole, 'orders:manage')} onClick={() => setShowForm(true)} className="btn-primary">
           <Plus size={16} /> Add Mapping
         </button>
       </div>
 
+      {heldOrders.length > 0 && <section className="card p-4 space-y-3"><h2 className="font-semibold">Đơn chờ ánh xạ SKU</h2>{heldOrders.map(o => <div key={o.id} className="flex flex-wrap gap-3 items-center"><a className="text-blue-700 underline" href={`/app?page=orders&order=${o.id}`}>{o.order_number}</a>{hasPermission(activeRole, 'orders:manage') && <button className="btn-secondary" onClick={() => { const r = mockStore.resolveOrderMapping(o.id); toast(r.success ? 'Đã map SKU danh mục của đơn; Vận hành có thể giao kho' : r.error || 'Không thể map', r.success ? 'success' : 'error'); revise(n => n + 1); load(); }}>Xác nhận mapping SKU đã có</button>}</div>)}</section>}
       {/* Channel summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {byChannel.map(({ channel, count }) => (

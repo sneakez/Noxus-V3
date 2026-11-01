@@ -75,7 +75,7 @@ describe('Unified RBAC Permission Registry — Dream Terus (Terus Tech)', () => 
     expect(hasPermission('growth', 'orders:create')).toBe(false);
   });
 
-  it('viewer (R7) has read-only access and no mutate permissions', () => {
+  it('viewer remains disabled pending role review, with no mutation permissions', () => {
     expect(hasPermission('viewer', 'orders:view')).toBe(false);
     expect(hasPermission('viewer', 'inventory:view')).toBe(false);
     expect(hasPermission('viewer', 'orders:create')).toBe(false);
@@ -103,10 +103,14 @@ describe('Unified RBAC Permission Registry — Dream Terus (Terus Tech)', () => 
 
     const growthPages = getAllowedPagesForRole('growth');
     expect(growthPages).toContain('marketingAnalytics');
-    expect(growthPages).not.toContain('customerAnalytics'); // optional, unaudited cohort workspace hidden
+    expect(growthPages).toContain('customerAnalytics'); // Restore original module access; readiness must not hide modules.
     expect(growthPages).toContain('skuEconomics');
     expect(growthPages).toContain('channelEconomics');
     expect(growthPages).not.toContain('settings');
     expect(growthPages).not.toContain('warehouses');
+    const ownerPages = getAllowedPagesForRole('owner');
+    for (const page of ['dashboard', 'operationsAnalytics', 'transfers', 'batches', 'ledger', 'cashWorkingCapital', 'founderExecution', 'webhooks', 'simulator']) {
+      expect(ownerPages).toContain(page);
+    }
   });
 });

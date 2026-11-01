@@ -1,50 +1,55 @@
-# Noxus-V3 / NexusOMS — prototype đa shop
+# Noxus-V3 / NexusOMS — Ocean prototype
 
-React/TypeScript, Ocean UI, dữ liệu mock trong browser. Core cho Owner, Manager, Warehouse, Growth và Admin; vận chuyển do sàn tổ chức, các sự kiện nguồn được mô phỏng.
+React/TypeScript, dữ liệu mock bền qua reload. UI gốc được phục hồi trên nhánh `codex/restore-ocean-role-flows`; dashboard và các trang xử lý chuyên biệt được giữ riêng. Công việc & bàn giao chỉ là danh sách link đến chứng từ.
 
 ## Chạy app
 
 ```powershell
-# Dependencies đã có: kiểm tra npm ls --depth=0; chỉ npm ci khi thiếu hoặc lệch lockfile.
 npm ls --depth=0
-npm run dev -- --host 127.0.0.1 --port 5174
+# Chỉ npm ci khi dependencies thiếu hoặc lệch package-lock.json.
+npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
 ```
 
-Mở http://127.0.0.1:5174/app. Mặc định `VITE_DATA_MODE=mock`; không cần Supabase, OAuth hay máy quét. Không dùng `.env` trỏ backend thật để chạy các fixture này.
+Mở http://127.0.0.1:5174/app. Mặc định dùng mock, không cần backend/OAuth/credentials thật. Đăng nhập dùng nút điền nhanh: owner@nexusoms.io, admin@nexusoms.io, manager@nexusoms.io, kho@nexusoms.io, growth@nexusoms.io. Mật khẩu mock không được xác thực, nút điền sẵn `demo`. Email lạ không tự thành Owner. Menu tài khoản cuối sidebar đổi demo user; menu dài có vùng cuộn, màn hình hẹp dùng nút ba gạch.
 
-Bấm tài khoản ở cuối sidebar để đổi **demo user**: Owner, Manager, Warehouse, Growth hoặc Admin. URL `role=` không cấp quyền. Viewer bỏ mặc định; Finance tắt. Các email seed hợp lệ gồm owner@nexusoms.io, manager@nexusoms.io, kho@nexusoms.io, growth@nexusoms.io và admin@nexusoms.io. Đăng nhập mock không phải auth production; email lạ không fallback Owner.
+## Thử role và bàn giao trên các trang gốc
 
-## Chạy thử từng role
+1. Owner → Mô phỏng → Nạp fixture RAM-X (có xác nhận thay dữ liệu demo). Nút Nạp ca nhiều dòng dùng cho serial, nhận nhiều đợt/mixed QC và PO. Scope tài khoản nằm ở Cấu hình.
+2. Admin → Nhật ký đồng bộ → event A → Kết nối lại shop demo → Retry A/B/C. Đơn được chuyển cho Vận hành, không sinh trùng khi retry.
+3. Manager → Đơn hàng → mở drawer từng đơn → Giữ tồn & giao kho, Phân công kho. Khi SKU chưa map: xử lý ở Ánh xạ SKU. Yêu cầu hủy dừng kho; lý do/kết quả nguồn quyết định hủy, từ chối hoặc rút.
+4. Warehouse → Xử lý đơn → Đơn đã giao nhóm Kho → mở drawer → kiểm RAM-X, nhặt, đóng gói, nhập vận đơn, bàn giao A/C; để B packed để thử hủy. Ca nhiều dòng cần RAM-X và SERIAL-SECOND.
+5. Manager → drawer Đơn hàng → Kết quả sàn mô phỏng & giao dịch tiền: A giao thành công, C giao thất bại. Kho không tự kết luận giao thành công.
+6. Warehouse → Đổi trả → mở hồ sơ C → nhập lượng nhận từng dòng → Lưu thực nhận → nhập QC đạt/lỗi → Lưu kết quả QC. Manager xử lý phần thiếu, claim và mở lại hàng đến muộn ngay trong hồ sơ; tiền độc lập với hàng.
+7. Manager → Đơn hàng ghi phí nguồn A100000/B0/C60000 → Đối soát phí → lưu. Refund/Ads credit dùng mã sự kiện riêng; giao dịch đến trễ cập nhật báo cáo. Điều chỉnh/bồi thường ở modal phí có mã giao dịch, lý do và actor.
+8. Growth → Hiệu quả Ads → xem dữ liệu cùng engine, gửi đề xuất; Manager tiếp nhận tại báo cáo đó. Đổi scope rồi reload để kiểm tra giới hạn đọc.
 
-1. Owner → **Công việc & bàn giao** → **Nạp fixture RAM-X**. Thao tác này có xác nhận thay dữ liệu demo hiện tại. Có thể cấu hình shop/kho cho các tài khoản trong mục scope.
-2. Admin → mở event A → thử Retry lúc lỗi → Kết nối lại shop demo → Retry A/B/C. Đơn nguồn chỉ được nhập một lần.
-3. Manager → từng đơn → **Giữ tồn & giao kho**. Nếu có hold SKU, map trước. Đơn đã giữ có monitor để xử lý hủy/ngoại lệ mà không cần Owner.
-4. Warehouse → nhập `RAM-X` để kiểm SKU → nhặt/đóng gói. Nhập vận đơn, in nhãn demo nếu cần. Bàn giao A/C, giữ B để thử hủy khi packed.
-5. Manager → monitor B → yêu cầu hủy; đổi Warehouse sẽ thấy dừng xuất. Manager xác nhận kết quả hủy. Với A/C, mô phỏng A giao thành công và C thất bại.
-6. Warehouse → phiếu hoàn C → nhận1 → QC đạt1. Tồn tăng vật lý ở nhận, khả dụng ở QC. Dùng **Nạp ca nhiều dòng** ở Owner để thử serial `SERIAL-SECOND`, nhận nhiều đợt/mixed QC, trả riêng dòng và PO.
-7. Manager → hàng chờ tiền → nhập phí thực A100000/B0/C60000 → chốt. Các sự kiện tiền muộn mở qua link **Sự kiện muộn** dưới báo cáo. Credit Ads C40000 là một sự kiện riêng.
-8. Growth → chọn shop/kỳ; kiểm tra nguồn và contribution; gửi đề xuất. Manager tiếp nhận; Growth xem trạng thái lưu lại. Owner xem kết quả hoặc đối soát bằng cùng nguồn dữ liệu.
-
-Fixture RAM-X kỳ vọng: available cuối9; sales1000000; Ads300000; contribution-120000. Sau credit40000: net Ads260000, contribution-80000. Bồi thường tách sales. Số liệu chưa có phí/Ads được ghi chưa chốt/chưa đủ, không dựng số ACTUAL.
-
-Đổi role hoặc reload vẫn cùng dữ liệu. Chưa phân công hiển thị theo nhóm nhận; thay assignee giữ lịch sử. **Kịch bản thử nghiệm → reset** đưa về seed mặc định; fixture acceptance dùng các nút nạp riêng. Snapshot schema3 được giữ khi nâng cấp; receipt cũ thiếu chứng từ bị giữ để kiểm tra, không tự cộng tồn.
+Fixture A/B/C: available cuối9, sales1000000, Ads300000, contribution-120000. Ads credit C40000 → netAds260000 và contribution-80000. Bồi thường tách sales.
 
 ## Kiểm chứng
+
+Giữ server local chạy trước các script browser:
 
 ```powershell
 npm test
 npm run typecheck
 npm run build
-# Giữ Vite chạy ở port5174 trong terminal khác:
-npm run test:ui
-npm run test:ui:edges
-npm run test:ui:followup
+npm run test:ui          # Luồng liên role qua các trang gốc
+npm run test:ui:edges    # RMA, QC, refund/phí, PO, scope, mobile
+npm run test:ui:followup # Từng menu/trang theo role và ảnh UI
+npm run test:ui:login    # Đăng nhập/reload/đăng xuất 5 tài khoản demo
 ```
 
-Puppeteer dùng Chromium đã cài; chỉ khi thiếu browser mới cần `npx puppeteer browsers install chrome`. Có thể đặt `$env:UAT_BASE_URL='http://127.0.0.1:5173'` để dùng port khác, `UAT_CHROMIUM_PATH` để chọn executable, `UAT_OUTPUT_DIR` để tách evidence. Ba browser script tạo fixture qua UI và đọc DOM/localStorage để kiểm chứng; không thay thế thao tác UI bằng gọi store. Giữ server chạy trước khi chạy UAT.
+Các script `commerce-ui-uat/edges/followup.mjs` cũ được giữ như lịch sử cho UI WorkQueue trước đây; npm scripts hiện trỏ sang các bài Ocean, không dùng kết quả cũ để kết luận UI mới. Puppeteer/Chromium đã có trên máy kiểm thử; không cài lại khi không cần. Launcher hỗ trợ UAT_CHROMIUM_PATH; các script Ocean dùng localhost:5174. Script login hỗ trợ UAT_BASE_URL và UAT_OUTPUT_DIR. Dữ liệu kiểm thử được tạo qua UI, localStorage chỉ đọc để assert nghiệp vụ.
 
-Kết quả tích hợp ZIP ngày 31/10/2026: xem [báo cáo chạy tại máy này](docs/audit/ZIP_INTEGRATION_RESULTS.md). [Báo cáo patch gốc](docs/audit/BUSINESS_FIX_RESULTS.md) và [prompt hợp nhất](docs/product/BUILD_PROMPT_UNIFIED.md) được giữ làm tài liệu tham khảo. [UAT baseline](docs/audit/UAT_RESULTS.md), [nghiệm thu/giới hạn](docs/audit/PROTOTYPE_ACCEPTANCE.md), [handoff](docs/audit/E2E_FLOW_MAP.md), [quyền](docs/audit/ROLE_PERMISSION_MATRIX.md), [phản biện/sửa đổi](docs/audit/REMEDIATION_MATRIX.md).
+Login dùng `chrome-headless-shell` đã cài cùng Puppeteer: unified Chrome 156 headless trên Windows kiểm thử không chuyển input sau reload. Bài login kiểm 5 role tuần tự trên cùng browser/page, cả chuột và Space, reload sau đăng nhập và sau logout. `UAT_LOGIN_BROWSER=chrome` dùng để đối chứng chế độ còn lỗi, không coi kết quả shell là PASS của chế độ đó. [Điều tra](docs/audit/LOGIN_UAT_INVESTIGATION.md). Sinh tổng hợp từ evidence bằng `node scripts/ocean-gate-summary.mjs`: [GATE_SUMMARY](docs/audit/GATE_SUMMARY.md).
 
-Các workspace nâng cao chưa nghiệm thu đã ẩn qua `OPTIONAL_PAGES`: chuyển kho UI, bảo hành/đổi hàng/lô, kế toán, dự báo/analytics nâng cao, OKR và rules/webhooks lab. Core không phụ thuộc các phần này. Không có backend production hay cam kết sổ kế toán/thuế từ prototype.
+[Báo cáo phục hồi, kết quả thực chạy và ảnh trước/sau](docs/audit/OCEAN_RESTORE_RESULTS.md). [Đối chiếu quyền và đề xuất Viewer/Finance/CS](docs/audit/OCEAN_ROLE_REVIEW.md). Các báo cáo audit/ZIP trước đó giữ nguyên làm lịch sử, không mô tả trạng thái UI mới nhất.
 
-Branch `refactor/prototype-marketplace-e2e`, HEAD nền lần tích hợp ZIP `a5316c937efb882f807f6b7f61a35130f7d06637`, phần tích hợp đang ở working tree chưa commit/push/merge. [Manifest mới](artifacts/business-fix/source-manifest.json) nhận diện source vừa kiểm chứng. [Manifest baseline cũ](artifacts/uat/source-manifest.json) giữ nguyên để đối chiếu lịch sử.
+## Mốc bảo toàn công việc
+
+- Nền UI đã xác minh: tree b891421, giữ các sửa typecheck của f801f38 và engine nghiệp vụ hiện tại.
+- Backup trước phục hồi: codex/backup-before-ocean-restore-20261031, commit c52cf87.
+- Nhánh kiểm toán riêng: codex/restore-ocean-role-flows; không merge main hoặc deploy.
+- Viewer/Finance/CS chưa bị thay cơ cấu thêm trong lần này; xem bảng quyền riêng.
+
+Các màn hình nâng cao được mở lại, không đồng nghĩa mọi thao tác của mọi module đã nghiệm thu. Backend/sàn thật, concurrency, exchange/warranty, full Maker/Checker và mọi chính sách sàn nằm ngoài bằng chứng hiện có; xem báo cáo cho ca cụ thể.

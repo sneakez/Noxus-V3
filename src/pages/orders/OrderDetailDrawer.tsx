@@ -1,5 +1,6 @@
+import { OrderActions } from './OrderActions';
 import { hasPermission } from '@/lib/permissions';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   User,
   Calendar,
@@ -78,11 +79,13 @@ export function OrderDetailDrawer({
   const handleDeleted = onDeleted ?? onOrderDeleted ?? (() => {});
   const toast = useToast();
   const { activeTenant, activeRole } = useAuth();
+  const canViewEconomics = hasPermission(activeRole, 'finance:view') || hasPermission(activeRole, 'analytics:view');
   const [items, setItems] = useState<OrderItem[]>([]);
   const [logs, setLogs] = useState<OrderStatusLog[]>([]);
   const [wave, setWave] = useState<FulfillmentWave | null>(null);
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadedOrderId = useRef<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<'operations' | 'economics' | 'audit'>('operations');
@@ -98,7 +101,8 @@ export function OrderDetailDrawer({
 
   useEffect(() => {
     if (!order) return;
-    setLoading(true);
+    let cancelled = false;
+    if (loadedOrderId.current !== order.id) setLoading(true);
     if (order.pod_evidence) {
       setPodTracking(order.pod_evidence.tracking_code);
       setPodCarrier(order.pod_evidence.carrier_name || 'Viettel Post');
@@ -126,12 +130,15 @@ export function OrderDetailDrawer({
         ? supabase.from('fulfillment_waves').select('*').eq('id', order.fulfillment_wave_id).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
     ]).then(([itemsRes, logsRes, whRes, waveRes]) => {
+      if (cancelled) return;
+      loadedOrderId.current = order.id;
       setItems(itemsRes.data ?? []);
       setLogs(logsRes.data ?? []);
       setWarehouse((whRes.data as Warehouse) ?? null);
       setWave((waveRes.data as FulfillmentWave) ?? null);
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [order]);
 
   async function updateStatus(newStatus: OrderStatus) {
@@ -321,6 +328,8 @@ export function OrderDetailDrawer({
               </button>
               <button
                 type="button"
+                disabled={!canViewEconomics}
+                title={!canViewEconomics ? 'Vai trò chưa có quyền xem tài chính / analytics' : undefined}
                 onClick={() => setActiveTab('economics')}
                 className={cn(
                   'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
@@ -408,102 +417,11 @@ export function OrderDetailDrawer({
                   Hành động khả dụng theo vai trò ({activeRole})
                 </p>
 
-                {activeRole === 'viewer' ? (
-                  <p className="text-xs text-ink-400 italic">
-                    Tài khoản quyền Chỉ Xem (Viewer) không có quyền thay đổi trạng thái đơn.
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2.5">
-                    {order.status === 'pending' && (
-                      <>
-                        {hasPermission(activeRole, 'orders:manage') && (
-                          <button
-                            disabled={updating}
-                            onClick={() => updateStatus('processing')}
-                            className="btn-primary text-xs py-2 px-3.5"
-                          >
-                            ✓ Xác nhận đơn & Giữ tồn kho
-                          </button>
-                        )}
-                        {hasPermission(activeRole, 'orders:manage') && (
-                          <button
-                            disabled={updating}
-                            onClick={() => updateStatus('cancelled')}
-                            className="btn-secondary text-xs text-rose-600 hover:bg-rose-50 border-rose-200 py-2 px-3.5"
-                          >
-                            ✕ Hủy đơn hàng
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    {order.status === 'processing' && (
-                      <>
-                        {(hasPermission(activeRole, 'inventory:move') && order.fulfillment_status === 'packed') && (
-                          <button
-                            disabled={updating}
-                            onClick={() => updateStatus('shipped')}
-                            className="btn-primary text-xs py-2 px-3.5"
-                          >
-                            📦 Đóng gói & Xuất kho (Dispatch)
-                          </button>
-                        )}
-                        {hasPermission(activeRole, 'orders:manage') && (
-                          <button
-                            disabled={updating}
-                            onClick={() => updateStatus('cancelled')}
-                            className="btn-secondary text-xs text-rose-600 hover:bg-rose-50 border-rose-200 py-2 px-3.5"
-                          >
-                            ✕ Hủy đơn & Giải phóng tồn
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    {order.status === 'shipped' && (
-                      <div className="w-full space-y-2">
-                        {!hasPermission(activeRole, 'orders:manage') ? (
-                          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-start gap-2.5">
-                            <Truck size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-semibold text-blue-900">Kiện hàng đã xuất kho và bàn giao bưu tá</p>
-                              <p className="text-blue-700 mt-0.5">
-                                Nhân viên kho đã hoàn thành xuất hàng. Trạng thái giao thành công (POD) thuộc thẩm quyền của hãng vận chuyển / sàn hoặc quản trị viên (Owner/Manager).
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-2.5">
-                            <button
-                              disabled={updating}
-                              onClick={() => setShowPodModal(true)}
-                              className="btn-primary text-xs py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1.5 shadow-xs"
-                            >
-                              <FileCheck2 size={14} />
-                              <span>🚚 Giao hàng thành công (Mô phỏng POD)</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {order.status === 'delivered' && (
-                      <div className="w-full p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
-                        <span>✓ Đơn hàng đã giao thành công và ghi nhận doanh thu.</span>
-                      </div>
-                    )}
-
-                    {order.status === 'cancelled' && (
-                      <div className="w-full p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800">
-                        ✕ Đơn hàng đã hủy. Toàn bộ tồn kho cam kết đã được tự động hoàn lại khả dụng.
-                      </div>
-                    )}
-                  </div>
-                )}
+                <OrderActions orderId={order.id} onUpdated={handleUpdated}/>
               </div>
             </div>
             {/* POD Evidence Section */}
-            {(order.pod_evidence || order.status === 'delivered') && (
+            {order.pod_evidence && (
               <div className="card p-5 bg-emerald-50/60 border border-emerald-200/90 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -727,7 +645,7 @@ export function OrderDetailDrawer({
             )}
 
             {/* TAB 2: FINANCIALS & UNIT ECONOMICS */}
-            {activeTab === 'economics' && (
+            {activeTab === 'economics' && canViewEconomics && (
               <div className="space-y-4 animate-fade-in-up">
                 <div className="card p-5 space-y-3">
               {/* Payment Section */}

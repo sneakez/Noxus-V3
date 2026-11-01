@@ -1,3 +1,4 @@
+import { ScopeSettings } from '@/pages/workQueue/ScopeSettings';
 import { useEffect, useState, useMemo } from 'react';
 import {
   Settings as SettingsIcon,
@@ -94,7 +95,7 @@ const PERMISSION_MATRIX: PermissionRow[] = [
   {
     module: 'Đơn Hàng (Orders)',
     action: 'Tạo & Duyệt đơn hàng',
-    admin: true,
+    admin: false,
     manager: true,
     warehouse: false,
     description: 'Tạo đơn mới, chỉnh sửa thông tin giao nhận và xác nhận đơn',
@@ -102,7 +103,7 @@ const PERMISSION_MATRIX: PermissionRow[] = [
   {
     module: 'Đơn Hàng (Orders)',
     action: 'Đóng gói & Xuất kho (Fulfillment)',
-    admin: true,
+    admin: false,
     manager: true,
     warehouse: true,
     description: 'In phiếu nhặt hàng (Pick/Pack), gán mã vận đơn và bàn giao shipper',
@@ -110,23 +111,23 @@ const PERMISSION_MATRIX: PermissionRow[] = [
   {
     module: 'Đổi Trả & RMA',
     action: 'Tiếp nhận & Kiểm định QC hàng hoàn',
-    admin: true,
+    admin: false,
     manager: true,
     warehouse: true,
     description: 'Đánh giá hàng đạt (Restock) hoặc hư hỏng (Scrap) tại dock hoàn',
   },
   {
     module: 'Đổi Trả & RMA',
-    action: 'Ký duyệt chi hoàn tiền (Maker/Checker)',
-    admin: true,
+    action: 'Đối soát phí / ghi nhận refund nguồn',
+    admin: false,
     manager: true,
     warehouse: false,
-    description: 'Ký duyệt chi tiền cho khách theo ngưỡng phân quyền ngân quỹ',
+    description: 'Ghi nhận kết quả sàn mô phỏng, đối soát phí và khoản hoàn; không phải chi tiền thật',
   },
   {
     module: 'Kho Bãi (Inventory)',
     action: 'Biến động tồn & Chuyển kho liên tỉnh',
-    admin: true,
+    admin: false,
     manager: true,
     warehouse: true,
     description: 'Nhập xuất tồn, điều chuyển In-transit và nghiệm thu hàng PO',
@@ -134,7 +135,7 @@ const PERMISSION_MATRIX: PermissionRow[] = [
   {
     module: 'Tài Chính & P&L',
     action: 'Xem báo cáo Dòng tiền & Lợi nhuận SKU',
-    admin: true,
+    admin: false,
     manager: true,
     warehouse: false,
     description: 'Truy cập P&L ròng, đối soát tiền sàn và chi phí quảng cáo Ads',
@@ -150,6 +151,7 @@ const PERMISSION_MATRIX: PermissionRow[] = [
 ];
 
 export function SettingsPage({ search = '' }: SettingsPageProps) {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<ActiveTab>('users');
 
   return (
@@ -166,6 +168,7 @@ export function SettingsPage({ search = '' }: SettingsPageProps) {
         }
       />
 
+      <ScopeSettings onResult={r => toast(r.success ? 'Đã lưu phạm vi' : r.error || 'Không thể lưu', r.success ? 'success' : 'error')}/>
       {/* 2. Top Navigation Tabs */}
       <div className="bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto">
         <button

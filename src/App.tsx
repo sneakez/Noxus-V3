@@ -87,8 +87,9 @@ interface PageMeta {
 }
 
 const PAGE_META: Record<PageId, PageMeta> = {
+  workQueue: { title: 'Công việc & bàn giao', subtitle: 'Danh sách dẫn đến chứng từ cần xử lý', searchPlaceholder: 'Tìm công việc...' },
   // Overview
-  dashboard: { title: 'Công việc & bàn giao', subtitle: 'Theo dõi đầu việc theo role, hàng và tiền', searchPlaceholder: 'Tìm kiếm nhanh...' },
+  dashboard: { title: 'Bảng điều hành kinh doanh', subtitle: 'Tổng quan doanh thu quản trị, dòng đóng góp lợi nhuận (CM1, CM2, CM3)', searchPlaceholder: 'Tìm kiếm nhanh...' },
   
   // Sales
   orders: { title: 'Quản trị đơn hàng', subtitle: 'Theo dõi tiến trình từ đặt hàng, giữ kho, đóng gói đến đối soát POD', searchPlaceholder: 'Tìm mã đơn, khách hàng...' },
@@ -182,10 +183,10 @@ function AuthenticatedWorkspace() {
   };
 
   const allowed = getAllowedPagesForRole(activeRole).includes(page);
-  const meta = PAGE_META[page] || PAGE_META.dashboard;
+  const meta = page === 'dashboard' && (activeRole === 'admin' || activeRole === 'warehouse') ? { ...PAGE_META.dashboard, title: activeRole === 'admin' ? 'Tổng quan đồng bộ' : 'Tổng quan vận hành kho' } : PAGE_META[page] || PAGE_META.dashboard;
 
   return (
-    <div className="flex h-screen bg-app-gradient overflow-hidden font-sans">
+    <div data-testid="workspace" data-role={activeRole} className="flex h-screen bg-app-gradient overflow-hidden font-sans">
       <Sidebar
         current={page}
         onNavigate={handleNavigate}
@@ -204,11 +205,12 @@ function AuthenticatedWorkspace() {
           onMobileMenu={() => setMobileOpen(!mobileOpen)}
         />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-transparent">
+        <main data-page={page} className="flex-1 overflow-y-auto overflow-x-hidden bg-transparent">
           <ErrorBoundary>
-            {!allowed ? <div className="p-8" role="alert"><h1 className="text-xl font-semibold">Không có quyền truy cập trang này</h1><p>Chuyển về công việc trong phạm vi tài khoản.</p><button className="border rounded p-2 mt-3" onClick={() => handleNavigate('dashboard')}>Mở công việc</button></div> : <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu..." />}>
+            {!allowed ? <div className="p-8" role="alert"><h1 className="text-xl font-semibold">Không có quyền truy cập trang này</h1><p>Chọn trang thuộc phạm vi tài khoản.</p><button className="border rounded p-2 mt-3" onClick={() => handleNavigate('dashboard')}>Về tổng quan</button></div> : <Suspense fallback={<FullPageSpinner label="Đang tải dữ liệu..." />}>
               {/* Overview */}
-              {page === 'dashboard' && <WorkQueuePage />}
+              {page === 'dashboard' && (activeRole === 'admin' ? <SyncMonitorPage search={search}/> : activeRole === 'warehouse' ? <OperationsAnalyticsPage/> : <ExecutiveAnalyticsDashboard onNavigate={(p) => handleNavigate(p as PageId)} />)}
+              {page === 'workQueue' && <WorkQueuePage />}
               
               {/* Sales */}
               {page === 'orders' && <OrdersPage search={search} onNavigate={(p) => handleNavigate(p as PageId)} />}
@@ -217,7 +219,7 @@ function AuthenticatedWorkspace() {
 
               {/* Operations & WMS */}
               {page === 'inventory' && <InventoryPage search={search} />}
-              {page === 'fulfillment' && <WorkQueuePage focus="warehouse" />}
+              {page === 'fulfillment' && <FulfillmentPage search={search} />}
               {page === 'inventoryAnalytics' && <InventoryAnalyticsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
               {page === 'transfers' && <TransfersPage search={search} />}
               {page === 'batches' && <BatchesPage search={search} />}
@@ -229,7 +231,7 @@ function AuthenticatedWorkspace() {
               {page === 'products' && <ProductsPage search={search} />}
 
               {/* After-sales */}
-              {page === 'returns' && <WorkQueuePage focus="returns" />}
+              {page === 'returns' && <ReturnsPage search={search} onNavigate={(p) => handleNavigate(p as PageId)} />}
 
               {/* Unit Economics */}
               {page === 'orderEconomics' && <OrderEconomicsPage onNavigate={(p) => handleNavigate(p as PageId)} />}
@@ -257,7 +259,7 @@ function AuthenticatedWorkspace() {
               {/* Legacy routes preserved */}
               {page === 'complaints' && <ComplaintsPage search={search} />}
               {page === 'channelMapping' && <ChannelMappingPage search={search} />}
-              {page === 'syncMonitor' && <WorkQueuePage focus="sync" />}
+              {page === 'syncMonitor' && <SyncMonitorPage search={search} />}
               {page === 'ledger' && <LedgerPage search={search} />}
               {page === 'feeReconciliation' && <FeeReconciliationPage search={search} />}
               {page === 'marginControl' && <MarginControlPage />}

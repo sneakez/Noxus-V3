@@ -1,3 +1,4 @@
+import { hasPermission } from '@/lib/permissions';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ShoppingCart,
@@ -68,7 +69,8 @@ const CHANNEL_BADGES: Record<string, { label: string; color: string; bg: string 
 
 export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
   const toast = useToast();
-  const { activeTenant } = useAuth();
+  const { activeTenant, activeRole } = useAuth();
+  const canViewEconomics = hasPermission(activeRole, 'finance:view') || hasPermission(activeRole, 'analytics:view');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
@@ -393,7 +395,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
           <button onClick={() => exportOrdersToPDF(filtered)} className="btn-secondary text-sm py-2 px-3 font-semibold">
             <FileText size={14} /> PDF
           </button>
-          <button onClick={() => setShowForm(true)} className="btn-primary text-sm py-2 px-3.5 font-bold shadow-xs">
+          <button disabled={!hasPermission(activeRole, 'orders:create')} onClick={() => setShowForm(true)} className="btn-primary text-sm py-2 px-3.5 font-bold shadow-xs">
             + Tạo Đơn Hàng Mới
           </button>
         </div>
@@ -691,7 +693,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
       {/* LEVEL 2 & 3: HIERARCHICAL REUSABLE DATA GRID */}
       <HierarchicalDataGrid
         data={filtered}
-        groups={columnGroups}
+        groups={canViewEconomics ? columnGroups : columnGroups.filter(g => g.id !== 'grp_economics')}
         rowKey={o => o.id}
         storageKey="orders"
         selectable
@@ -785,7 +787,7 @@ export function OrdersPage({ search = '', onNavigate }: OrdersPageProps) {
                 <div>
                   <span className="text-[10px] text-ink-400 block font-sans">Lợi nhuận CM3:</span>
                   <span className="font-bold text-emerald-700">
-                    {econ ? formatCurrency(econ.cm3) : 'N/A'}
+                    {canViewEconomics ? econ ? formatCurrency(econ.cm3) : 'N/A' : 'Không có quyền'}
                   </span>
                 </div>
               </div>

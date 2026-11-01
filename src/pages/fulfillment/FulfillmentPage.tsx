@@ -1,4 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { OrderDetailDrawer } from '@/pages/orders/OrderDetailDrawer';
+import { useAuth } from '@/providers/AuthProvider';
+import { hasPermission } from '@/lib/permissions';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Waves,
   Plus,
@@ -73,10 +76,16 @@ const CHANNEL_BADGES: Record<string, { label: string; bg: string; color: string 
 
 export function FulfillmentPage({ search }: FulfillmentPageProps) {
   const toast = useToast();
+  const { activeRole } = useAuth();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(() => new URLSearchParams(location.search).get('order'));
+  const [, revise] = useState(0);
+  useEffect(() => mockStore.subscribe(() => { revise(n => n + 1); load(); }), []);
+  const warehouseOrders = mockStore.getOrders().filter(o => o.status === 'processing' && o.fulfillment_status);
   const [waves, setWaves] = useState<WaveRow[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [unassignedOrders, setUnassignedOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoaded = useRef(false);
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -86,7 +95,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
   const [selectedWaveForLabels, setSelectedWaveForLabels] = useState<WaveRow | null>(null);
 
   async function load() {
-    setLoading(true);
+    if (!hasLoaded.current) setLoading(true);
     const [{ data: w }, { data: wh }, { data: ord }] = await Promise.all([
       supabase
         .from('fulfillment_waves')
@@ -104,6 +113,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
     setWaves((w ?? []) as WaveRow[]);
     setWarehouses(wh ?? []);
     setUnassignedOrders((ord ?? []) as Order[]);
+    hasLoaded.current = true;
     setLoading(false);
   }
 
@@ -144,6 +154,7 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
   }
 
   async function advanceWave(wave: FulfillmentWave) {
+    if (!hasPermission(activeRole, 'inventory:move')) return toast('Không có quyền xử lý kho', 'error');
     const next = NEXT_WAVE_STATUS[wave.status];
     if (!next) return;
 
@@ -196,6 +207,8 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 animate-fade-in-up space-y-5">
+      <OrderDetailDrawer order={mockStore.getOrders().find(o => o.id === selectedOrderId) || null} open={Boolean(selectedOrderId)} onClose={() => setSelectedOrderId(null)} onUpdated={() => revise(n => n + 1)}/>
+
       {/* Page Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
@@ -306,6 +319,10 @@ export function FulfillmentPage({ search }: FulfillmentPageProps) {
         </div>
       </div>
 
+      <section className="card p-4 space-y-3" data-testid="warehouse-orders"><h2 className="font-semibold text-slate-900">Đơn đã giao nhóm Kho</h2>
+        {!warehouseOrders.length && <p className="text-sm text-slate-500">Không có đơn còn chờ chuẩn bị.</p>}
+        {warehouseOrders.map(o => <button key={o.id} data-warehouse-order={o.id} className="btn-secondary mr-2 mb-2" onClick={() => setSelectedOrderId(o.id)}>{o.order_number} · {o.fulfillment_status}{o.cancellation_requested || o.hold_reason ? ' · đang chặn' : ''}</button>)}
+      </section>
       {/* Filter Tabs Track */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <FilterPill active={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>

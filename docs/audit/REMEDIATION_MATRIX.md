@@ -1,5 +1,6 @@
 # Phản biện và sửa đổi đã triển khai
 
+> Báo cáo lịch sử trước phục hồi Ocean. Trạng thái mới nhất: [OCEAN_RESTORE_RESULTS.md](OCEAN_RESTORE_RESULTS.md).
 Ngày 30/10/2026. Đây là kết quả kiểm tra lại trên HEAD b70ec98 + working tree, thay thế bảng “28/28 resolved” cũ.
 
 | Phát hiện / bằng chứng | Tác động | Quyết định và code đã triển khai | Kiểm chứng |

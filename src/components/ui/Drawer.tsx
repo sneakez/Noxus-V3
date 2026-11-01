@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
@@ -33,7 +34,7 @@ export function Drawer({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end !m-0" style={{ margin: 0 }}>
       <div
         className="absolute inset-0 bg-ink-950/50 backdrop-blur-sm animate-backdrop"
@@ -61,6 +62,6 @@ export function Drawer({
           </div>
         )}
       </div>
-    </div>
+    </div>, document.body
   );
 }

@@ -1,3 +1,4 @@
+import { mockStore } from '@/mock/store';
 import { useState } from 'react';
 import { Atom, Zap, Bug, ShieldOff, TrendingDown, Copy, AlertTriangle, CheckCircle2, Loader2, Terminal } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -25,7 +26,7 @@ const SCENARIOS: { id: SimScenario; label: string; icon: typeof Zap; description
 
 export function SimulatorPage() {
   const toast = useToast();
-  const { activeTenant } = useAuth();
+  const { activeTenant, activeRole } = useAuth();
   const tenantId = activeTenant?.id ?? '';
   const [results, setResults] = useState<Record<string, SimResult>>({});
   const [logs, setLogs] = useState<string[]>([]);
@@ -161,6 +162,7 @@ export function SimulatorPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {activeRole === 'owner' && <section className="card p-4 space-y-3"><h2 className="font-semibold">Dữ liệu kiểm thử nghiệp vụ</h2><p className="text-sm text-slate-500">Thay dữ liệu demo hiện tại bằng fixture biệt lập; không dùng dữ liệu khách hàng thật.</p>{(['core','partial'] as const).map(kind => <button key={kind} className="btn-secondary mr-2" onClick={() => { if (!confirm('Thay dữ liệu demo hiện tại bằng fixture?')) return; const r = mockStore.loadAcceptanceFixture(kind === 'core' ? undefined : kind); toast(r.success ? 'Đã nạp fixture' : r.error || 'Không thể nạp', r.success ? 'success' : 'error'); }}>{kind === 'core' ? 'Nạp fixture RAM-X' : 'Nạp ca nhiều dòng'}</button>)}</section>}
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center">
           <Atom size={24} className="text-violet-600" />

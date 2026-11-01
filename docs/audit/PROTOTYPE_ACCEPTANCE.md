@@ -1,5 +1,6 @@
 # Noxus-V3 — nghiệm thu prototype mock
 
+> Báo cáo lịch sử trước phục hồi Ocean. Trạng thái mới nhất: [OCEAN_RESTORE_RESULTS.md](OCEAN_RESTORE_RESULTS.md).
 Triển khai ngày 30/10/2026; kiểm chứng lại để đóng gói ngày 31/10/2026, Asia/Ho_Chi_Minh. Tài liệu này thay thế kết luận nghiệm thu trước đó.
 
 ## Phiên bản và kết luận

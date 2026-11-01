@@ -184,8 +184,9 @@ function getRolePages(role: TenantRole | null | undefined): string[] {
   }
 }
 
-// Optional legacy workspaces are hidden until their own complete acceptance is run.
-export const OPTIONAL_PAGES = new Set(['operationsAnalytics', 'inventoryAnalytics', 'cashWorkingCapital', 'customerAnalytics', 'salesAnalytics', 'founderExecution', 'marginControl', 'salesVelocity', 'revenueReport', 'transfers', 'batches', 'ledger', 'ownerValidation', 'businessRules', 'simulator', 'automationRules', 'webhooks', 'bufferRules', 'routingRules']);
+// Preserve all original modules; role access is independent of module readiness.
+export const OPTIONAL_PAGES = new Set<string>();
 export function getAllowedPagesForRole(role: TenantRole | null | undefined): string[] {
-  return getRolePages(role).filter(page => !OPTIONAL_PAGES.has(page));
+  const pages = getRolePages(role);
+  return pages.includes('dashboard') ? [...pages, 'workQueue'] : pages;
 }

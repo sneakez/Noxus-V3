@@ -61,6 +61,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={t.id}
+              role="status"
+              data-toast-type={t.type}
               className={cn(
                 'flex items-start gap-3 rounded-xl border shadow-lg p-4 animate-fade-in-up',
                 c.bg,
